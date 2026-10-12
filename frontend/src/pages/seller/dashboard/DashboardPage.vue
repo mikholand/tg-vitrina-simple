@@ -33,7 +33,7 @@ const tiles = computed<Tile[]>(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4">
+  <div class="flex flex-col gap-4 px-4 sm:px-6 md:px-8 lg:px-10">
     <h1 class="text-xl font-semibold leading-tight text-sf-ink">Главное</h1>
 
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">

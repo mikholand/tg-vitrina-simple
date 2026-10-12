@@ -41,7 +41,7 @@ onMounted(() => {
     >
       <header
         v-if="!isSeller && !bare && storeInfoStore.storeInfo"
-        class="mb-1 flex items-center gap-2.5 px-4 pb-2 pt-safe-top"
+        class="mb-1 flex items-center gap-2.5 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
       >
         <img
           v-if="storeInfoStore.storeInfo.logo"
@@ -65,7 +65,7 @@ onMounted(() => {
            no card/logo like the customer header above. -->
       <header
         v-if="isSeller && storeInfoStore.storeInfo"
-        class="flex items-center justify-between gap-2 px-4 pb-2 pt-safe-top"
+        class="flex items-center justify-between gap-2 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
       >
         <RouterLink to="/seller" class="truncate text-lg font-semibold leading-tight text-sf-ink">
           {{ storeInfoStore.storeInfo.name }}

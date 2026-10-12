@@ -44,7 +44,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4">
+  <div class="flex flex-col gap-4 px-4 sm:px-6 md:px-8 lg:px-10">
     <div>
       <h1 class="text-2xl font-semibold leading-tight text-sf-ink">Избранное</h1>
       <p class="text-sm text-sf-muted">{{ subtitle }}</p>

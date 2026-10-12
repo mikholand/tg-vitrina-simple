@@ -130,7 +130,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4">
+  <div class="flex flex-col gap-4 px-4 sm:px-6 md:px-8 lg:px-10">
     <div class="flex items-center gap-2">
       <input
         v-model="search"
@@ -170,7 +170,10 @@ onMounted(async () => {
       </button>
     </div>
 
-    <div v-if="chips.length > 0" class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+    <div
+      v-if="chips.length > 0"
+      class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10"
+    >
       <button
         v-for="chip in chips"
         :key="chip.id"

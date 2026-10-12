@@ -81,7 +81,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4">
+  <div class="flex flex-col gap-4 px-4 sm:px-6 md:px-8 lg:px-10">
     <div class="flex items-center gap-2">
       <input
         v-model="search"
@@ -120,7 +120,9 @@ onMounted(async () => {
         <h2 class="text-xl font-semibold leading-tight text-sf-ink">Новинки</h2>
         <p class="text-sm text-sf-muted">Появилось недавно</p>
       </div>
-      <div class="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
+      <div
+        class="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10"
+      >
         <div v-for="product in newItems" :key="product.id" class="w-36 shrink-0 snap-start">
           <ProductCard :product="product" />
         </div>
