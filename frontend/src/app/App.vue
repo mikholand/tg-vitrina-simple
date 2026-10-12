@@ -33,7 +33,13 @@ onMounted(() => {
       padding-left: var(--tg-safe-area-inset-left, 0px);
       padding-right: var(--tg-safe-area-inset-right, 0px);
     "
-    :style="{ paddingTop: bare ? '0px' : 'var(--tg-safe-area-inset-top, 0px)' }"
+    :style="{
+      // Outside Telegram this var is never set, so the fallback (0px) left
+      // the header flush against the browser's top edge — max() keeps a
+      // comfortable floor in the browser while still growing to the real
+      // notch inset inside Telegram.
+      paddingTop: bare ? '0px' : 'max(1rem, var(--tg-safe-area-inset-top, 0px))',
+    }"
   >
     <div
       class="relative mx-auto max-w-web-app sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl"
