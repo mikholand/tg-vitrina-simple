@@ -4,7 +4,6 @@ import type { Product } from '@entities/product/types'
 import { getCatalogProducts } from '@entities/product/api'
 import ProductCard from '@entities/product/ui/ProductCard.vue'
 import { useStoreInfoStore } from '@entities/store-info/store'
-import { useCategoryStore } from '@entities/category/store'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useBannerStore } from '@entities/banner/store'
 import BannerCarousel from '@entities/banner/ui/BannerCarousel.vue'
@@ -16,12 +15,8 @@ const FEED_SIZE = 24
 // Длина полки «Новинки»: один горизонтальный проход, не второй каталог.
 const NEW_SIZE = 10
 
-// Те же холодные сине-серые тона, что и у карточки товара/плиток каталога.
-const TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', 'bg-[#e8eef7]']
-
 const router = useRouter()
 const storeInfoStore = useStoreInfoStore()
-const categoryStore = useCategoryStore()
 const favoriteStore = useFavoriteStore()
 const bannerStore = useBannerStore()
 
@@ -34,23 +29,10 @@ const canAddToHome = ref(false)
 // берёт первые карточки той же выдачи, второй запрос тут не нужен.
 const newItems = computed(() => items.value.slice(0, NEW_SIZE))
 
-const visibleCategories = computed(() => categoryStore.categories.filter((c) => !c.is_hidden))
-const rootCategories = computed(() => visibleCategories.value.filter((c) => c.parent_id === null))
-
-const tiles = computed(() =>
-  rootCategories.value.map((root, index) => ({
-    id: root.id,
-    name: root.name,
-    letter: root.name[0]?.toUpperCase() ?? '',
-    tint: TINTS[index % TINTS.length],
-  })),
-)
-
-function goToCatalog(categoryId?: number): void {
+function goToCatalog(): void {
   const query: Record<string, string> = {}
   const value = search.value.trim()
   if (value) query.search = value
-  if (categoryId) query.category_id = String(categoryId)
   router.push({ path: '/catalog', query })
 }
 
@@ -84,8 +66,7 @@ onMounted(async () => {
 
   loading.value = true
   try {
-    const [, , , result] = await Promise.all([
-      categoryStore.fetchCategories(),
+    const [, , result] = await Promise.all([
       favoriteStore.fetchFavorites(),
       bannerStore.fetchBanners(),
       getCatalogProducts({ limit: FEED_SIZE }),
@@ -146,29 +127,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="tiles.length > 0" class="flex flex-col gap-3">
-      <h2 class="text-xl font-semibold leading-tight text-sf-ink">Категории</h2>
-      <div class="grid grid-cols-2 gap-2.5">
-        <button
-          v-for="tile in tiles"
-          :key="tile.id"
-          type="button"
-          class="flex min-h-[6.25rem] flex-col justify-between rounded-3xl border border-sf-line bg-sf-card p-3.5 text-left"
-          @click="goToCatalog(tile.id)"
-        >
-          <span
-            class="flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-semibold text-sf-accent"
-            :class="tile.tint"
-          >
-            {{ tile.letter }}
-          </span>
-          <span class="block truncate pt-3 text-sm font-medium leading-tight text-sf-ink">
-            {{ tile.name }}
-          </span>
-        </button>
-      </div>
-    </div>
-
     <div class="flex items-end justify-between gap-3">
       <div>
         <h2 class="text-xl font-semibold leading-tight text-sf-ink">Товары</h2>
@@ -184,7 +142,7 @@ onMounted(async () => {
       <span>В магазине пока нет товаров</span>
     </div>
 
-    <div v-else class="grid grid-cols-2 gap-3">
+    <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       <ProductCard v-for="product in items" :key="product.id" :product="product" />
     </div>
   </div>

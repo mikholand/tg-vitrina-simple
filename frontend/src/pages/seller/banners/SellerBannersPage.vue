@@ -90,7 +90,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4">
+  <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <div>
       <h1 class="text-xl font-semibold leading-tight text-sf-ink">Баннеры</h1>
       <p class="text-sm text-sf-muted">Карусель на главной — до {{ MAX_BANNERS }} баннеров</p>

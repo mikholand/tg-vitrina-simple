@@ -141,7 +141,7 @@ onMounted(async () => {
       />
     </div>
 
-    <div v-if="tiles.length > 1" class="grid grid-cols-2 gap-2.5">
+    <div v-if="tiles.length > 1" class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       <button
         v-for="tile in tiles"
         :key="tile.id ?? 'all'"
@@ -196,7 +196,7 @@ onMounted(async () => {
         <span>Ничего не найдено</span>
       </div>
 
-      <div v-else class="grid grid-cols-2 gap-3">
+      <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         <ProductCard v-for="product in products" :key="product.id" :product="product" />
       </div>
 

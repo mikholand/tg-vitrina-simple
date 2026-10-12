@@ -15,7 +15,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4">
+  <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <h1 class="text-xl font-semibold leading-tight text-sf-ink">Статистика</h1>
 
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>

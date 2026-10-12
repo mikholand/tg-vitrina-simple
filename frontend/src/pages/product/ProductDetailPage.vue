@@ -106,7 +106,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div class="mx-auto flex w-full max-w-2xl flex-col">
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
 
     <div v-else-if="!product" class="flex flex-col items-center gap-2 py-16 text-center text-sf-muted">
@@ -174,7 +174,7 @@ onMounted(load)
       </div>
 
       <div
-        class="fixed bottom-0 left-1/2 z-10 w-full max-w-web-app -translate-x-1/2 border-t border-sf-line bg-sf-bg px-4 pb-safe-bottom pt-3"
+        class="fixed bottom-0 left-1/2 z-10 w-full max-w-2xl -translate-x-1/2 border-t border-sf-line bg-sf-bg px-4 pb-safe-bottom pt-3"
       >
         <div class="mb-3 flex items-center gap-3">
           <div class="min-w-0">

@@ -35,7 +35,10 @@ onMounted(() => {
     "
     :style="{ paddingTop: bare ? '0px' : 'var(--tg-safe-area-inset-top, 0px)' }"
   >
-    <div class="relative mx-auto max-w-web-app" :class="bare ? '' : 'pb-20'">
+    <div
+      class="relative mx-auto max-w-web-app sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl"
+      :class="bare ? '' : 'pb-20'"
+    >
       <header
         v-if="!isSeller && !bare && storeInfoStore.storeInfo"
         class="mb-1 flex items-center gap-2.5 px-4 pb-2 pt-safe-top"

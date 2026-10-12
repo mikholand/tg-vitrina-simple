@@ -36,7 +36,7 @@ const tiles = computed<Tile[]>(() => {
   <div class="flex flex-col gap-4 px-4">
     <h1 class="text-xl font-semibold leading-tight text-sf-ink">Главное</h1>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
       <RouterLink
         v-for="tile in tiles"
         :key="tile.to"

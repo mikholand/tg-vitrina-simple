@@ -58,7 +58,7 @@ onMounted(async () => {
         <span>В избранном пока пусто</span>
       </div>
 
-      <div v-else class="grid grid-cols-2 gap-3">
+      <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         <ProductCard v-for="product in products" :key="product.id" :product="product" />
       </div>
     </template>

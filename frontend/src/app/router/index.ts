@@ -89,25 +89,51 @@ export const router = createRouter({
   routes,
 })
 
-let attemptedSilentLogin = false
+let authInitPromise: Promise<void> | null = null
 
 /**
- * Attempts a single silent Telegram login per session before the first
- * navigation(s) resolve. Non-blocking by design: failures are swallowed so
- * public routes still render. Seller-only routes are gated once the silent
- * login attempt has resolved (success or failure).
+ * Runs once per page load, before the first navigation(s) resolve:
+ *  - no token yet (fresh tab, never logged in this browser) → silent
+ *    Telegram login via initData.
+ *  - token already in sessionStorage (e.g. a page *reload*, not a fresh
+ *    tab — the token survives that) → re-fetch the profile instead of
+ *    logging in again. Without this, `currentUser`/`role` would start out
+ *    `null` on every reload (fresh Pinia store, nothing restores it from
+ *    the token alone), so an owner/moderator would silently lose access to
+ *    `/seller/*` until the page was reopened fresh from Telegram.
+ * Memoized in a module-level promise (not just a boolean flag) so every
+ * navigation that fires before the first one resolves awaits the same
+ * in-flight attempt instead of racing a second one.
  */
+function ensureAuthInitialized(): Promise<void> {
+  if (!authInitPromise) {
+    const authStore = useAuthStore()
+    authInitPromise = (async () => {
+      if (authStore.token) {
+        try {
+          await authStore.fetchMe()
+        } catch {
+          // Stale/invalid token — http.ts already tried a silent relogin
+          // via Telegram initData on the 401 and failed, so this really is
+          // a dead token. Drop it and fall back to anonymous access.
+          authStore.logout()
+        }
+      } else {
+        try {
+          await authStore.loginWithTelegram()
+        } catch {
+          // Ignored — public routes still render outside Telegram.
+        }
+      }
+    })()
+  }
+  return authInitPromise
+}
+
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
-  if (!authStore.token && !attemptedSilentLogin) {
-    attemptedSilentLogin = true
-    try {
-      await authStore.loginWithTelegram()
-    } catch {
-      // Ignored — see comment above.
-    }
-  }
+  await ensureAuthInitialized()
 
   if (to.meta.requiresOwner && authStore.role !== 'seller' && authStore.role !== 'admin') {
     return { name: 'home' }
