@@ -2,9 +2,11 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import OptionalUser, VisitorKey
+from app.dto.banner import BannerSchema
 from app.dto.category import CategorySchema
 from app.dto.product import ProductSchema
 from app.entities.product import Product
+from app.repositories.banner import BannerRepository
 from app.repositories.category import CategoryRepository
 from app.repositories.product import ProductRepository
 from app.repositories.store_profile import StoreProfileRepository
@@ -43,6 +45,14 @@ async def record_visit(
     if user is None and visitor_key is None:
         return
     await view_service.record_store_visit(user.id if user else None, visitor_key)
+
+
+@router.get("/banners")
+async def list_banners(
+    banner_repository: FromDishka[BannerRepository],
+) -> list[BannerSchema]:
+    banners = await banner_repository.list_all()
+    return [BannerSchema.model_validate(b) for b in banners]
 
 
 @router.get("/categories")

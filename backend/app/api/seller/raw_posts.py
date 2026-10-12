@@ -1,7 +1,7 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.api.deps import CurrentSeller
+from app.api.deps import CurrentStaff
 from app.dto.raw_post import RawPostSchema
 from app.entities.raw_post import RawPostStatus
 from app.repositories.raw_post import RawPostRepository
@@ -14,7 +14,7 @@ router = APIRouter(
 
 @router.get("")
 async def list_raw_posts(
-    _: CurrentSeller,
+    _: CurrentStaff,
     raw_post_repository: FromDishka[RawPostRepository],
     status_filter: RawPostStatus | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, le=100),
@@ -27,7 +27,7 @@ async def list_raw_posts(
 
 @router.get("/{raw_post_id}")
 async def get_raw_post(
-    raw_post_id: int, _: CurrentSeller, raw_post_repository: FromDishka[RawPostRepository]
+    raw_post_id: int, _: CurrentStaff, raw_post_repository: FromDishka[RawPostRepository]
 ) -> RawPostSchema:
     post = await raw_post_repository.get(raw_post_id)
     if post is None:

@@ -1,7 +1,7 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter
 
-from app.api.deps import CurrentSeller
+from app.api.deps import CurrentStaff
 from app.dto.sync import SyncStateSchema
 from app.services.sync import SyncOrchestrationService
 
@@ -12,7 +12,7 @@ router = APIRouter(
 
 @router.get("")
 async def get_sync_status(
-    _: CurrentSeller, sync_service: FromDishka[SyncOrchestrationService]
+    _: CurrentStaff, sync_service: FromDishka[SyncOrchestrationService]
 ) -> SyncStateSchema:
     state = await sync_service.get_status()
     return SyncStateSchema.model_validate(state)
@@ -20,7 +20,7 @@ async def get_sync_status(
 
 @router.post("/start")
 async def start_sync(
-    _: CurrentSeller,
+    _: CurrentStaff,
     sync_service: FromDishka[SyncOrchestrationService],
     resume: bool = False,
 ) -> SyncStateSchema:
@@ -30,7 +30,7 @@ async def start_sync(
 
 @router.post("/stop")
 async def stop_sync(
-    _: CurrentSeller, sync_service: FromDishka[SyncOrchestrationService]
+    _: CurrentStaff, sync_service: FromDishka[SyncOrchestrationService]
 ) -> SyncStateSchema:
     state = await sync_service.request_stop()
     return SyncStateSchema.model_validate(state)

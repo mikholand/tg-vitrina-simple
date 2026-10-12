@@ -232,6 +232,12 @@ async def admin(make_user, auth_header) -> tuple[User, dict[str, str]]:
     return user, auth_header(user.id, user.role)
 
 
+@pytest_asyncio.fixture
+async def moderator(make_user, auth_header) -> tuple[User, dict[str, str]]:
+    user = await make_user(4001, UserRole.MODERATOR)
+    return user, auth_header(user.id, user.role)
+
+
 @pytest.fixture
 def internal_header(settings: Settings) -> dict[str, str]:
     return {"X-Internal-Token": settings.security.INTERNAL_API_TOKEN.get_secret_value()}

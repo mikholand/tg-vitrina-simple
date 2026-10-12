@@ -75,6 +75,18 @@ async def require_seller(user: CurrentUser) -> User:
 CurrentSeller = Annotated[User, Depends(require_seller)]
 
 
+async def require_staff(user: CurrentUser) -> User:
+    """Looser than `require_seller`: also allows moderators. Used by every
+    seller-side endpoint except shop settings and moderator management
+    themselves, which stay owner-only (`CurrentSeller`)."""
+    if user.role not in (UserRole.SELLER, UserRole.ADMIN, UserRole.MODERATOR):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="staff_access_required")
+    return user
+
+
+CurrentStaff = Annotated[User, Depends(require_staff)]
+
+
 @inject
 async def require_internal_token(
     settings: FromDishka[Settings],

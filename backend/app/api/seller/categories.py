@@ -1,7 +1,7 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter
 
-from app.api.deps import CurrentSeller
+from app.api.deps import CurrentStaff
 from app.dto.category import CategorySchema, CategoryVisibilityUpdateSchema
 from app.repositories.category import CategoryRepository
 from app.services.category import CategoryService
@@ -13,7 +13,7 @@ router = APIRouter(
 
 @router.get("")
 async def list_categories(
-    _: CurrentSeller, category_repository: FromDishka[CategoryRepository]
+    _: CurrentStaff, category_repository: FromDishka[CategoryRepository]
 ) -> list[CategorySchema]:
     categories = await category_repository.list_all()
     return [CategorySchema.model_validate(c) for c in categories]
@@ -23,7 +23,7 @@ async def list_categories(
 async def set_visibility(
     category_id: int,
     payload: CategoryVisibilityUpdateSchema,
-    _: CurrentSeller,
+    _: CurrentStaff,
     category_repository: FromDishka[CategoryRepository],
     category_service: FromDishka[CategoryService],
 ) -> CategorySchema:

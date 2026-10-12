@@ -27,8 +27,18 @@ const sellerItems: NavItem[] = [
   { to: '/seller/settings', label: 'Настройки', icon: 'pi pi-cog' },
 ]
 
-const isSeller = computed(() => authStore.role === 'seller' || authStore.role === 'admin')
-const items = computed<NavItem[]>(() => (isSeller.value ? sellerItems : customerItems))
+// Moderators get the same cabinet as the owner, minus shop settings —
+// "модератор без доступа к настройкам магазина".
+const moderatorItems: NavItem[] = sellerItems.filter((item) => item.to !== '/seller/settings')
+
+const isSeller = computed(
+  () => authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator',
+)
+const items = computed<NavItem[]>(() => {
+  if (authStore.role === 'moderator') return moderatorItems
+  if (isSeller.value) return sellerItems
+  return customerItems
+})
 </script>
 
 <template>

@@ -6,6 +6,8 @@ import ProductCard from '@entities/product/ui/ProductCard.vue'
 import { useStoreInfoStore } from '@entities/store-info/store'
 import { useCategoryStore } from '@entities/category/store'
 import { useFavoriteStore } from '@entities/favorite/store'
+import { useBannerStore } from '@entities/banner/store'
+import BannerCarousel from '@entities/banner/ui/BannerCarousel.vue'
 
 // Сколько товаров грузит подборка на главной — хватает и на «Товары», и на
 // первые карточки шелфа «Новинки» (см. newItems ниже).
@@ -21,6 +23,7 @@ const router = useRouter()
 const storeInfoStore = useStoreInfoStore()
 const categoryStore = useCategoryStore()
 const favoriteStore = useFavoriteStore()
+const bannerStore = useBannerStore()
 
 const search = ref('')
 const loading = ref(true)
@@ -81,9 +84,10 @@ onMounted(async () => {
 
   loading.value = true
   try {
-    const [, , result] = await Promise.all([
+    const [, , , result] = await Promise.all([
       categoryStore.fetchCategories(),
       favoriteStore.fetchFavorites(),
+      bannerStore.fetchBanners(),
       getCatalogProducts({ limit: FEED_SIZE }),
     ])
     items.value = result.items
@@ -106,6 +110,8 @@ onMounted(async () => {
         @keyup.enter="goToCatalog()"
       />
     </div>
+
+    <BannerCarousel v-if="bannerStore.banners.length > 0" :banners="bannerStore.banners" />
 
     <!-- Только на главной: ярлык ведёт именно сюда, и предлагать его на
          каждом экране витрины значило бы мозолить глаза одной и той же

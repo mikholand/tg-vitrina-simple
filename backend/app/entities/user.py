@@ -11,6 +11,7 @@ class UserRole(enum.StrEnum):
 
     ADMIN = "admin"
     SELLER = "seller"
+    MODERATOR = "moderator"
     CUSTOMER = "customer"
 
 

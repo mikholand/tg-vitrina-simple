@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, Query
 
-from app.api.deps import CurrentSeller
+from app.api.deps import CurrentStaff
 from app.repositories.product import ProductRepository
 from app.repositories.view import ViewRepository
 
@@ -14,7 +14,7 @@ router = APIRouter(
 
 @router.get("")
 async def get_stats(
-    _: CurrentSeller,
+    _: CurrentStaff,
     view_repository: FromDishka[ViewRepository],
     product_repository: FromDishka[ProductRepository],
     top_limit: int = Query(default=10, le=50),

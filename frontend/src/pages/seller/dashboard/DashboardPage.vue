@@ -1,24 +1,35 @@
 <script setup lang="ts">
+import { useAuthStore } from '@entities/user/store'
+
 interface Tile {
   to: string
   label: string
   icon: string
 }
 
+const authStore = useAuthStore()
+
 // tg-vitrina's "Главное" is a pure launcher — a grid of tiles, not an
 // at-a-glance stats screen (that's «Статистика», a tab of its own there).
 // Daily sections (Товары/Посты/Категории/Настройки) already live in the
-// bottom nav; this grid covers those plus the two that don't — Статистика
-// and Синхронизация — mirroring how tg-vitrina's dashboard surfaces
+// bottom nav; this grid covers those plus the ones that don't — Статистика,
+// Синхронизация, Баннеры — mirroring how tg-vitrina's dashboard surfaces
 // banners/team/contacts/sync only through its own tile grid.
-const tiles: Tile[] = [
-  { to: '/seller/products', label: 'Товары', icon: 'box' },
-  { to: '/seller/raw-posts', label: 'Посты', icon: 'inbox' },
-  { to: '/seller/categories', label: 'Категории', icon: 'sitemap' },
-  { to: '/seller/statistics', label: 'Статистика', icon: 'chart-bar' },
-  { to: '/seller/sync', label: 'Синхронизация', icon: 'sync' },
-  { to: '/seller/settings', label: 'Настройки', icon: 'cog' },
-]
+const tiles = computed<Tile[]>(() => {
+  const base: Tile[] = [
+    { to: '/seller/products', label: 'Товары', icon: 'box' },
+    { to: '/seller/raw-posts', label: 'Посты', icon: 'inbox' },
+    { to: '/seller/categories', label: 'Категории', icon: 'sitemap' },
+    { to: '/seller/banners', label: 'Баннеры', icon: 'images' },
+    { to: '/seller/statistics', label: 'Статистика', icon: 'chart-bar' },
+    { to: '/seller/sync', label: 'Синхронизация', icon: 'sync' },
+  ]
+  // Settings (incl. moderator management) is owner-only.
+  if (authStore.role === 'seller' || authStore.role === 'admin') {
+    base.push({ to: '/seller/settings', label: 'Настройки', icon: 'cog' })
+  }
+  return base
+})
 </script>
 
 <template>

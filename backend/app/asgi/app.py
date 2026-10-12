@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, catalog, favorites, health, internal_sync
-from app.api.seller import categories, products, raw_posts, stats, sync
+from app.api.seller import banners, categories, moderators, products, raw_posts, stats, sync
 from app.api.seller import settings as seller_settings
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -49,6 +49,8 @@ def create_app() -> FastAPI:
         sync.router,
         seller_settings.router,
         stats.router,
+        banners.router,
+        moderators.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

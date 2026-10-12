@@ -1,7 +1,7 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, UploadFile, status
 
-from app.api.deps import CurrentSeller
+from app.api.deps import CurrentStaff
 from app.core.config import Settings
 from app.dto.product import ProductSchema, ProductUpdateSchema
 from app.entities.product import ProductStatus
@@ -24,7 +24,7 @@ def _to_schema(product, category_ids: list[int]) -> ProductSchema:
 
 @router.get("")
 async def list_products(
-    _: CurrentSeller,
+    _: CurrentStaff,
     product_repository: FromDishka[ProductRepository],
     status_filter: ProductStatus | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, le=100),
@@ -37,7 +37,7 @@ async def list_products(
 
 @router.get("/{product_id}")
 async def get_product(
-    product_id: int, _: CurrentSeller, product_repository: FromDishka[ProductRepository]
+    product_id: int, _: CurrentStaff, product_repository: FromDishka[ProductRepository]
 ) -> ProductSchema:
     product = await product_repository.get(product_id)
     if product is None:
@@ -49,7 +49,7 @@ async def get_product(
 async def update_product(
     product_id: int,
     payload: ProductUpdateSchema,
-    _: CurrentSeller,
+    _: CurrentStaff,
     product_repository: FromDishka[ProductRepository],
     product_service: FromDishka[ProductService],
 ) -> ProductSchema:
@@ -64,7 +64,7 @@ async def update_product(
 async def upload_photo(
     product_id: int,
     file: UploadFile,
-    _: CurrentSeller,
+    _: CurrentStaff,
     settings: FromDishka[Settings],
     product_repository: FromDishka[ProductRepository],
 ) -> ProductSchema:
@@ -79,7 +79,7 @@ async def upload_photo(
 @router.post("/{product_id}/publish")
 async def publish_product(
     product_id: int,
-    _: CurrentSeller,
+    _: CurrentStaff,
     product_repository: FromDishka[ProductRepository],
     product_service: FromDishka[ProductService],
     publishing_service: FromDishka[PublishingService],
@@ -96,7 +96,7 @@ async def publish_product(
 @router.post("/{product_id}/hide")
 async def hide_product(
     product_id: int,
-    _: CurrentSeller,
+    _: CurrentStaff,
     product_repository: FromDishka[ProductRepository],
     product_service: FromDishka[ProductService],
 ) -> ProductSchema:

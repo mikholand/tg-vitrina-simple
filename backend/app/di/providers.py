@@ -8,6 +8,7 @@ from app.clients.bot import BotClient, create_bot
 from app.clients.openrouter import OpenRouterClient
 from app.core.config import Settings, get_settings
 from app.core.db import create_engine, create_session_factory
+from app.repositories.banner import BannerRepository
 from app.repositories.category import CategoryRepository
 from app.repositories.favorite import FavoriteRepository
 from app.repositories.product import ProductRepository
@@ -68,6 +69,7 @@ class RepositoryProvider(Provider):
     view_repository = provide(ViewRepository)
     sync_state_repository = provide(SyncStateRepository)
     store_profile_repository = provide(StoreProfileRepository)
+    banner_repository = provide(BannerRepository)
 
 
 class ClientProvider(Provider):

@@ -33,7 +33,7 @@ http.interceptors.request.use((config) => {
 interface LoginResponse {
   token: string
   user_id: number
-  role: 'admin' | 'seller' | 'customer'
+  role: 'admin' | 'seller' | 'moderator' | 'customer'
 }
 
 let reloginPromise: Promise<string | null> | null = null

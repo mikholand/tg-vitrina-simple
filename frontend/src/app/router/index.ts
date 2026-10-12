@@ -3,7 +3,12 @@ import { useAuthStore } from '@entities/user/store'
 
 declare module 'vue-router' {
   interface RouteMeta {
+    // Staff access: seller, admin, or moderator.
     requiresSeller?: boolean
+    // Owner-only: seller or admin — moderators are explicitly excluded.
+    // Used only by the shop settings page (store identity + moderator
+    // management itself), per "модератор без доступа к настройкам магазина".
+    requiresOwner?: boolean
   }
 }
 
@@ -66,10 +71,16 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresSeller: true },
   },
   {
+    path: '/seller/banners',
+    name: 'seller-banners',
+    component: () => import('@pages/seller/banners/SellerBannersPage.vue'),
+    meta: { requiresSeller: true },
+  },
+  {
     path: '/seller/settings',
     name: 'seller-settings',
     component: () => import('@pages/seller/settings/SellerSettingsPage.vue'),
-    meta: { requiresSeller: true },
+    meta: { requiresOwner: true },
   },
 ]
 
@@ -98,7 +109,16 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (to.meta.requiresSeller && authStore.role !== 'seller' && authStore.role !== 'admin') {
+  if (to.meta.requiresOwner && authStore.role !== 'seller' && authStore.role !== 'admin') {
+    return { name: 'home' }
+  }
+
+  if (
+    to.meta.requiresSeller &&
+    authStore.role !== 'seller' &&
+    authStore.role !== 'admin' &&
+    authStore.role !== 'moderator'
+  ) {
     return { name: 'home' }
   }
 

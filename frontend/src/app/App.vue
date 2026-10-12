@@ -7,7 +7,10 @@ const route = useRoute()
 const authStore = useAuthStore()
 const storeInfoStore = useStoreInfoStore()
 
-const isSeller = computed(() => authStore.role === 'seller' || authStore.role === 'admin')
+const isSeller = computed(
+  () => authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator',
+)
+const isOwner = computed(() => authStore.role === 'seller' || authStore.role === 'admin')
 
 // Карточка товара рисует фото во всю ширину и свою нижнюю панель с ценой —
 // общие вкладки и верхний отступ под чёлку на ней только мешали бы, как и
@@ -64,7 +67,12 @@ onMounted(() => {
         <RouterLink to="/seller" class="truncate text-lg font-semibold leading-tight text-sf-ink">
           {{ storeInfoStore.storeInfo.name }}
         </RouterLink>
-        <RouterLink to="/seller/settings" class="shrink-0 text-sf-muted" aria-label="Настройки">
+        <RouterLink
+          v-if="isOwner"
+          to="/seller/settings"
+          class="shrink-0 text-sf-muted"
+          aria-label="Настройки"
+        >
           <i class="pi pi-cog text-xl" />
         </RouterLink>
       </header>
