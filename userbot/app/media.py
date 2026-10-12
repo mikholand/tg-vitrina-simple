@@ -70,9 +70,25 @@ async def download_photo(
         await backoff.wait()
         try:
             await download_with_flood_wait(client, message, destination)
+
+            # Pyrogram's download_media() can return normally (no exception)
+            # while having written nothing: Client.handle_download() only
+            # removes its *.temp file and returns None on a raised error —
+            # if the underlying GetFile call comes back with an empty first
+            # chunk (observed for some historical/archived messages, likely
+            # a stale file reference that Telegram doesn't surface as a
+            # hard error), the "" bytes are still written out as a real
+            # 0-byte file at `destination`. Treat that the same as a
+            # failed attempt instead of trusting "no exception" as success,
+            # otherwise a permanently-broken empty file gets recorded in
+            # photo_paths and silently 404s/renders broken in the frontend.
+            if not destination.is_file() or destination.stat().st_size == 0:
+                raise RuntimeError("downloaded file is empty")
+
             backoff.record_success()
             return True
         except Exception as exc:
+            destination.unlink(missing_ok=True)
             backoff.record_failure()
             logger.warning(
                 "media_download_failed",
