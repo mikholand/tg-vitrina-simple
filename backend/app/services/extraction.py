@@ -118,7 +118,7 @@ class ExtractionService:
 
     async def _call_with_retries(self, raw_post: RawPost) -> ProductExtractionSchema | None:
         catalog_labels = list((await self._category_service.list_selectable_paths()).keys())
-        catalog_text = "\n".join(f"- {label}" for label in [*catalog_labels, "Другое"])
+        catalog_text = "\n".join(f"- {label}" for label in [*catalog_labels, "Другие"])
         system_prompt = EXTRACTION_SYSTEM_TEMPLATE.format(catalog=catalog_text)
         user_prompt = EXTRACTION_USER_TEMPLATE.format(raw_text=raw_post.raw_text or "")
 

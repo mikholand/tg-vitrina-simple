@@ -39,7 +39,7 @@ class CategoryService:
     async def resolve_label(self, label: str | None) -> Category:
         """Map the LLM's chosen label back to a Category row. Any answer
         that isn't an exact match against the menu we gave it — including
-        a made-up category — falls back to "Другое". The LLM has no
+        a made-up category — falls back to "Другие". The LLM has no
         authority to create categories.
         """
         fallback = await self._category_repository.get_fallback()
