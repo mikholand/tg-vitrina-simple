@@ -90,6 +90,11 @@ class AppSettings(BaseSettings):
     MEDIA_ROOT: str = "/media"
     LOG_LEVEL: str = "INFO"
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173"
+    # Public HTTPS URL of the storefront Mini App, used to build the "Open
+    # shop" WebApp button the bot sends in reply to /start. Telegram requires
+    # WebApp button URLs to be https, so this is left unset (button omitted)
+    # rather than defaulting to something like http://localhost.
+    WEBAPP_URL: str = ""
 
     @property
     def cors_origins(self) -> list[str]:
