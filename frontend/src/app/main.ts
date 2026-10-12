@@ -46,6 +46,14 @@ const SfPreset = definePreset(Aura, {
       950: '#172554',
     },
     formField: {
+      // Aura's default paddingX/Y (0.75rem/0.5rem) reads noticeably smaller
+      // than the hand-rolled pill search bars elsewhere in the app
+      // (px-4 py-2.5 = 1rem/0.625rem) — bumped to match so PrimeVue fields
+      // feel like the same touch-friendly size, not a cramped afterthought.
+      // Button paddingX/Y reference these same tokens, so pill buttons grow
+      // in step automatically.
+      paddingX: '1rem',
+      paddingY: '0.625rem',
       borderRadius: '0.75rem',
     },
     colorScheme: {

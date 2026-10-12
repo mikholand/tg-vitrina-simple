@@ -118,7 +118,7 @@ onMounted(() => {
     class="w-[90vw] max-w-md"
     @update:visible="(value: boolean) => emit('update:visible', value)"
   >
-    <div v-if="product" class="flex flex-col gap-3">
+    <div v-if="product" class="flex flex-col gap-4">
       <div class="flex gap-2 overflow-x-auto">
         <div
           v-for="photo in photoPaths"
@@ -145,34 +145,34 @@ onMounted(() => {
         />
       </div>
 
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex flex-col gap-1.5 text-sm">
         <span class="text-sf-muted">Название</span>
         <InputText v-model="name" fluid />
       </label>
 
-      <div class="flex gap-2">
-        <label class="flex flex-1 flex-col gap-1 text-sm">
+      <div class="flex gap-3">
+        <label class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Цена</span>
           <InputText v-model="price" fluid />
         </label>
-        <label class="flex flex-1 flex-col gap-1 text-sm">
+        <label class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Валюта</span>
           <InputText v-model="currency" fluid />
         </label>
       </div>
 
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex flex-col gap-1.5 text-sm">
         <span class="text-sf-muted">Описание</span>
         <Textarea v-model="description" auto-resize rows="3" fluid />
       </label>
 
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex flex-col gap-1.5 text-sm">
         <span class="text-sf-muted">Артикул</span>
         <InputText v-model="sku" fluid />
       </label>
 
-      <div class="flex gap-2">
-        <label class="flex flex-1 flex-col gap-1 text-sm">
+      <div class="flex gap-3">
+        <label class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Наличие</span>
           <Select
             v-model="availability"
@@ -182,13 +182,13 @@ onMounted(() => {
             fluid
           />
         </label>
-        <label class="flex flex-1 flex-col gap-1 text-sm">
+        <label class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Количество</span>
           <InputNumber v-model="quantity" :min="0" show-buttons button-layout="horizontal" fluid />
         </label>
       </div>
 
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex flex-col gap-1.5 text-sm">
         <span class="text-sf-muted">Категории</span>
         <MultiSelect
           v-model="categoryIds"
