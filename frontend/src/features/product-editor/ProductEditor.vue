@@ -147,28 +147,28 @@ onMounted(() => {
 
       <label class="flex flex-col gap-1 text-sm">
         <span class="text-sf-muted">Название</span>
-        <InputText v-model="name" />
+        <InputText v-model="name" fluid />
       </label>
 
       <div class="flex gap-2">
         <label class="flex flex-1 flex-col gap-1 text-sm">
           <span class="text-sf-muted">Цена</span>
-          <InputText v-model="price" />
+          <InputText v-model="price" fluid />
         </label>
         <label class="flex flex-1 flex-col gap-1 text-sm">
           <span class="text-sf-muted">Валюта</span>
-          <InputText v-model="currency" />
+          <InputText v-model="currency" fluid />
         </label>
       </div>
 
       <label class="flex flex-col gap-1 text-sm">
         <span class="text-sf-muted">Описание</span>
-        <Textarea v-model="description" auto-resize rows="3" />
+        <Textarea v-model="description" auto-resize rows="3" fluid />
       </label>
 
       <label class="flex flex-col gap-1 text-sm">
         <span class="text-sf-muted">Артикул</span>
-        <InputText v-model="sku" />
+        <InputText v-model="sku" fluid />
       </label>
 
       <div class="flex gap-2">
@@ -179,11 +179,12 @@ onMounted(() => {
             :options="availabilityOptions"
             option-label="label"
             option-value="value"
+            fluid
           />
         </label>
         <label class="flex flex-1 flex-col gap-1 text-sm">
           <span class="text-sf-muted">Количество</span>
-          <InputNumber v-model="quantity" :min="0" show-buttons button-layout="horizontal" />
+          <InputNumber v-model="quantity" :min="0" show-buttons button-layout="horizontal" fluid />
         </label>
       </div>
 
@@ -196,6 +197,7 @@ onMounted(() => {
           option-value="id"
           placeholder="Выберите категории"
           display="chip"
+          fluid
         />
       </label>
 

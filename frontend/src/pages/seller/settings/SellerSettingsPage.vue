@@ -81,19 +81,19 @@ async function onLogoSelected(event: Event): Promise<void> {
       <div class="flex items-center gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
         <button
           type="button"
-          class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sf-accent text-sm font-semibold text-white disabled:opacity-60"
+          class="relative shrink-0 overflow-hidden rounded-full disabled:opacity-60"
           :disabled="uploadingLogo"
           @click="triggerFilePicker"
         >
-          <img
-            v-if="settings.store_logo"
-            :src="settings.store_logo"
-            :alt="name"
-            class="size-full object-cover"
+          <Avatar
+            :image="settings.store_logo ?? undefined"
+            :label="settings.store_logo ? undefined : name[0]?.toUpperCase()"
+            shape="circle"
+            size="xlarge"
+            style="background-color: var(--sf-accent); color: #fff"
           />
-          <span v-else>{{ name[0]?.toUpperCase() }}</span>
           <span
-            class="absolute inset-0 flex items-center justify-center bg-black/40 text-white"
+            class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white"
             :class="uploadingLogo ? 'opacity-100' : 'opacity-0 transition-opacity hover:opacity-100'"
           >
             <i v-if="!uploadingLogo" class="pi pi-camera text-sm" />
@@ -109,31 +109,26 @@ async function onLogoSelected(event: Event): Promise<void> {
       <div class="flex flex-col gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
         <label class="flex flex-col gap-1 text-sm">
           <span class="text-sf-muted">Название магазина</span>
-          <InputText v-model="name" />
+          <InputText v-model="name" fluid />
         </label>
 
         <label class="flex flex-col gap-1 text-sm">
           <span class="text-sf-muted">Описание</span>
-          <Textarea v-model="description" auto-resize rows="3" />
+          <Textarea v-model="description" auto-resize rows="3" fluid />
         </label>
 
         <label class="flex flex-col gap-1 text-sm">
           <span class="text-sf-muted">Контакт (Telegram)</span>
-          <InputText v-model="contactTg" placeholder="@username" />
+          <IconField>
+            <InputIcon class="pi pi-at" />
+            <InputText v-model="contactTg" placeholder="username" fluid />
+          </IconField>
         </label>
 
-        <p v-if="error" class="text-xs text-sf-danger">{{ error }}</p>
-        <p v-else-if="savedAt" class="text-xs text-sf-success">Сохранено</p>
+        <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+        <Message v-else-if="savedAt" severity="success" :closable="false">Сохранено</Message>
 
-        <button
-          type="button"
-          class="flex items-center justify-center gap-1.5 rounded-full bg-sf-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          :disabled="saving"
-          @click="onSave"
-        >
-          <i v-if="saving" class="pi pi-spin pi-spinner text-xs" />
-          Сохранить
-        </button>
+        <Button label="Сохранить" :loading="saving" fluid @click="onSave" />
       </div>
 
       <div class="flex flex-col gap-2 rounded-2xl border border-sf-line bg-sf-card p-3.5 text-sm">
@@ -143,12 +138,11 @@ async function onLogoSelected(event: Event): Promise<void> {
         </div>
         <div class="flex items-center justify-between gap-2">
           <span class="text-sf-muted">Экстрактор настроен</span>
-          <span
-            class="shrink-0 rounded-full px-2 py-0.5 text-[0.65rem]"
-            :class="settings.extractor_configured ? 'bg-sf-success-soft text-sf-success' : 'bg-sf-danger-soft text-sf-danger'"
-          >
-            {{ settings.extractor_configured ? 'Да' : 'Нет' }}
-          </span>
+          <Tag
+            :severity="settings.extractor_configured ? 'success' : 'danger'"
+            :value="settings.extractor_configured ? 'Да' : 'Нет'"
+            rounded
+          />
         </div>
         <p class="text-xs text-sf-muted">
           Эти два параметра заданы на сервере переменными окружения и не редактируются здесь.
