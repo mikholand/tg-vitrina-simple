@@ -1,0 +1,20 @@
+# Static Traefik configuration for local/dev use: plain HTTP on :80 only,
+# routing decided purely from Docker labels (see docker-compose.yml).
+# No TLS here — see traefik.prod.yml for the production variant.
+
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: tg-vitrina-simple_default
+
+api:
+  dashboard: true
+  insecure: true

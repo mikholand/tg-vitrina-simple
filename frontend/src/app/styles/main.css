@@ -1,0 +1,43 @@
+@layer tailwind-base, primevue, tailwind-utilities;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Storefront palette — ported verbatim from tg-vitrina (the original
+     project this is a slimmed-down rebuild of) so the storefront looks
+     pixel-identical regardless of the visitor's Telegram theme: white
+     background, cool greys, blue accent. Deliberately NOT wired to
+     --tg-theme-* vars (unlike the previous revision of this file) — a
+     faithful visual clone needs a fixed palette, not one that follows the
+     user's dark/light mode. */
+  --sf-bg: #ffffff;
+  --sf-card: #f8fafc;
+  --sf-accent: #2563eb;
+  --sf-accent-soft: #eff4ff;
+  --sf-ink: #0f172a;
+  --sf-muted: #64748b;
+  --sf-line: #e2e8f0;
+  --sf-placeholder: #94a3b8;
+  --sf-disabled: #cbd5e1;
+
+  --sf-success: #16a34a;
+  --sf-success-soft: #f0fdf4;
+  --sf-danger: #ef4444;
+  --sf-danger-soft: #fef2f2;
+  --sf-warning: #f59e0b;
+  --sf-warning-soft: #fffbeb;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}

@@ -1,0 +1,45 @@
+# Production overlay: swap Traefik to the HTTPS/Let's Encrypt static
+# config, publish :443, persist the ACME account/certificates, drop the
+# dev-only insecure dashboard's host port, and add the `websecure`
+# entrypoint + TLS certresolver to the public-facing routers.
+#
+# IMPORTANT: the base rules are plain PathPrefix(...) with no Host(...)
+# match, which is fine for dev (single vhost-less Traefik on localhost) but
+# breaks ACME in prod: Traefik's Let's Encrypt resolver only knows which
+# domain to request a certificate for when a router's `rule` pins a
+# Host(...). Without it, the TLS handshake is served from Traefik's
+# self-signed default cert forever and no ACME request is ever triggered.
+# So this overlay REPLACES (not just adds to) the `rule` label with a
+# version that also pins Host(`${DOMAIN}`) — requires DOMAIN to be set in
+# .env. (Mirrors how the sibling /opt/tg-vitrina deployment's prod overlay
+# does it.)
+#
+# Usage (traefik still only starts with the `dev` profile flag — that
+# profile name is just a historical toggle for "run the bundled reverse
+# proxy", it is also what we want on in prod):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile dev up -d --build
+
+services:
+  traefik:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik/traefik.prod.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+
+  backend:
+    labels:
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/media`))"
+      - "traefik.http.routers.backend.entrypoints=web,websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+
+  frontend:
+    labels:
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web,websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+
+volumes:
+  letsencrypt:

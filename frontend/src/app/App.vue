@@ -1,0 +1,76 @@
+<script setup lang="ts">
+import BottomNav from '@widgets/nav/BottomNav.vue'
+import { useAuthStore } from '@entities/user/store'
+import { useStoreInfoStore } from '@entities/store-info/store'
+
+const route = useRoute()
+const authStore = useAuthStore()
+const storeInfoStore = useStoreInfoStore()
+
+const isSeller = computed(() => authStore.role === 'seller' || authStore.role === 'admin')
+
+// Карточка товара рисует фото во всю ширину и свою нижнюю панель с ценой —
+// общие вкладки и верхний отступ под чёлку на ней только мешали бы, как и
+// в исходном tg-vitrina (там этот маршрут тоже помечен как "bare").
+const bare = computed(() => route.name === 'product-detail')
+
+const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
+
+onMounted(() => {
+  // /catalog/store не требует авторизации, так что одного и того же
+  // fetchStoreInfo хватает и покупательской шапке, и шапке продавца ниже.
+  void storeInfoStore.fetchStoreInfo()
+})
+</script>
+
+<template>
+  <div
+    class="min-h-screen bg-sf-bg text-sf-ink"
+    style="
+      padding-left: var(--tg-safe-area-inset-left, 0px);
+      padding-right: var(--tg-safe-area-inset-right, 0px);
+    "
+    :style="{ paddingTop: bare ? '0px' : 'var(--tg-safe-area-inset-top, 0px)' }"
+  >
+    <div class="relative mx-auto max-w-web-app" :class="bare ? '' : 'pb-20'">
+      <header
+        v-if="!isSeller && !bare && storeInfoStore.storeInfo"
+        class="mb-1 flex items-center gap-2.5 px-4 pb-2 pt-safe-top"
+      >
+        <img
+          v-if="storeInfoStore.storeInfo.logo"
+          :src="storeInfoStore.storeInfo.logo"
+          :alt="storeInfoStore.storeInfo.name"
+          class="size-9 shrink-0 rounded-full object-cover"
+        />
+        <div
+          v-else
+          class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-white"
+        >
+          {{ storeInitial }}
+        </div>
+        <h1 class="min-w-0 truncate font-semibold leading-tight text-sf-ink">
+          {{ storeInfoStore.storeInfo.name }}
+        </h1>
+      </header>
+
+      <!-- Seller cabinet: tg-vitrina's SellerLayout header — flat row with
+           the shop name (back to the dashboard) and a gear to Settings,
+           no card/logo like the customer header above. -->
+      <header
+        v-if="isSeller && storeInfoStore.storeInfo"
+        class="flex items-center justify-between gap-2 px-4 pb-2 pt-safe-top"
+      >
+        <RouterLink to="/seller" class="truncate text-lg font-semibold leading-tight text-sf-ink">
+          {{ storeInfoStore.storeInfo.name }}
+        </RouterLink>
+        <RouterLink to="/seller/settings" class="shrink-0 text-sf-muted" aria-label="Настройки">
+          <i class="pi pi-cog text-xl" />
+        </RouterLink>
+      </header>
+
+      <router-view />
+    </div>
+    <BottomNav v-if="!bare" />
+  </div>
+</template>

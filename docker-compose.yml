@@ -1,0 +1,157 @@
+# Single-shop Telegram Mini App storefront — deployment composition.
+#
+# Project name is pinned so the Traefik docker-provider config (which
+# references the compose-generated network by name) stays stable:
+# default network == "tg-vitrina-simple_default".
+# (Also deliberately distinct from any other project literally named
+# "tg-vitrina" that might run on the same Docker host.)
+name: tg-vitrina-simple
+
+x-backend-base: &backend-base
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  image: tg-vitrina-backend:latest
+  env_file:
+    - .env
+  depends_on:
+    database:
+      condition: service_healthy
+  volumes:
+    - ./media:/media
+  restart: unless-stopped
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vitrina}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vitrina}
+      POSTGRES_DB: ${POSTGRES_DB:-vitrina}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vitrina} -d ${POSTGRES_DB:-vitrina}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # API process. Runs pending Alembic migrations once at container start,
+  # then hands off to the granian ASGI server (see backend/app/__main__.py
+  # and backend/Dockerfile). The `bot` and `extractor` services below reuse
+  # the exact same built image, just with a different `command:`.
+  backend:
+    <<: *backend-base
+    command: sh -c "alembic upgrade head && python -m app"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=tg-vitrina-simple_default"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`) || PathPrefix(`/media`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.priority=10"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  # Telegram bot (aiogram): ingests new posts from the source channel in
+  # real time. Talks to Postgres directly (same codebase/DI container as
+  # the API), so it does not call the backend over HTTP — it only needs the
+  # database and a schema that's already migrated, hence depends_on backend
+  # (healthy) rather than just database.
+  bot:
+    <<: *backend-base
+    command: python -m app.telegram
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Extractor worker: polls RawPost rows and drafts Product data via an
+  # OpenRouter LLM call. Same reasoning as `bot` for the depends_on choice.
+  extractor:
+    <<: *backend-base
+    command: python -m app.extractor
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Pyrogram userbot: resumable historical backfill. Calls the backend's
+  # internal sync API (BACKEND_INTERNAL_URL, default
+  # http://backend:8000/api/v1/internal/sync) authenticated with
+  # X-Internal-Token, so it genuinely needs the API to be up and reachable
+  # by service name on the compose network.
+  userbot:
+    build:
+      context: ./userbot
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./media:/media
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    expose:
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=tg-vitrina-simple_default"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    restart: unless-stopped
+
+  # Reverse proxy / router — optional, only started with `--profile dev`
+  # (or `make up`, which passes that profile; see Makefile). Mounts the dev
+  # static config by default; swap the mounted file (or add a
+  # docker-compose.override.yml) to use traefik/traefik.prod.yml instead
+  # once a real domain + TLS email are available.
+  traefik:
+    # NOTE: pin v2.11 (NOT a v3.x tag), AND pin DOCKER_API_VERSION below.
+    # Traefik's vendored Docker client does not auto-negotiate the API
+    # version with the daemon; it falls back to a hardcoded old default
+    # (observed: 1.24) unless told otherwise. Very new Docker Engine
+    # releases (here: 29.6.1, API 1.55) refuse anything below their
+    # `minimum supported API version` (here: 1.40), so without this
+    # override the docker provider can't discover ANY labeled routers at
+    # all. v3.x tags (tried v3.1 and v3.4.3) exhibit the SAME failure even
+    # WITH the override — only v2.11 + DOCKER_API_VERSION actually works on
+    # this host (verified against the known-good sibling deployment
+    # /opt/tg-vitrina, which uses this exact combination).
+    image: traefik:v2.11
+    profiles:
+      - dev
+    environment:
+      DOCKER_API_VERSION: "1.40"
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik dashboard (insecure, dev-only — do not expose in prod)
+    volumes:
+      - ./traefik/traefik.dev.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  pgdata:

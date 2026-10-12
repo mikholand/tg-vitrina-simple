@@ -1,0 +1,44 @@
+# Static Traefik configuration for production: HTTP on :80 (redirects to
+# HTTPS) plus HTTPS on :443, with a Let's Encrypt resolver.
+#
+# ASSUMPTION: no real domain/email was supplied for this deployment, so the
+# ACME resolver block below is commented out. To enable TLS:
+#   1. Point your domain's DNS at this host.
+#   2. Uncomment the `certificatesResolvers` block and replace
+#      "admin@example.com" with a real, monitored address (Let's Encrypt
+#      sends expiry/revocation notices there).
+#   3. Add `traefik.http.routers.<name>.tls.certresolver=letsencrypt` and
+#      the `websecure` entrypoint to the relevant service labels in
+#      docker-compose.yml (they currently only declare the `web` entrypoint).
+
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: tg-vitrina-simple_default
+
+api:
+  dashboard: true
+  insecure: false
+
+# certificatesResolvers:
+#   letsencrypt:
+#     acme:
+#       email: "admin@example.com"
+#       storage: "/letsencrypt/acme.json"
+#       httpChallenge:
+#         entryPoint: web
