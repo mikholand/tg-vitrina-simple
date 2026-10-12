@@ -1,8 +1,24 @@
 @layer tailwind-base, primevue, tailwind-utilities;
 
-@tailwind base;
+/* Tailwind v3's @tailwind directives do NOT wrap their own output in
+   @layer blocks — they emit plain, unlayered CSS. Per the CSS Cascade
+   Layers spec, unlayered rules always beat ANY layered rule regardless of
+   layer order or selector specificity, so without this explicit wrapping
+   Tailwind's preflight button reset (background-color: transparent;
+   padding: 0) silently overrode PrimeVue's .p-button styles (which PrimeVue
+   injects inside `@layer primevue`), even though the theme tokens
+   themselves were configured correctly. Wrapping base/utilities in the
+   named layers declared above makes the `@layer tailwind-base, primevue,
+   tailwind-utilities;` ordering above actually take effect. */
+@layer tailwind-base {
+  @tailwind base;
+}
+
 @tailwind components;
-@tailwind utilities;
+
+@layer tailwind-utilities {
+  @tailwind utilities;
+}
 
 :root {
   /* Storefront palette — ported verbatim from tg-vitrina (the original
