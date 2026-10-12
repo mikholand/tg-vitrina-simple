@@ -1,5 +1,7 @@
 # tg-vitrina — Telegram Mini App storefront (single-shop)
 
+[![CI](https://github.com/mikholand/tg-vitrina-simple/actions/workflows/ci.yml/badge.svg)](https://github.com/mikholand/tg-vitrina-simple/actions/workflows/ci.yml)
+
 A self-hosted storefront that turns a single Telegram channel into a
 browsable, shoppable catalog inside a Telegram Mini App. One deployment
 serves exactly one shop/channel — see `docs/architecture.md` for why that
