@@ -90,11 +90,11 @@ onMounted(() => {
 <template>
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <div class="flex items-start justify-between gap-2">
-      <div>
+      <div class="min-w-0">
         <h1 class="text-xl font-semibold leading-tight text-sf-ink">Категории</h1>
         <p class="text-sm text-sf-muted">Общий справочник — скрывайте то, чего не продаёте</p>
       </div>
-      <Button label="Добавить" icon="pi pi-plus" size="small" @click="openCreateDialog" />
+      <Button label="Добавить" icon="pi pi-plus" size="small" class="shrink-0" @click="openCreateDialog" />
     </div>
 
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
