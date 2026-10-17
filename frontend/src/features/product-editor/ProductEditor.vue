@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import type { Product, ProductAvailability, SellerProductPatch } from '@entities/product/types'
-import { updateSellerProduct, uploadProductPhoto } from '@entities/product/api'
+import type {
+  Product,
+  ProductAvailability,
+  SellerProductCreate,
+  SellerProductPatch,
+} from '@entities/product/types'
+import { createSellerProduct, updateSellerProduct, uploadProductPhoto } from '@entities/product/api'
 import { useCategoryStore } from '@entities/category/store'
 
 const props = defineProps<{
   visible: boolean
+  /** `null` opens the dialog in "create a new product" mode — there's no
+   *  id yet, so photo upload (which needs one) is unavailable until after
+   *  the first save; the seller can add photos afterwards via Изменить. */
   product: Product | null
 }>()
+
+const isCreateMode = computed(() => props.product === null)
 
 const emit = defineEmits<{
   'update:visible': [value: boolean]
@@ -38,23 +48,32 @@ const uploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 function resetForm(product: Product | null): void {
-  if (!product) return
-  name.value = product.name
-  price.value = product.price ?? ''
-  currency.value = product.currency
-  description.value = product.description ?? ''
-  sku.value = product.sku ?? ''
-  availability.value = product.availability
-  quantity.value = product.quantity
-  categoryIds.value = [...product.category_ids]
-  publishToChannel.value = product.publish_to_channel
-  photoPaths.value = [...product.photo_paths]
+  name.value = product?.name ?? ''
+  price.value = product?.price ?? ''
+  currency.value = product?.currency ?? 'RUB'
+  description.value = product?.description ?? ''
+  sku.value = product?.sku ?? ''
+  availability.value = product?.availability ?? 'unknown'
+  quantity.value = product?.quantity ?? null
+  categoryIds.value = product ? [...product.category_ids] : []
+  publishToChannel.value = product?.publish_to_channel ?? false
+  photoPaths.value = product ? [...product.photo_paths] : []
 }
 
 watch(
   () => props.product,
   (product) => resetForm(product),
   { immediate: true },
+)
+
+// `product` stays `null` across two consecutive "create" openings (no
+// reference change to trigger the watcher above), so also reset whenever
+// the dialog transitions to visible.
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) resetForm(props.product)
+  },
 )
 
 function close(): void {
@@ -81,22 +100,39 @@ async function onFileSelected(event: Event): Promise<void> {
 }
 
 async function onSave(): Promise<void> {
-  if (!props.product) return
-
-  const patch: SellerProductPatch = {
-    name: name.value,
-    price: price.value === '' ? null : price.value,
-    currency: currency.value,
-    description: description.value === '' ? null : description.value,
-    sku: sku.value === '' ? null : sku.value,
-    availability: availability.value,
-    quantity: quantity.value,
-    category_ids: categoryIds.value,
-    publish_to_channel: publishToChannel.value,
-  }
+  if (!name.value.trim()) return
 
   saving.value = true
   try {
+    if (isCreateMode.value) {
+      const payload: SellerProductCreate = {
+        name: name.value,
+        price: price.value === '' ? null : price.value,
+        currency: currency.value || 'RUB',
+        description: description.value === '' ? null : description.value,
+        sku: sku.value === '' ? null : sku.value,
+        availability: availability.value,
+        quantity: quantity.value,
+        category_ids: categoryIds.value,
+      }
+      const created = await createSellerProduct(payload)
+      emit('saved', created)
+      close()
+      return
+    }
+
+    if (!props.product) return
+    const patch: SellerProductPatch = {
+      name: name.value,
+      price: price.value === '' ? null : price.value,
+      currency: currency.value,
+      description: description.value === '' ? null : description.value,
+      sku: sku.value === '' ? null : sku.value,
+      availability: availability.value,
+      quantity: quantity.value,
+      category_ids: categoryIds.value,
+      publish_to_channel: publishToChannel.value,
+    }
     const updated = await updateSellerProduct(props.product.id, patch)
     emit('saved', updated)
     close()
@@ -114,12 +150,12 @@ onMounted(() => {
   <Dialog
     :visible="visible"
     modal
-    header="Редактирование товара"
+    :header="isCreateMode ? 'Новый товар' : 'Редактирование товара'"
     class="w-[90vw] max-w-md"
     @update:visible="(value: boolean) => emit('update:visible', value)"
   >
-    <div v-if="product" class="flex flex-col gap-4">
-      <div class="flex gap-2 overflow-x-auto">
+    <div class="flex flex-col gap-4">
+      <div v-if="!isCreateMode" class="flex gap-2 overflow-x-auto">
         <div
           v-for="photo in photoPaths"
           :key="photo"
@@ -144,6 +180,9 @@ onMounted(() => {
           @change="onFileSelected"
         />
       </div>
+      <p v-else class="text-xs text-sf-muted">
+        Фото можно будет добавить после создания товара, в редактировании.
+      </p>
 
       <label class="flex flex-col gap-1.5 text-sm">
         <span class="text-sf-muted">Название</span>
@@ -209,7 +248,7 @@ onMounted(() => {
 
     <template #footer>
       <Button label="Отмена" text @click="close" />
-      <Button label="Сохранить" :loading="saving" @click="onSave" />
+      <Button label="Сохранить" :loading="saving" :disabled="!name.trim()" @click="onSave" />
     </template>
   </Dialog>
 </template>

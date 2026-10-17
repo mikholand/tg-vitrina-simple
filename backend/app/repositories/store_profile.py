@@ -4,6 +4,19 @@ from app.core.config import Settings
 from app.entities.store_profile import STORE_PROFILE_SINGLETON_ID, StoreProfile
 
 
+def _normalize_env_logo(logo: str | None) -> str | None:
+    """`STORE_LOGO` in `.env` is documented/typically set as a host-relative
+    URL like `/media/store/logo.png` (see .env.example), but the `logo`
+    column — like every other media path in this codebase (see
+    `save_store_logo`, `save_banner_image`) — stores a path *relative to
+    MEDIA_ROOT* (e.g. `store/logo.png`), since `media_url()` always adds the
+    `/media/` prefix itself. Strip it here so a fresh deployment doesn't end
+    up with a double-prefixed, 404ing logo URL."""
+    if logo is None:
+        return None
+    return logo.removeprefix("/media/").removeprefix("media/")
+
+
 class StoreProfileRepository:
     def __init__(self, session: AsyncSession, settings: Settings) -> None:
         self._session = session
@@ -19,7 +32,7 @@ class StoreProfileRepository:
                 id=STORE_PROFILE_SINGLETON_ID,
                 name=self._settings.store.STORE_NAME,
                 description=self._settings.store.STORE_DESCRIPTION,
-                logo=self._settings.store.STORE_LOGO,
+                logo=_normalize_env_logo(self._settings.store.STORE_LOGO),
                 contact_tg=self._settings.store.STORE_CONTACT_TG,
             )
             self._session.add(profile)

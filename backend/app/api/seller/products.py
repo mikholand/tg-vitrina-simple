@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, status
 
 from app.api.deps import CurrentStaff
 from app.core.config import Settings
-from app.dto.product import ProductSchema, ProductUpdateSchema
+from app.dto.product import ProductCreateSchema, ProductSchema, ProductUpdateSchema
 from app.entities.product import ProductStatus
 from app.repositories.product import ProductRepository
 from app.services.product import ProductService
@@ -33,6 +33,17 @@ async def list_products(
     products, total = await product_repository.list_seller(status_filter, limit, offset)
     items = [_to_schema(p, await product_repository.get_category_ids(p.id)) for p in products]
     return Paginated[ProductSchema](items=items, total=total, limit=limit, offset=offset)
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def create_product(
+    payload: ProductCreateSchema,
+    _: CurrentStaff,
+    product_repository: FromDishka[ProductRepository],
+    product_service: FromDishka[ProductService],
+) -> ProductSchema:
+    product = await product_service.create_by_seller(payload)
+    return _to_schema(product, await product_repository.get_category_ids(product.id))
 
 
 @router.get("/{product_id}")

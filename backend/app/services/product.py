@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from app.dto.product import ProductUpdateSchema
+from app.dto.product import ProductCreateSchema, ProductUpdateSchema
 from app.entities.product import Availability, Product, ProductStatus
 from app.repositories.product import ProductRepository
 from app.shared.stock import resolve_availability
@@ -9,6 +9,29 @@ from app.shared.stock import resolve_availability
 class ProductService:
     def __init__(self, product_repository: ProductRepository) -> None:
         self._product_repository = product_repository
+
+    async def create_by_seller(self, payload: ProductCreateSchema) -> Product:
+        """A seller-authored product starts out exactly like an
+        extractor-authored draft, except it's flagged `edited_by_seller` up
+        front — there's no source post for the extractor to ever match it
+        against, but this keeps the invariant explicit and consistent with
+        every other seller-touched product."""
+        availability = resolve_availability(payload.quantity, payload.availability)
+        product = await self._product_repository.create_draft(
+            name=payload.name,
+            price=payload.price,
+            currency=payload.currency,
+            description=payload.description,
+            sku=payload.sku,
+            availability=availability,
+            quantity=payload.quantity,
+            photo_paths=[],
+            source_post_id=None,
+        )
+        product.edited_by_seller = True
+        if payload.category_ids:
+            await self._product_repository.set_categories(product.id, payload.category_ids)
+        return product
 
     async def create_or_update_from_extraction(
         self,

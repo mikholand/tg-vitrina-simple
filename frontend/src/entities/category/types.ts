@@ -12,3 +12,8 @@ export interface Category {
 export interface CategoryTreeNode extends Category {
   children: CategoryTreeNode[]
 }
+
+export interface SellerCategoryCreate {
+  name: string
+  parent_id?: number | null
+}

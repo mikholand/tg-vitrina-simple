@@ -1,0 +1,45 @@
+# Deploy this store behind the Traefik that's already running for the
+# sibling /opt/tg-vitrina deployment (polkitech.ru), instead of starting a
+# Traefik of our own on this host — a second instance would collide on
+# :80/:443 with the one already bound there.
+#
+# That Traefik's docker provider discovers routers from container labels on
+# ANY network it's attached to, not just the compose project that started
+# it. So rather than enabling this project's own `traefik` service (profile
+# `dev`, network tg-vitrina-simple_default — see docker-compose.yml and
+# docker-compose.prod.yml), we attach `backend` and `frontend` to the
+# *external* network the sibling's Traefik already sits on
+# (`tg-vitrina_default`) and point the same label set at it:
+# `traefik.docker.network=tg-vitrina_default`, the `websecure` entrypoint,
+# and the `letsencrypt` certresolver already configured on that Traefik
+# instance (see /opt/tg-vitrina/traefik/traefik.prod.yml).
+#
+# Usage — NEVER pass --profile dev here, and never start/compose this
+# project's own `traefik` service on this host:
+#   docker compose -f docker-compose.yml -f docker-compose.shared-traefik.yml \
+#     up -d --build database backend bot extractor frontend
+
+networks:
+  tg-vitrina_default:
+    external: true
+
+services:
+  backend:
+    networks:
+      - default
+      - tg-vitrina_default
+    labels:
+      - "traefik.docker.network=tg-vitrina_default"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/media`))"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+
+  frontend:
+    networks:
+      - default
+      - tg-vitrina_default
+    labels:
+      - "traefik.docker.network=tg-vitrina_default"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"

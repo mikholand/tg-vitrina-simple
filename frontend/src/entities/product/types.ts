@@ -33,6 +33,17 @@ export interface SellerProductListParams {
   offset?: number
 }
 
+export interface SellerProductCreate {
+  name: string
+  price?: string | null
+  currency?: string
+  description?: string | null
+  sku?: string | null
+  availability?: ProductAvailability
+  quantity?: number | null
+  category_ids?: number[]
+}
+
 export interface SellerProductPatch {
   name?: string
   price?: string | null

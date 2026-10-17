@@ -39,6 +39,17 @@ class ProductSchema(BaseModel):
     category_ids: list[int] = []
 
 
+class ProductCreateSchema(BaseModel):
+    name: str
+    price: Decimal | None = None
+    currency: str = "RUB"
+    description: str | None = None
+    sku: str | None = None
+    availability: Availability = Availability.UNKNOWN
+    quantity: int | None = None
+    category_ids: list[int] = []
+
+
 class ProductUpdateSchema(BaseModel):
     name: str | None = None
     price: Decimal | None = None

@@ -4,6 +4,7 @@ import { paginatedProductSchema, productSchema } from './schema'
 import type {
   CatalogProductListParams,
   Product,
+  SellerProductCreate,
   SellerProductListParams,
   SellerProductPatch,
 } from './types'
@@ -29,6 +30,11 @@ export async function getSellerProducts(
 
 export async function getSellerProduct(id: number): Promise<Product> {
   const { data } = await http.get(`/seller/products/${id}`)
+  return productSchema.parse(data)
+}
+
+export async function createSellerProduct(payload: SellerProductCreate): Promise<Product> {
+  const { data } = await http.post('/seller/products', payload)
   return productSchema.parse(data)
 }
 

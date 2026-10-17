@@ -16,3 +16,8 @@ class CategorySchema(BaseModel):
 
 class CategoryVisibilityUpdateSchema(BaseModel):
     is_hidden: bool
+
+
+class CategoryCreateSchema(BaseModel):
+    name: str
+    parent_id: int | None = None

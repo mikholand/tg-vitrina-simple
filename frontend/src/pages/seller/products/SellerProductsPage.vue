@@ -56,9 +56,19 @@ function openEditor(product: Product): void {
   editorVisible.value = true
 }
 
+function openCreateEditor(): void {
+  editingProduct.value = null
+  editorVisible.value = true
+}
+
 function onSaved(updated: Product): void {
   const index = products.value.findIndex((p) => p.id === updated.id)
-  if (index !== -1) products.value[index] = updated
+  if (index !== -1) {
+    products.value[index] = updated
+  } else {
+    products.value = [updated, ...products.value]
+    total.value += 1
+  }
 }
 
 async function onTogglePublish(product: Product): Promise<void> {
@@ -84,7 +94,10 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
-    <h1 class="text-xl font-semibold leading-tight text-sf-ink">Товары</h1>
+    <div class="flex items-center justify-between gap-2">
+      <h1 class="text-xl font-semibold leading-tight text-sf-ink">Товары</h1>
+      <Button label="Добавить" icon="pi pi-plus" size="small" @click="openCreateEditor" />
+    </div>
 
     <div class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
       <button

@@ -1,5 +1,6 @@
 from app.entities.category import Category
 from app.repositories.category import CategoryRepository
+from app.shared.slug import category_code
 
 PATH_SEPARATOR = " / "
 
@@ -67,3 +68,24 @@ class CategoryService:
         if category is not None and category.is_fallback and is_hidden:
             raise ValueError("the fallback category 'Другое' cannot be hidden")
         await self._category_repository.set_hidden(category_id, is_hidden)
+
+    async def create(self, name: str, parent_id: int | None) -> Category:
+        parent = await self._category_repository.get(parent_id) if parent_id is not None else None
+        if parent_id is not None and parent is None:
+            raise ValueError("parent category not found")
+        depth = parent.depth + 1 if parent is not None else 0
+        code = category_code(name, parent.code if parent is not None else None)
+        return await self._category_repository.create(
+            name=name,
+            code=code,
+            parent_id=parent_id,
+            depth=depth,
+        )
+
+    async def delete(self, category_id: int) -> None:
+        category = await self._category_repository.get(category_id)
+        if category is None:
+            return
+        if category.is_fallback:
+            raise ValueError("the fallback category 'Другое' cannot be deleted")
+        await self._category_repository.delete(category)
