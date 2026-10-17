@@ -32,41 +32,67 @@ function isMobilePlatform(platform: string): boolean {
  * :root (safe-area insets, theme colors, etc). Safe to call outside of
  * Telegram (e.g. a plain browser during local dev) — all failures are
  * swallowed so the app still boots.
+ *
+ * Each step gets its own try/catch (rather than one big one around the
+ * whole function) and `viewport.mount()` is *awaited* before anything that
+ * depends on it. On a real client `mount()` round-trips to the native app
+ * over postMessage and does NOT resolve synchronously (only a few desktop
+ * platforms short-circuit) — calling `bindCssVars()`/`requestFullscreen()`
+ * right after an un-awaited `mount()` throws `FunctionNotAvailableError`
+ * ("parent component is not mounted"), which — under a single shared
+ * try/catch — silently swallowed every later step including fullscreen.
  */
-export function initTelegram(): void {
+export async function initTelegram(): Promise<void> {
   try {
     init()
+  } catch {
+    // Not running inside Telegram (e.g. a plain browser during local dev).
+    return
+  }
 
+  try {
     if (viewport.mount.isAvailable()) {
-      viewport.mount()
+      await viewport.mount()
       viewport.bindCssVars(tgCssVarName)
     }
+  } catch {
+    // Viewport unavailable on this client — safe-area vars just won't be set.
+  }
 
+  try {
     if (miniApp.mount.isAvailable()) {
-      miniApp.mount()
+      await miniApp.mount()
       miniApp.bindCssVars()
     }
+  } catch {
+    // Mini app component unavailable — no theme-driven CSS vars from it.
+  }
 
+  try {
     if (themeParams.mount.isAvailable()) {
-      themeParams.mount()
+      await themeParams.mount()
       themeParams.bindCssVars()
     }
+  } catch {
+    // Theme params unavailable — fine, the app uses a fixed light palette.
+  }
 
+  try {
     if (viewport.expand.isAvailable()) {
       viewport.expand()
     }
+  } catch {
+    // Already expanded / not supported — no-op.
+  }
 
+  try {
     const platform = retrieveLaunchParams().tgWebAppPlatform
     if (isMobilePlatform(platform) && viewport.requestFullscreen.isAvailable()) {
-      // Fire-and-forget: older/desktop clients or a user declining the
-      // prompt shouldn't block the rest of the app from booting.
-      viewport.requestFullscreen().catch(() => {
-        // Not supported by this client / request rejected — the app still
-        // works fine in the regular expanded (non-fullscreen) viewport.
-      })
+      await viewport.requestFullscreen()
     }
   } catch {
-    // Not running inside Telegram (e.g. local browser dev) — no-op.
+    // Not supported by this client / request rejected — the app still
+    // works fine in the regular expanded (non-fullscreen) viewport.
   }
 }
 

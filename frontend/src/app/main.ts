@@ -12,7 +12,7 @@ import App from './App.vue'
 import { router } from './router'
 import { initTelegram } from '@shared/telegram/sdk'
 
-initTelegram()
+void initTelegram()
 
 // PrimeVue's "primary" defaults to Aura's emerald scale, which would make
 // every untouched PrimeVue control (ToggleSwitch, ProgressSpinner, Tag,
@@ -55,6 +55,15 @@ const SfPreset = definePreset(Aura, {
       paddingX: '1rem',
       paddingY: '0.625rem',
       borderRadius: '0.75rem',
+      // size="small" components (e.g. the "Добавить" buttons) read from this
+      // separate `sm` namespace, not the root paddingX/Y above — left
+      // unset it falls back to Aura's stock 0.625rem/0.375rem, which paired
+      // with the forced pill radius below produces a squished aspect ratio.
+      // Scaled down proportionally from the root override instead.
+      sm: {
+        paddingX: '0.875rem',
+        paddingY: '0.5rem',
+      },
     },
     colorScheme: {
       light: {
@@ -91,6 +100,14 @@ app.use(PrimeVue, {
   theme: {
     preset: SfPreset,
     options: {
+      // Defaults to 'system', which makes PrimeVue independently follow
+      // the OS/Telegram `prefers-color-scheme: dark` media query — on a
+      // device with dark theme active this flips Dialog and ToggleSwitch
+      // (among others) to Aura's dark palette while the rest of the app
+      // (styled via the static, deliberately-light --sf-* tokens in
+      // main.css) stays light. The app has no dark mode of its own, so
+      // PrimeVue should never switch palettes either.
+      darkModeSelector: false,
       cssLayer: {
         name: 'primevue',
         order: 'tailwind-base, primevue, tailwind-utilities',
