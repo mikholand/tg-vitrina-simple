@@ -27,6 +27,44 @@ function isMobilePlatform(platform: string): boolean {
 }
 
 /**
+ * Mounts `viewport` and binds its CSS vars. Split out so it can be awaited
+ * on its own — `requestFullscreen()` only depends on this, not on
+ * miniApp/themeParams.
+ */
+async function mountViewport(): Promise<void> {
+  try {
+    if (viewport.mount.isAvailable()) {
+      await viewport.mount()
+      viewport.bindCssVars(tgCssVarName)
+    }
+  } catch {
+    // Viewport unavailable on this client — safe-area vars just won't be set.
+  }
+}
+
+async function mountMiniApp(): Promise<void> {
+  try {
+    if (miniApp.mount.isAvailable()) {
+      await miniApp.mount()
+      miniApp.bindCssVars()
+    }
+  } catch {
+    // Mini app component unavailable — no theme-driven CSS vars from it.
+  }
+}
+
+async function mountThemeParams(): Promise<void> {
+  try {
+    if (themeParams.mount.isAvailable()) {
+      await themeParams.mount()
+      themeParams.bindCssVars()
+    }
+  } catch {
+    // Theme params unavailable — fine, the app uses a fixed light palette.
+  }
+}
+
+/**
  * Bootstraps the Telegram Mini App SDK: initializes the environment, mounts
  * the viewport/theme/mini-app components and syncs their CSS variables onto
  * :root (safe-area insets, theme colors, etc). Safe to call outside of
@@ -41,6 +79,14 @@ function isMobilePlatform(platform: string): boolean {
  * right after an un-awaited `mount()` throws `FunctionNotAvailableError`
  * ("parent component is not mounted"), which — under a single shared
  * try/catch — silently swallowed every later step including fullscreen.
+ *
+ * `viewport`/`miniApp`/`themeParams` are mounted *concurrently* rather than
+ * one after another: each `mount()` is its own round-trip over postMessage
+ * to the native client, and `requestFullscreen()` only needs `viewport` to
+ * be mounted — chaining all three sequentially before requesting fullscreen
+ * (as this used to do) tripled the round-trip latency on first launch for
+ * no reason. `miniApp`/`themeParams` are left to mount in the background;
+ * only `viewport` is awaited before expand/fullscreen.
  */
 export async function initTelegram(): Promise<void> {
   try {
@@ -50,32 +96,11 @@ export async function initTelegram(): Promise<void> {
     return
   }
 
-  try {
-    if (viewport.mount.isAvailable()) {
-      await viewport.mount()
-      viewport.bindCssVars(tgCssVarName)
-    }
-  } catch {
-    // Viewport unavailable on this client — safe-area vars just won't be set.
-  }
+  const viewportMounted = mountViewport()
+  void mountMiniApp()
+  void mountThemeParams()
 
-  try {
-    if (miniApp.mount.isAvailable()) {
-      await miniApp.mount()
-      miniApp.bindCssVars()
-    }
-  } catch {
-    // Mini app component unavailable — no theme-driven CSS vars from it.
-  }
-
-  try {
-    if (themeParams.mount.isAvailable()) {
-      await themeParams.mount()
-      themeParams.bindCssVars()
-    }
-  } catch {
-    // Theme params unavailable — fine, the app uses a fixed light palette.
-  }
+  await viewportMounted
 
   try {
     if (viewport.expand.isAvailable()) {
