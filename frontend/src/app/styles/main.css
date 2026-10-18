@@ -50,6 +50,19 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+/* Telegram Mini Apps are touch/swipe-driven, so the OS scrollbar track is
+   pure visual clutter here (most visible as a thin grey strip down the
+   right edge on desktop Telegram/Chrome) — scrolling itself still works
+   with it hidden. Applied to the document root, not a wrapper div: the
+   page body itself is what actually overflows/scrolls on every route. */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
