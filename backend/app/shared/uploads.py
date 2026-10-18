@@ -31,7 +31,11 @@ async def save_banner_image(settings: Settings, upload: UploadFile) -> str:
     if suffix not in ALLOWED_IMAGE_SUFFIXES:
         suffix = ".jpg"
 
-    rel_dir = "banners"
+    # Deliberately NOT "banners" — that path segment matches common ad-block
+    # filter lists (EasyList etc. block any URL containing "/banner"), so
+    # browsers with an ad blocker installed would silently fail to load the
+    # storefront's own promo carousel image.
+    rel_dir = "slides"
     abs_dir = Path(settings.app.MEDIA_ROOT) / rel_dir
     abs_dir.mkdir(parents=True, exist_ok=True)
 

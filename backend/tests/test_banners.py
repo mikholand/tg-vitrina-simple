@@ -10,7 +10,7 @@ async def test_create_and_list_banner(client, seller):
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["image_path"].startswith("/media/banners/")
+    assert body["image_path"].startswith("/media/slides/")
     assert body["link_url"] is None
 
     catalog_response = await client.get("/api/v1/catalog/banners")
