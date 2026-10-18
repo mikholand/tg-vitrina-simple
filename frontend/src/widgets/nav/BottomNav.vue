@@ -63,7 +63,14 @@ const items = computed<NavItem[]>(() => {
     </ul>
   </nav>
 
-  <!-- Seller nav: tg-vitrina's SellerNav — a flat, bordered-top tab bar. -->
+  <!-- Seller nav: tg-vitrina's SellerNav — a flat, bordered-top tab bar.
+       tg-vitrina itself contrasts a light gray-400 inactive color against a
+       strong dark-blue primary for the active tab. Our sf-muted (#64748b) is
+       already a fairly dark slate, so pairing it with sf-ink for "active"
+       barely moved the needle — on a small 18px icon the two read as the
+       same blue-grey. Swapped the inactive color to sf-placeholder (a much
+       lighter slate, #94a3b8) so the near-black active tab actually pops
+       against it instead of blending in. -->
   <nav
     v-else
     class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 border-t border-sf-line bg-sf-bg pb-safe-bottom"
@@ -72,7 +79,7 @@ const items = computed<NavItem[]>(() => {
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="flex flex-col items-center gap-1 py-2 text-sf-muted transition-colors"
+          class="flex flex-col items-center gap-1 py-2 text-sf-placeholder transition-colors"
           active-class="text-sf-ink font-medium"
           exact-active-class="text-sf-ink font-medium"
         >
