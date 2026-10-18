@@ -151,12 +151,18 @@ async function onLogoSelected(event: Event): Promise<void> {
           :disabled="uploadingLogo"
           @click="triggerFilePicker"
         >
+          <!-- PrimeVue's own Avatar CSS sets `.p-avatar img { width: 100%; height:
+               100%; }` with no object-fit, so a non-square uploaded logo gets
+               stretched to fill the circle instead of being cropped — the artwork
+               ends up looking squashed/off-center. object-cover + object-center via
+               pt crops it like a normal avatar instead of distorting it. -->
           <Avatar
             :image="settings.store_logo ?? undefined"
             :label="settings.store_logo ? undefined : name[0]?.toUpperCase()"
             shape="circle"
             size="xlarge"
             style="background-color: var(--sf-accent); color: #fff"
+            :pt="{ image: { class: 'object-cover object-center' } }"
           />
           <span
             class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white"
