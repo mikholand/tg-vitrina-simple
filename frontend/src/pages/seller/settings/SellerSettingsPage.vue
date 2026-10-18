@@ -147,15 +147,28 @@ async function onLogoSelected(event: Event): Promise<void> {
       <div class="flex items-center gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
         <button
           type="button"
-          class="relative shrink-0 appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none outline-none disabled:opacity-60"
+          class="relative flex shrink-0 appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none outline-none disabled:opacity-60"
           :disabled="uploadingLogo"
           @click="triggerFilePicker"
         >
-          <!-- PrimeVue's own Avatar CSS sets `.p-avatar img { width: 100%; height:
-               100%; }` with no object-fit, so a non-square uploaded logo gets
-               stretched to fill the circle instead of being cropped — the artwork
-               ends up looking squashed/off-center. object-cover + object-center via
-               pt crops it like a normal avatar instead of distorting it. -->
+          <!-- `flex` above is load-bearing, not decorative: PrimeVue's Avatar
+               renders as `display: inline-flex`, an inline-level box, and
+               inline-level children leave a few px of "phantom" space below
+               themselves inside a plain block parent (the same reason a bare
+               <img> in a <div> leaves a gap underneath unless you set
+               display:block/vertical-align). That gap was exactly the sliver
+               showing below the circle (first as a stray shadow, then as a
+               trailing bit of the hover overlay) — the button's own box was a
+               few px taller than the avatar it wraps. Making the button a flex
+               container turns the Avatar into a flex item, which doesn't get
+               that baseline gap, so the button's box now hugs the avatar
+               exactly and overflow-hidden clips the overlay flush with it.
+
+               PrimeVue's own Avatar CSS also sets `.p-avatar img { width: 100%;
+               height: 100%; }` with no object-fit, so a non-square uploaded
+               logo gets stretched to fill the circle instead of being cropped —
+               object-cover + object-center via pt below crops it like a normal
+               avatar instead of distorting it. -->
           <Avatar
             :image="settings.store_logo ?? undefined"
             :label="settings.store_logo ? undefined : name[0]?.toUpperCase()"
