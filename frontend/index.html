@@ -10,7 +10,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="color-scheme" content="light dark" />
-    <title>Store</title>
+    <!-- Static fallback shown before JS loads store info — App.vue overwrites
+         this with the real shop name (document.title) once it's fetched. -->
+    <title>Магазин</title>
   </head>
   <body>
     <div id="app"></div>

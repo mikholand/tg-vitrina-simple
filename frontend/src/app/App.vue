@@ -24,6 +24,17 @@ onMounted(() => {
   // fetchStoreInfo хватает и покупательской шапке, и шапке продавца ниже.
   void storeInfoStore.fetchStoreInfo()
 })
+
+// Заголовок вкладки/PWA по умолчанию — "Store" (см. index.html, он нужен
+// как статичный фолбэк до того, как JS успеет загрузить данные магазина).
+// Как только название магазина подгрузилось — подставляем его.
+watch(
+  () => storeInfoStore.storeInfo?.name,
+  (name) => {
+    if (name) document.title = name
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
