@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@entities/user/store'
 
 interface NavItem {
@@ -8,6 +9,25 @@ interface NavItem {
 }
 
 const authStore = useAuthStore()
+const route = useRoute()
+
+// Why not RouterLink's `active-class`/`exact-active-class`: those props
+// APPEND a class string alongside whatever static `class` is already on the
+// element — they don't replace it. That silently broke every previous
+// attempt at coloring the active tab here: with a base `text-sf-placeholder`
+// class always present, the active tab ended up with *both*
+// `text-sf-placeholder` and `text-sf-ink` (or `text-sf-accent` before it) on
+// the same element at once. Same specificity (single class selector each) →
+// the cascade falls back to source order in the compiled stylesheet, and
+// `.text-sf-placeholder` happens to be emitted after `.text-sf-ink`, so it
+// silently won every time regardless of which color we picked for "active".
+// Computing a single class ourselves (mirrors tg-vitrina's own
+// `isActive(section) ? 'text-primary' : 'text-gray-400'` pattern) guarantees
+// only one color class is ever on the element, so there's nothing left to
+// collide.
+function isActive(item: NavItem): boolean {
+  return route.path === item.to
+}
 
 // Labels match tg-vitrina's storefront nav verbatim ("Витрина" names the
 // landing/feed screen as a curated pick, distinct from "Каталог" which is
@@ -53,8 +73,7 @@ const items = computed<NavItem[]>(() => {
         <RouterLink
           :to="item.to"
           class="flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors"
-          active-class="bg-sf-soft font-medium text-sf-accent"
-          exact-active-class="bg-sf-soft font-medium text-sf-accent"
+          :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : ''"
         >
           <i :class="item.icon" class="text-sm" />
           <span class="leading-none">{{ item.label }}</span>
@@ -65,12 +84,8 @@ const items = computed<NavItem[]>(() => {
 
   <!-- Seller nav: tg-vitrina's SellerNav — a flat, bordered-top tab bar.
        tg-vitrina itself contrasts a light gray-400 inactive color against a
-       strong dark-blue primary for the active tab. Our sf-muted (#64748b) is
-       already a fairly dark slate, so pairing it with sf-ink for "active"
-       barely moved the needle — on a small 18px icon the two read as the
-       same blue-grey. Swapped the inactive color to sf-placeholder (a much
-       lighter slate, #94a3b8) so the near-black active tab actually pops
-       against it instead of blending in. -->
+       strong dark-blue primary for the active tab, so the active one clearly
+       pops instead of blending in with a merely-slightly-darker shade. -->
   <nav
     v-else
     class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 border-t border-sf-line bg-sf-bg pb-safe-bottom"
@@ -79,9 +94,8 @@ const items = computed<NavItem[]>(() => {
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="flex flex-col items-center gap-1 py-2 text-sf-placeholder transition-colors"
-          active-class="text-sf-ink font-medium"
-          exact-active-class="text-sf-ink font-medium"
+          class="flex flex-col items-center gap-1 py-2 transition-colors"
+          :class="isActive(item) ? 'text-sf-ink font-medium' : 'text-sf-placeholder'"
         >
           <i :class="item.icon" class="text-lg" />
           <span class="text-[0.65rem] leading-none">{{ item.label }}</span>
