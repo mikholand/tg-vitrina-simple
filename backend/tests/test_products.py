@@ -1,6 +1,10 @@
 from app.entities.product import ProductStatus
 
 
+def _fake_video() -> dict:
+    return {"file": ("clip.mp4", b"fake-video-bytes", "video/mp4")}
+
+
 async def test_seller_list_products_default_and_filtered(client, seller, make_product):
     _, headers = seller
     await make_product(name="Draft one", status=ProductStatus.DRAFT)
@@ -100,3 +104,44 @@ async def test_seller_product_endpoints_require_seller_role(client, customer, ma
 
     response = await client.post(f"/api/v1/seller/products/{product.id}/publish", headers=headers)
     assert response.status_code == 403
+
+
+async def test_create_product_then_attach_photo_and_video(client, seller):
+    """Mirrors the create-time upload flow the frontend now drives: create
+    the row first (no id exists before this), then attach media to the id
+    it comes back with — exercising both upload endpoints end to end."""
+    _, headers = seller
+
+    create_response = await client.post(
+        "/api/v1/seller/products", json={"name": "Новый товар"}, headers=headers
+    )
+    assert create_response.status_code == 201
+    body = create_response.json()
+    assert body["photo_paths"] == []
+    assert body["video_path"] is None
+    product_id = body["id"]
+
+    photo_response = await client.post(
+        f"/api/v1/seller/products/{product_id}/photos",
+        headers=headers,
+        files={"file": ("photo.jpg", b"fake-image-bytes", "image/jpeg")},
+    )
+    assert photo_response.status_code == 200
+    photo_paths = photo_response.json()["photo_paths"]
+    assert len(photo_paths) == 1
+    assert photo_paths[0].startswith(f"/media/products/{product_id}/")
+
+    video_response = await client.post(
+        f"/api/v1/seller/products/{product_id}/video", headers=headers, files=_fake_video()
+    )
+    assert video_response.status_code == 200
+    video_path = video_response.json()["video_path"]
+    assert video_path.startswith(f"/media/products/{product_id}/")
+    assert video_path.endswith(".mp4")
+
+    # A second video upload replaces the first rather than stacking up.
+    second_video_response = await client.post(
+        f"/api/v1/seller/products/{product_id}/video", headers=headers, files=_fake_video()
+    )
+    assert second_video_response.status_code == 200
+    assert second_video_response.json()["video_path"] != video_path

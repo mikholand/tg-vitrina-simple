@@ -48,6 +48,10 @@ class Product(Base, TimestampMixin):
     )
     quantity: Mapped[int | None] = mapped_column(Integer)
     photo_paths: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    # At most one video per product (unlike photos, there's no gallery of
+    # them) — set via its own upload endpoint, same as photos, never through
+    # the create/update JSON body.
+    video_path: Mapped[str | None] = mapped_column(String(300))
     status: Mapped[ProductStatus] = mapped_column(
         Enum(ProductStatus, native_enum=False, length=20),
         default=ProductStatus.DRAFT,

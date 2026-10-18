@@ -5,14 +5,17 @@ import type {
   SellerProductCreate,
   SellerProductPatch,
 } from '@entities/product/types'
-import { createSellerProduct, updateSellerProduct, uploadProductPhoto } from '@entities/product/api'
+import {
+  createSellerProduct,
+  updateSellerProduct,
+  uploadProductPhoto,
+  uploadProductVideo,
+} from '@entities/product/api'
 import { useCategoryStore } from '@entities/category/store'
 
 const props = defineProps<{
   visible: boolean
-  /** `null` opens the dialog in "create a new product" mode — there's no
-   *  id yet, so photo upload (which needs one) is unavailable until after
-   *  the first save; the seller can add photos afterwards via Изменить. */
+  /** `null` opens the dialog in "create a new product" mode. */
   product: Product | null
 }>()
 
@@ -42,10 +45,32 @@ const quantity = ref<number | null>(null)
 const categoryIds = ref<number[]>([])
 const publishToChannel = ref(false)
 const photoPaths = ref<string[]>([])
+const videoPath = ref<string | null>(null)
+
+// Create mode has no product id yet, so anything picked before the first
+// save can't be uploaded to anything (both upload endpoints are
+// POST /products/{id}/...). Staged files are held here — as a File plus a
+// local blob preview for photos — and only actually uploaded, one by one,
+// right after `createSellerProduct` returns the new id. Edit mode skips all
+// of this and uploads on selection, same as before this existed.
+interface StagedPhoto {
+  file: File
+  previewUrl: string
+}
+const stagedPhotos = ref<StagedPhoto[]>([])
+const stagedVideo = ref<File | null>(null)
 
 const saving = ref(false)
 const uploading = ref(false)
+const uploadingVideo = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const videoInput = ref<HTMLInputElement | null>(null)
+
+function clearStaged(): void {
+  for (const staged of stagedPhotos.value) URL.revokeObjectURL(staged.previewUrl)
+  stagedPhotos.value = []
+  stagedVideo.value = null
+}
 
 function resetForm(product: Product | null): void {
   name.value = product?.name ?? ''
@@ -58,6 +83,8 @@ function resetForm(product: Product | null): void {
   categoryIds.value = product ? [...product.category_ids] : []
   publishToChannel.value = product?.publish_to_channel ?? false
   photoPaths.value = product ? [...product.photo_paths] : []
+  videoPath.value = product?.video_path ?? null
+  clearStaged()
 }
 
 watch(
@@ -84,12 +111,22 @@ function triggerFilePicker(): void {
   fileInput.value?.click()
 }
 
+function triggerVideoPicker(): void {
+  videoInput.value?.click()
+}
+
 async function onFileSelected(event: Event): Promise<void> {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   target.value = ''
-  if (!file || !props.product) return
+  if (!file) return
 
+  if (isCreateMode.value) {
+    stagedPhotos.value.push({ file, previewUrl: URL.createObjectURL(file) })
+    return
+  }
+
+  if (!props.product) return
   uploading.value = true
   try {
     const updated = await uploadProductPhoto(props.product.id, file)
@@ -97,6 +134,36 @@ async function onFileSelected(event: Event): Promise<void> {
   } finally {
     uploading.value = false
   }
+}
+
+function removeStagedPhoto(index: number): void {
+  const [removed] = stagedPhotos.value.splice(index, 1)
+  if (removed) URL.revokeObjectURL(removed.previewUrl)
+}
+
+async function onVideoSelected(event: Event): Promise<void> {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  target.value = ''
+  if (!file) return
+
+  if (isCreateMode.value) {
+    stagedVideo.value = file
+    return
+  }
+
+  if (!props.product) return
+  uploadingVideo.value = true
+  try {
+    const updated = await uploadProductVideo(props.product.id, file)
+    videoPath.value = updated.video_path
+  } finally {
+    uploadingVideo.value = false
+  }
+}
+
+function removeStagedVideo(): void {
+  stagedVideo.value = null
 }
 
 async function onSave(): Promise<void> {
@@ -115,7 +182,16 @@ async function onSave(): Promise<void> {
         quantity: quantity.value,
         category_ids: categoryIds.value,
       }
-      const created = await createSellerProduct(payload)
+      let created = await createSellerProduct(payload)
+      // Photos/video couldn't be attached until the product had an id —
+      // upload every staged file now, in sequence, to the id we just got.
+      for (const staged of stagedPhotos.value) {
+        created = await uploadProductPhoto(created.id, staged.file)
+      }
+      if (stagedVideo.value) {
+        created = await uploadProductVideo(created.id, stagedVideo.value)
+      }
+      clearStaged()
       emit('saved', created)
       close()
       return
@@ -155,34 +231,90 @@ onMounted(() => {
     @update:visible="(value: boolean) => emit('update:visible', value)"
   >
     <div class="flex flex-col gap-4">
-      <div v-if="!isCreateMode" class="flex gap-2 overflow-x-auto">
-        <div
-          v-for="photo in photoPaths"
-          :key="photo"
-          class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-sf-line"
-        >
-          <img :src="photo" class="h-full w-full object-cover" alt="Фото товара" />
+      <div class="flex flex-col gap-2">
+        <div class="flex gap-2 overflow-x-auto">
+          <div
+            v-for="photo in photoPaths"
+            :key="photo"
+            class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-sf-line"
+          >
+            <img :src="photo" class="h-full w-full object-cover" alt="Фото товара" />
+          </div>
+          <!-- Create mode only: picked, not-yet-uploaded photos — removable
+               before the first save, unlike the already-persisted ones above. -->
+          <div
+            v-for="(staged, index) in stagedPhotos"
+            :key="staged.previewUrl"
+            class="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-sf-line"
+          >
+            <img :src="staged.previewUrl" class="h-full w-full object-cover" alt="Фото товара" />
+            <button
+              type="button"
+              class="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-black/60 text-white"
+              aria-label="Убрать фото"
+              @click="removeStagedPhoto(index)"
+            >
+              <i class="pi pi-times text-[10px]" />
+            </button>
+          </div>
+          <button
+            type="button"
+            class="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border border-dashed border-sf-line text-sf-muted"
+            :disabled="uploading"
+            @click="triggerFilePicker"
+          >
+            <i v-if="!uploading" class="pi pi-plus" />
+            <i v-else class="pi pi-spin pi-spinner" />
+          </button>
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="onFileSelected"
+          />
         </div>
-        <button
-          type="button"
-          class="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border border-dashed border-sf-line text-sf-muted"
-          :disabled="uploading"
-          @click="triggerFilePicker"
-        >
-          <i v-if="!uploading" class="pi pi-plus" />
-          <i v-else class="pi pi-spin pi-spinner" />
-        </button>
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          class="hidden"
-          @change="onFileSelected"
-        />
+
+        <div class="flex gap-2">
+          <div
+            v-if="videoPath || stagedVideo"
+            class="relative flex h-16 w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-sf-line bg-sf-soft text-xs text-sf-muted"
+          >
+            <i class="pi pi-video text-lg" />
+            <span>Видео</span>
+            <!-- Only the not-yet-uploaded staged video can be removed here —
+                 same asymmetry as photos: nothing already persisted has a
+                 delete control yet. -->
+            <button
+              v-if="stagedVideo"
+              type="button"
+              class="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-black/60 text-white"
+              aria-label="Убрать видео"
+              @click="removeStagedVideo"
+            >
+              <i class="pi pi-times text-[10px]" />
+            </button>
+          </div>
+          <button
+            v-else
+            type="button"
+            class="flex h-16 w-28 shrink-0 items-center justify-center gap-1.5 rounded-md border border-dashed border-sf-line text-xs text-sf-muted"
+            :disabled="uploadingVideo"
+            @click="triggerVideoPicker"
+          >
+            <i v-if="!uploadingVideo" class="pi pi-video" />
+            <i v-else class="pi pi-spin pi-spinner" />
+            <span>Видео</span>
+          </button>
+          <input
+            ref="videoInput"
+            type="file"
+            accept="video/*"
+            class="hidden"
+            @change="onVideoSelected"
+          />
+        </div>
       </div>
-      <p v-else class="text-xs text-sf-muted">
-        Фото можно будет добавить после создания товара, в редактировании.
-      </p>
 
       <label class="flex flex-col gap-1.5 text-sm">
         <span class="text-sf-muted">Название</span>

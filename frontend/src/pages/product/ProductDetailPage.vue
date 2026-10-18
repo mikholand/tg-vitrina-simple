@@ -122,7 +122,7 @@ onMounted(load)
     </div>
 
     <template v-else>
-      <ProductGallery :photos="product.photo_paths" :alt="product.name">
+      <ProductGallery :photos="product.photo_paths" :video="product.video_path" :alt="product.name">
         <template #overlay>
           <div class="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-safe-top">
             <button

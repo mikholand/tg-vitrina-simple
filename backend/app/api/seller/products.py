@@ -9,7 +9,7 @@ from app.repositories.product import ProductRepository
 from app.services.product import ProductService
 from app.services.publishing import PublishingService
 from app.shared.pagination import Paginated
-from app.shared.uploads import save_product_photo
+from app.shared.uploads import save_product_photo, save_product_video
 
 router = APIRouter(
     route_class=DishkaRoute,
@@ -84,6 +84,24 @@ async def upload_photo(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="product_not_found")
     rel_path = await save_product_photo(settings, product_id, file)
     product.photo_paths = [*product.photo_paths, rel_path]
+    return _to_schema(product, await product_repository.get_category_ids(product.id))
+
+
+@router.post("/{product_id}/video")
+async def upload_video(
+    product_id: int,
+    file: UploadFile,
+    _: CurrentStaff,
+    settings: FromDishka[Settings],
+    product_repository: FromDishka[ProductRepository],
+) -> ProductSchema:
+    """One video per product — a second upload replaces whatever was there
+    before (the old file is simply orphaned on disk, same tradeoff
+    `save_store_logo` already makes for the store logo)."""
+    product = await product_repository.get(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="product_not_found")
+    product.video_path = await save_product_video(settings, product_id, file)
     return _to_schema(product, await product_repository.get_category_ids(product.id))
 
 

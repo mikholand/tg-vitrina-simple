@@ -55,6 +55,15 @@ export async function uploadProductPhoto(id: number, file: File): Promise<Produc
   return productSchema.parse(data)
 }
 
+export async function uploadProductVideo(id: number, file: File): Promise<Product> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await http.post(`/seller/products/${id}/video`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return productSchema.parse(data)
+}
+
 export async function publishProduct(id: number): Promise<Product> {
   const { data } = await http.post(`/seller/products/${id}/publish`)
   return productSchema.parse(data)

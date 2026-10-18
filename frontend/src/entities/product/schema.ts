@@ -13,6 +13,7 @@ export const productSchema = z.object({
   availability: productAvailabilitySchema,
   quantity: z.number().nullable(),
   photo_paths: z.array(z.string()),
+  video_path: z.string().nullable(),
   status: productStatusSchema,
   edited_by_seller: z.boolean(),
   publish_to_channel: z.boolean(),

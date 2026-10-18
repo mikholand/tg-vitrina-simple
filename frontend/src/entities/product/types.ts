@@ -11,6 +11,7 @@ export interface Product {
   availability: ProductAvailability
   quantity: number | null
   photo_paths: string[]
+  video_path: string | null
   status: ProductStatus
   edited_by_seller: boolean
   publish_to_channel: boolean
