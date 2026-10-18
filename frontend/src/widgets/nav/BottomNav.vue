@@ -73,8 +73,8 @@ const items = computed<NavItem[]>(() => {
         <RouterLink
           :to="item.to"
           class="flex flex-col items-center gap-1 py-2 text-sf-muted transition-colors"
-          active-class="text-sf-accent"
-          exact-active-class="text-sf-accent"
+          active-class="text-sf-ink font-medium"
+          exact-active-class="text-sf-ink font-medium"
         >
           <i :class="item.icon" class="text-lg" />
           <span class="text-[0.65rem] leading-none">{{ item.label }}</span>
