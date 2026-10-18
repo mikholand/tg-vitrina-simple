@@ -1,3 +1,4 @@
+import mimetypes
 from contextlib import asynccontextmanager
 
 from dishka.integrations.fastapi import setup_dishka
@@ -34,6 +35,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Starlette's StaticFiles relies on Python's mimetypes module to derive
+    # Content-Type from the file extension, and that module's table doesn't
+    # include image/webp on every platform/Python build (confirmed missing
+    # in prod's container even on 3.12) — it falls back to
+    # application/octet-stream, which makes browsers download uploaded .webp
+    # banners/photos instead of displaying them inline. Registered explicitly
+    # so it's correct regardless of the underlying OS's mime.types file.
+    mimetypes.add_type("image/webp", ".webp")
 
     app.mount("/media", StaticFiles(directory=settings.app.MEDIA_ROOT, check_dir=False), name="media")
 
