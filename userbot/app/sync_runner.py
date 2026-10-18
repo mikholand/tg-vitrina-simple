@@ -14,7 +14,11 @@ logger = get_logger("userbot.sync_runner")
 class SyncRunner:
     """Drives one backfill pass for a claimed `SyncJob`, walking strictly
     older messages from `job.cursor` (resuming) or `job.stop_id` (fresh
-    start) until Pyrogram's history generator is naturally exhausted.
+    start) until Pyrogram's history generator is naturally exhausted or
+    `job.total_count` posts have been imported — whichever comes first.
+    `total_count` is the backend-fixed cap for this pass (see
+    SyncOrchestrationService.MAX_SYNC_POSTS); it doesn't change mid-pass, so
+    reading it once off `job` here is safe.
     """
 
     def __init__(
@@ -36,7 +40,17 @@ class SyncRunner:
         done_count = job.done_count
         backoff = AdaptiveMediaBackoff()
 
+        def cap_reached() -> bool:
+            return job.total_count is not None and done_count >= job.total_count
+
         try:
+            # Guards a resume that happened to already be at (or somehow
+            # past) the cap when it was interrupted — otherwise identical to
+            # the in-loop check below.
+            if cap_reached():
+                await self._backend.complete(success=True, error=None)
+                return
+
             while True:
                 messages, next_offset_id, exhausted = await fetch_batch(
                     self._client, self._channel_id, offset_id, self._batch_size
@@ -50,6 +64,16 @@ class SyncRunner:
                     done_count += len(groups)
                     cursor = min(g.message_id for g in groups)
                     await self._backend.update_progress(done_count, job.total_count, cursor)
+
+                # A batch is `self._batch_size` *messages*, not posts, so
+                # this can overshoot the cap by up to a batch's worth of
+                # posts (never mid-post/mid-album though, since done_count
+                # only ever advances by whole groups) — acceptable: the
+                # point is to stop backfilling an entire channel history,
+                # not to land on exactly 100.
+                if cap_reached():
+                    await self._backend.complete(success=True, error=None)
+                    return
 
                 if exhausted:
                     await self._backend.complete(success=True, error=None)

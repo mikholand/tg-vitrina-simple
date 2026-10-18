@@ -9,6 +9,15 @@ from app.repositories.sync_state import SyncStateRepository
 
 logger = get_logger(__name__)
 
+# A full backfill pass only ever pulls the newest MAX_SYNC_POSTS posts off
+# the channel, not its entire history — a seller onboarding a channel with
+# years of posts doesn't actually want everything re-imported, and most of
+# that volume would just get discarded further down the pipeline anyway.
+# Fixed in SyncState.total_count once at the start of a fresh pass (see
+# claim_job below) — same "set once, never touched again mid-pass or across
+# a resume" convention already used for stop_id.
+MAX_SYNC_POSTS = 100
+
 
 class SyncOrchestrationService:
     """Owns the single application-wide sync checkpoint. There is no `Shop`
@@ -49,7 +58,7 @@ class SyncOrchestrationService:
             stop_id = await self._raw_post_repository.get_max_message_id(
                 self._settings.store.TELEGRAM_CHANNEL_ID
             ) or 0
-        return await self._sync_state_repository.mark_running(stop_id)
+        return await self._sync_state_repository.mark_running(stop_id, total_count=MAX_SYNC_POSTS)
 
     async def is_stop_requested(self) -> bool:
         state = await self._sync_state_repository.get()

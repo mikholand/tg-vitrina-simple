@@ -39,6 +39,25 @@ async def test_claim_job_on_fresh_pass_computes_stop_id_from_max_message_id(
     assert response.json() is None
 
 
+async def test_claim_job_on_fresh_pass_caps_total_count_at_100(
+    client, seller, internal_header, settings
+):
+    """Mirrors the 'only sync the newest 100 posts' requirement — a fresh
+    pass should never walk a channel's entire history."""
+    _, seller_headers = seller
+    channel_id = settings.store.TELEGRAM_CHANNEL_ID
+
+    await client.post(
+        "/api/v1/internal/sync/ingest",
+        json={"posts": [{"channel_id": channel_id, "message_id": 42, "posted_at": _iso()}]},
+        headers=internal_header,
+    )
+    await client.post("/api/v1/seller/sync/start", headers=seller_headers)
+
+    response = await client.get("/api/v1/internal/sync/job", headers=internal_header)
+    assert response.json()["total_count"] == 100
+
+
 async def test_claim_job_resume_keeps_existing_cursor_and_stop_id(
     client, seller, internal_header, settings
 ):

@@ -42,14 +42,18 @@ class SyncStateRepository:
         await self._session.flush()
         return state
 
-    async def mark_running(self, stop_id: int | None) -> SyncState:
+    async def mark_running(self, stop_id: int | None, total_count: int | None = None) -> SyncState:
         state = await self.get()
         state.status = SyncStatus.RUNNING
-        # stop_id is fixed once at the start of a pass and never moves again
-        # mid-pass — only set it if this pass doesn't already have one
-        # (i.e. it's a fresh pass, not a resume of an interrupted one).
+        # stop_id (and, alongside it, the post cap in total_count) are fixed
+        # once at the start of a pass and never move again mid-pass — only
+        # set them if this pass doesn't already have a stop_id (i.e. it's a
+        # fresh pass, not a resume of an interrupted one). A resume keeps
+        # walking toward the same cap it was given originally.
         if state.stop_id is None:
             state.stop_id = stop_id
+            if total_count is not None:
+                state.total_count = total_count
         await self._session.flush()
         return state
 
