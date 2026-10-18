@@ -19,7 +19,7 @@ function onBannerClick(banner: Banner): void {
       v-for="banner in banners"
       :key="banner.id"
       type="button"
-      class="relative aspect-[16/7] w-full shrink-0 snap-start overflow-hidden rounded-3xl bg-sf-soft"
+      class="relative aspect-[16/9] w-full shrink-0 snap-start overflow-hidden rounded-3xl bg-sf-soft"
       :class="banner.link_url ? 'cursor-pointer' : 'cursor-default'"
       @click="onBannerClick(banner)"
     >

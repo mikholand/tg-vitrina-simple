@@ -135,16 +135,23 @@ router.beforeEach(async (to) => {
 
   await ensureAuthInitialized()
 
+  const isStaff =
+    authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator'
+
+  // tg-vitrina sends sellers/admins/moderators straight to their own
+  // dashboard instead of the public storefront — the customer "Витрина" has
+  // no real use for staff, who don't even have a nav item back to it once
+  // inside the seller cabinet. Mirrored here so opening the mini app lands
+  // staff on "Главное" immediately rather than the generic home page.
+  if (to.name === 'home' && isStaff) {
+    return { name: 'seller-dashboard' }
+  }
+
   if (to.meta.requiresOwner && authStore.role !== 'seller' && authStore.role !== 'admin') {
     return { name: 'home' }
   }
 
-  if (
-    to.meta.requiresSeller &&
-    authStore.role !== 'seller' &&
-    authStore.role !== 'admin' &&
-    authStore.role !== 'moderator'
-  ) {
+  if (to.meta.requiresSeller && !isStaff) {
     return { name: 'home' }
   }
 
