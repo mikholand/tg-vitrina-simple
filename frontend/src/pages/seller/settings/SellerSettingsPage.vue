@@ -147,7 +147,7 @@ async function onLogoSelected(event: Event): Promise<void> {
       <div class="flex items-center gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
         <button
           type="button"
-          class="relative shrink-0 overflow-hidden rounded-full disabled:opacity-60"
+          class="relative shrink-0 appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none outline-none disabled:opacity-60"
           :disabled="uploadingLogo"
           @click="triggerFilePicker"
         >
