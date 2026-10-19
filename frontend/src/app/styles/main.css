@@ -29,6 +29,12 @@
      faithful visual clone needs a fixed palette, not one that follows the
      user's dark/light mode. */
   --sf-bg: #ffffff;
+  /* tg-vitrina's cabinet runs on a separate gray --surface, not its white
+     storefront --sf-bg — the gray is what makes white shadow-sm cards (see
+     DashboardPage) actually read as elevated instead of blending into the
+     page. Customer-facing pages keep --sf-bg; only the seller cabinet uses
+     this (see App.vue's root background class). */
+  --sf-surface: #f3f4f6;
   --sf-card: #f8fafc;
   --sf-accent: #2563eb;
   --sf-accent-soft: #eff4ff;

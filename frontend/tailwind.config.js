@@ -8,6 +8,7 @@ export default {
     extend: {
       colors: {
         'sf-bg': 'var(--sf-bg)',
+        'sf-surface': 'var(--sf-surface)',
         'sf-card': 'var(--sf-card)',
         'sf-accent': 'var(--sf-accent)',
         'sf-soft': 'var(--sf-accent-soft)',

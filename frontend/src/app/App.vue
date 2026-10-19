@@ -39,7 +39,8 @@ watch(
 
 <template>
   <div
-    class="min-h-screen bg-sf-bg text-sf-ink"
+    class="min-h-screen text-sf-ink"
+    :class="isSeller ? 'bg-sf-surface' : 'bg-sf-bg'"
     style="
       padding-left: var(--tg-safe-area-inset-left, 0px);
       padding-right: var(--tg-safe-area-inset-right, 0px);

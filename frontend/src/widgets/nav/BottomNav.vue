@@ -39,11 +39,16 @@ const customerItems: NavItem[] = [
   { to: '/favorites', label: 'Избранное', icon: 'pi pi-heart' },
 ]
 
+// Icon/label match tg-vitrina's tabBarSections verbatim where the same
+// route exists there: 'th-large' (a tile grid) for "Главное" — it opens a
+// grid of tiles, a bar chart icon described a page this isn't — and
+// "Категории" instead of "Разделы", so the bottom-nav label agrees with the
+// tile on the dashboard that links to the same /seller/categories route.
 const sellerItems: NavItem[] = [
-  { to: '/seller', label: 'Главное', icon: 'pi pi-chart-bar' },
+  { to: '/seller', label: 'Главное', icon: 'pi pi-th-large' },
   { to: '/seller/products', label: 'Товары', icon: 'pi pi-box' },
   { to: '/seller/raw-posts', label: 'Посты', icon: 'pi pi-inbox' },
-  { to: '/seller/categories', label: 'Разделы', icon: 'pi pi-sitemap' },
+  { to: '/seller/categories', label: 'Категории', icon: 'pi pi-sitemap' },
   { to: '/seller/settings', label: 'Настройки', icon: 'pi pi-cog' },
 ]
 
