@@ -123,7 +123,15 @@ onMounted(() => {
         <h1 class="text-xl font-semibold leading-tight text-sf-ink">Категории</h1>
         <p class="text-sm text-sf-muted">Каталог вашего магазина — скрывайте то, чего не продаёте</p>
       </div>
-      <Button label="Добавить" icon="pi pi-plus" size="small" class="shrink-0" @click="openCreateDialog" />
+      <!-- Plain button, not PrimeVue <Button> — matches the seller products
+           page's "Добавить" (rounded rectangle, not the app-wide pill). -->
+      <button
+        type="button"
+        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-white"
+        @click="openCreateDialog"
+      >
+        <i class="pi pi-plus text-xs" /> Добавить
+      </button>
     </div>
 
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
