@@ -56,13 +56,17 @@ const sellerItems: NavItem[] = [
 // "модератор без доступа к настройкам магазина".
 const moderatorItems: NavItem[] = sellerItems.filter((item) => item.to !== '/seller/settings')
 
-const isSeller = computed(
-  () => authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator',
+// Which tab set to show follows the current *section*, not the raw role —
+// staff previewing the storefront via the store<->admin switcher in
+// App.vue (route name not prefixed "seller-") must see the same customer
+// tabs a real customer would, not get stuck in the cabinet's nav.
+const isInAdminSection = computed(
+  () => typeof route.name === 'string' && route.name.startsWith('seller'),
 )
 const items = computed<NavItem[]>(() => {
+  if (!isInAdminSection.value) return customerItems
   if (authStore.role === 'moderator') return moderatorItems
-  if (isSeller.value) return sellerItems
-  return customerItems
+  return sellerItems
 })
 </script>
 
@@ -70,7 +74,7 @@ const items = computed<NavItem[]>(() => {
   <!-- Customer nav: tg-vitrina's StorefrontNav — a floating rounded pill,
        bordered/shadowed so it reads on a plain white background. -->
   <nav
-    v-if="!isSeller"
+    v-if="!isInAdminSection"
     class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 px-4 pb-safe-bottom"
   >
     <ul class="mb-3 flex items-stretch gap-1 rounded-full border border-sf-line bg-sf-bg p-1.5 shadow-lg shadow-black/5">

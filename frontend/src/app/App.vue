@@ -132,7 +132,7 @@ watch(
 <template>
   <div
     class="min-h-screen text-sf-ink"
-    :class="isSeller ? 'bg-sf-surface' : 'bg-sf-bg'"
+    :class="isInAdminSection ? 'bg-sf-surface' : 'bg-sf-bg'"
     style="
       padding-left: var(--tg-safe-area-inset-left, 0px);
       padding-right: var(--tg-safe-area-inset-right, 0px);
@@ -149,32 +149,46 @@ watch(
       class="relative mx-auto max-w-web-app sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl"
       :class="bare ? '' : 'pb-20'"
     >
+      <!-- Shown for customers always, and for staff while they're
+           previewing the storefront via the store<->admin switcher below
+           (hence `!isInAdminSection`, not role-based `!isSeller` — a staff
+           member on /catalog must see exactly what a customer sees). -->
       <header
-        v-if="!isSeller && !bare && storeInfoStore.storeInfo"
-        class="mb-1 flex items-center gap-2.5 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
+        v-if="!isInAdminSection && !bare && storeInfoStore.storeInfo"
+        class="mb-1 flex items-center justify-between gap-2.5 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
       >
-        <img
-          v-if="storeInfoStore.storeInfo.logo"
-          :src="storeInfoStore.storeInfo.logo"
-          :alt="storeInfoStore.storeInfo.name"
-          class="size-9 shrink-0 rounded-full object-cover"
-        />
-        <div
-          v-else
-          class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-white"
-        >
-          {{ storeInitial }}
+        <div class="flex min-w-0 items-center gap-2.5">
+          <img
+            v-if="storeInfoStore.storeInfo.logo"
+            :src="storeInfoStore.storeInfo.logo"
+            :alt="storeInfoStore.storeInfo.name"
+            class="size-9 shrink-0 rounded-full object-cover"
+          />
+          <div
+            v-else
+            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-white"
+          >
+            {{ storeInitial }}
+          </div>
+          <h1 class="min-w-0 truncate font-semibold leading-tight text-sf-ink">
+            {{ storeInfoStore.storeInfo.name }}
+          </h1>
         </div>
-        <h1 class="min-w-0 truncate font-semibold leading-tight text-sf-ink">
-          {{ storeInfoStore.storeInfo.name }}
-        </h1>
+        <RouterLink
+          v-if="isSeller"
+          :to="{ name: 'seller-dashboard' }"
+          class="shrink-0 text-sf-muted"
+          aria-label="Админка"
+        >
+          <i class="pi pi-briefcase text-xl" />
+        </RouterLink>
       </header>
 
       <!-- Seller cabinet: tg-vitrina's SellerLayout header — flat row with
            the shop name (back to the dashboard) and a gear to Settings,
            no card/logo like the customer header above. -->
       <header
-        v-if="isSeller && storeInfoStore.storeInfo"
+        v-if="isInAdminSection && storeInfoStore.storeInfo"
         class="flex items-center justify-between gap-2 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
       >
         <RouterLink to="/seller" class="truncate text-lg font-semibold leading-tight text-sf-ink">

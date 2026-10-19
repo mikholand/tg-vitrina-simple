@@ -176,7 +176,7 @@ function redeemPendingInvite(): Promise<void> {
   return inviteRedeemPromise
 }
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
 
   await ensureAuthInitialized()
@@ -186,11 +186,14 @@ router.beforeEach(async (to) => {
     authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator'
 
   // tg-vitrina sends sellers/admins/moderators straight to their own
-  // dashboard instead of the public storefront — the customer "Витрина" has
-  // no real use for staff, who don't even have a nav item back to it once
-  // inside the seller cabinet. Mirrored here so opening the mini app lands
-  // staff on "Главное" immediately rather than the generic home page.
-  if (to.name === 'home' && isStaff) {
+  // dashboard instead of the public storefront, so opening the mini app
+  // lands staff on "Главное" immediately rather than the generic home page.
+  // Only on that very first navigation though (`from.matched` is empty only
+  // for vue-router's START_LOCATION) — staff can deliberately come back to
+  // "Витрина" afterwards (the store<->admin switcher in App.vue, the
+  // BottomNav "Витрина" tab while previewing) and this must not bounce them
+  // straight back to the dashboard every time.
+  if (to.name === 'home' && isStaff && from.matched.length === 0) {
     return { name: 'seller-dashboard' }
   }
 
