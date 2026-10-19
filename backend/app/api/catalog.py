@@ -2,6 +2,7 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import OptionalUser, VisitorKey
+from app.clients.bot import BotClient
 from app.dto.banner import BannerSchema
 from app.dto.category import CategorySchema
 from app.dto.contact import PublicContactSchema, contact_url
@@ -119,6 +120,7 @@ async def get_product(
     product_id: int,
     product_repository: FromDishka[ProductRepository],
     view_service: FromDishka[ViewService],
+    bot_client: FromDishka[BotClient],
     user: OptionalUser,
     visitor_key: VisitorKey,
 ) -> ProductSchema:
@@ -131,4 +133,7 @@ async def get_product(
         product.views_total += 1  # reflect the just-recorded view in the response
 
     category_ids = await product_repository.get_category_ids(product.id)
-    return _to_schema(product, category_ids)
+    schema = _to_schema(product, category_ids)
+    username = await bot_client.username()
+    schema.share_url = f"https://t.me/{username}?startapp=product_{product_id}"
+    return schema

@@ -147,6 +147,24 @@ function ensureAuthInitialized(): Promise<void> {
 let inviteRedeemPromise: Promise<void> | null = null
 
 const INVITE_START_PARAM_PREFIX = 'invite_'
+const PRODUCT_START_PARAM_PREFIX = 'product_'
+
+/**
+ * A `startapp=product_<id>` deep link — the format `BotClient` already
+ * stamps on the "Открыть в витрине" button under channel posts, and that
+ * `ProductDetailPage.vue`'s "Поделиться" button now hands out too (see
+ * `share_url` on `GET /catalog/products/{id}`). Resolved once per page load,
+ * same shape as `redeemPendingInvite()` below — returns the product route to
+ * redirect to on the very first navigation, or null when there's no such
+ * param / it's not a product link.
+ */
+function pendingProductRedirect(): { name: string; params: { id: string } } | null {
+  const startParam = getStartParam()
+  if (!startParam?.startsWith(PRODUCT_START_PARAM_PREFIX)) return null
+  const id = startParam.slice(PRODUCT_START_PARAM_PREFIX.length)
+  if (!id) return null
+  return { name: 'product-detail', params: { id } }
+}
 
 /**
  * A `startapp=invite_<token>` deep link (see `SellerTeamPage.vue`, which
@@ -181,6 +199,16 @@ router.beforeEach(async (to, from) => {
 
   await ensureAuthInitialized()
   await redeemPendingInvite()
+
+  // A shared product link (`startapp=product_<id>`) takes priority over the
+  // staff auto-redirect right below — a seller/moderator opening a link a
+  // customer sent them should land on that product, not get bounced to
+  // their own dashboard. Only on the very first navigation, same
+  // `from.matched.length === 0` guard as `redeemPendingInvite()`'s caller.
+  if (from.matched.length === 0) {
+    const productRedirect = pendingProductRedirect()
+    if (productRedirect) return productRedirect
+  }
 
   const isStaff =
     authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator'

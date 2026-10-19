@@ -48,6 +48,18 @@ class CoreProvider(Provider):
     def bot(self, settings: Settings) -> Bot:
         return create_bot(settings)
 
+    # APP-scoped (not REQUEST, unlike the other clients below) so
+    # `BotClient._username`'s cache survives across requests — it used to be
+    # fine to rebuild per request when only seller-side invite creation hit
+    # `username()` (a rare, owner-only action), but `GET /catalog/products/
+    # {id}` now reads it on every single product-detail view (for the
+    # "Поделиться" deep link) and that's hot enough that re-calling
+    # `Bot.get_me()` every time would add a needless Telegram API round-trip
+    # to every visitor's product page load.
+    @provide
+    def bot_client(self, bot: Bot) -> BotClient:
+        return BotClient(bot)
+
 
 class SessionProvider(Provider):
     scope = Scope.REQUEST
@@ -80,7 +92,6 @@ class ClientProvider(Provider):
     scope = Scope.REQUEST
 
     openrouter_client = provide(OpenRouterClient)
-    bot_client = provide(BotClient)
 
 
 class ServiceProvider(Provider):

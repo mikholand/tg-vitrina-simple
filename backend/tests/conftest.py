@@ -51,7 +51,7 @@ def _compile_big_integer_sqlite(element, compiler, **kw):  # noqa: ANN001, ARG00
 
 
 from app.asgi.app import create_app  # noqa: E402
-from app.clients.bot import create_bot  # noqa: E402
+from app.clients.bot import BotClient, create_bot  # noqa: E402
 from app.core.config import Settings, get_settings  # noqa: E402
 from app.di.providers import (  # noqa: E402
     ClientProvider,
@@ -159,6 +159,10 @@ class _TestCoreProvider(Provider):
     @provide
     def provide_bot(self, settings: Settings) -> Bot:
         return create_bot(settings)
+
+    @provide
+    def provide_bot_client(self, bot: Bot) -> BotClient:
+        return BotClient(bot)
 
 
 @pytest_asyncio.fixture

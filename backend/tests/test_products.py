@@ -95,6 +95,22 @@ async def test_catalog_only_returns_published_products_with_pagination_shape(
     assert len(body["items"]) == 1
 
 
+async def test_catalog_product_detail_includes_share_url(client, make_product):
+    """`share_url` powers the "Поделиться" button on the product detail
+    page — the `startapp=product_<id>` deep-link format `BotClient` already
+    stamps on channel-post buttons. Only the detail endpoint sets it
+    (`GET /catalog/products/{id}`); the list endpoint leaves it null since
+    nothing there needs a per-item bot round-trip."""
+    product = await make_product(status=ProductStatus.PUBLISHED)
+
+    response = await client.get(f"/api/v1/catalog/products/{product.id}")
+    assert response.status_code == 200
+    assert response.json()["share_url"] == f"https://t.me/test_bot?startapp=product_{product.id}"
+
+    list_response = await client.get("/api/v1/catalog/products")
+    assert list_response.json()["items"][0]["share_url"] is None
+
+
 async def test_seller_product_endpoints_require_seller_role(client, customer, make_product):
     _, headers = customer
     product = await make_product(status=ProductStatus.DRAFT)

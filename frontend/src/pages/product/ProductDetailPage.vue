@@ -10,6 +10,7 @@ import { useCategoryStore } from '@entities/category/store'
 import type { PublicContact } from '@entities/contact/types'
 import { getCatalogContacts } from '@entities/contact/api'
 import ContactPicker from '@features/contact-picker/ContactPicker.vue'
+import { shareLink } from '@shared/telegram/sdk'
 
 const props = defineProps<{ id: string }>()
 
@@ -90,6 +91,35 @@ async function toggleFavorite(): Promise<void> {
   await favoriteStore.toggleFavorite(product.value.id)
 }
 
+const shareCopiedAt = ref<number | null>(null)
+
+// На телефоне внутри Telegram открываем системную шторку «Поделиться» —
+// как и в SellerTeamPage.vue. Если недоступно (десктоп/обычный браузер),
+// откатываемся на буфер обмена, но здесь — в отличие от шторки с
+// приглашением — подсказка об этом скрывается сама через пару секунд:
+// страница товара во весь экран, постоянно висящее сообщение было бы негде
+// красиво разместить.
+async function onShare(): Promise<void> {
+  if (!product.value?.share_url) return
+  const shared = shareLink(product.value.share_url, product.value.name)
+  if (!shared) await onCopyShareLink()
+}
+
+async function onCopyShareLink(): Promise<void> {
+  if (!product.value?.share_url) return
+  try {
+    await navigator.clipboard.writeText(product.value.share_url)
+    const copiedAt = Date.now()
+    shareCopiedAt.value = copiedAt
+    window.setTimeout(() => {
+      if (shareCopiedAt.value === copiedAt) shareCopiedAt.value = null
+    }, 2000)
+  } catch {
+    // Буфер обмена недоступен — молча ничего не показываем, как и
+    // toggleFavorite выше при сбое сети.
+  }
+}
+
 async function load(): Promise<void> {
   loading.value = true
   try {
@@ -132,23 +162,45 @@ onMounted(load)
     <template v-else>
       <ProductGallery :photos="product.photo_paths" :video="product.video_path" :alt="product.name">
         <template #overlay>
-          <div class="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-safe-top">
-            <button
-              type="button"
-              class="mt-4 flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
-              aria-label="Назад"
-              @click="goBack"
+          <div class="absolute inset-x-0 top-0 flex flex-col items-center gap-2 px-4 pt-safe-top">
+            <div class="flex w-full items-start justify-between">
+              <button
+                type="button"
+                class="mt-4 flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+                aria-label="Назад"
+                @click="goBack"
+              >
+                <i class="pi pi-arrow-left text-sf-ink" />
+              </button>
+              <div class="mt-4 flex gap-2">
+                <button
+                  v-if="product?.share_url"
+                  type="button"
+                  class="flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+                  aria-label="Поделиться"
+                  @click="onShare"
+                >
+                  <i class="pi pi-share-alt text-sm text-sf-ink" />
+                </button>
+                <button
+                  type="button"
+                  class="flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+                  :aria-label="isFavorite ? 'Убрать из избранного' : 'В избранное'"
+                  @click="toggleFavorite"
+                >
+                  <i
+                    class="pi text-sm"
+                    :class="isFavorite ? 'pi-heart-fill text-sf-danger' : 'pi-heart text-sf-ink'"
+                  />
+                </button>
+              </div>
+            </div>
+            <p
+              v-if="shareCopiedAt"
+              class="rounded-full bg-black/70 px-3 py-1.5 text-xs text-white backdrop-blur"
             >
-              <i class="pi pi-arrow-left text-sf-ink" />
-            </button>
-            <button
-              type="button"
-              class="mt-4 flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
-              :aria-label="isFavorite ? 'Убрать из избранного' : 'В избранное'"
-              @click="toggleFavorite"
-            >
-              <i class="pi text-sm" :class="isFavorite ? 'pi-heart-fill text-sf-danger' : 'pi-heart text-sf-ink'" />
-            </button>
+              Ссылка скопирована
+            </p>
           </div>
         </template>
       </ProductGallery>
