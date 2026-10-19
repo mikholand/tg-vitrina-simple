@@ -16,10 +16,13 @@ const generatingInvite = ref(false)
 const inviteError = ref<string | null>(null)
 const copiedAt = ref<number | null>(null)
 
-function moderatorLabel(moderator: Moderator): string {
-  if (moderator.tg_username) return moderator.tg_username
+function moderatorName(moderator: Moderator): string {
   const fullName = [moderator.tg_first_name, moderator.tg_last_name].filter(Boolean).join(' ')
   return fullName || `ID ${moderator.id}`
+}
+
+function moderatorInitial(moderator: Moderator): string {
+  return moderatorName(moderator)[0]?.toUpperCase() ?? '?'
 }
 
 async function loadModerators(): Promise<void> {
@@ -153,13 +156,26 @@ onMounted(() => {
         <div
           v-for="moderator in moderators"
           :key="moderator.id"
-          class="flex items-center justify-between gap-2 rounded-xl border border-sf-line p-2.5"
+          class="flex items-center gap-2.5 rounded-xl border border-sf-line p-2.5"
         >
-          <span class="truncate text-sm text-sf-ink">{{ moderatorLabel(moderator) }}</span>
+          <Avatar
+            :label="moderatorInitial(moderator)"
+            shape="circle"
+            style="background-color: var(--sf-accent); color: #fff"
+            class="shrink-0"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm text-sf-ink">{{ moderatorName(moderator) }}</p>
+            <p v-if="moderator.tg_username" class="truncate text-xs text-sf-muted">
+              (@{{ moderator.tg_username }})
+            </p>
+          </div>
           <Button
             icon="pi pi-times"
             severity="danger"
             text
+            rounded
+            class="shrink-0"
             :loading="removingId === moderator.id"
             @click="onRemoveModerator(moderator)"
           />
