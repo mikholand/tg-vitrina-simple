@@ -25,7 +25,7 @@ const open = ref(true)
 <template>
   <li>
     <div
-      class="flex items-center gap-2 rounded-2xl border border-sf-line bg-sf-card px-3 py-2"
+      class="flex items-center gap-2 rounded-xl border border-sf-line bg-white px-3 py-2"
       :class="category.is_hidden ? 'opacity-60' : ''"
     >
       <button
