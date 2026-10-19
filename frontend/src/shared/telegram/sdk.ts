@@ -5,6 +5,7 @@ import {
   themeParams,
   retrieveLaunchParams,
   retrieveRawInitData,
+  shareURL,
   type ViewportGetCSSVarNameKey,
 } from '@telegram-apps/sdk'
 
@@ -143,5 +144,35 @@ export function getTelegramUser() {
     return tgWebAppData?.user ?? null
   } catch {
     return null
+  }
+}
+
+/**
+ * Returns the Mini App deep-link `start_param` (the `startapp=...` value
+ * from the `https://t.me/<bot>?startapp=...` link that opened this app), or
+ * null when absent / outside Telegram. Checked once at boot to detect an
+ * invite link (`startapp=invite_<token>`) — see `app/router/index.ts`.
+ */
+export function getStartParam(): string | null {
+  try {
+    return retrieveLaunchParams().tgWebAppStartParam ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Opens Telegram's native share sheet pre-filled with `url`/`text`. Only
+ * available on real Telegram clients (not desktop web / plain browser) —
+ * returns false when unsupported so the caller can fall back to a plain
+ * copy-to-clipboard button instead.
+ */
+export function shareLink(url: string, text?: string): boolean {
+  try {
+    if (!shareURL.isAvailable()) return false
+    shareURL(url, text)
+    return true
+  } catch {
+    return false
   }
 }

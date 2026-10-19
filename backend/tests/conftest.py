@@ -19,10 +19,12 @@ os.environ["OPENROUTER_API_KEY"] = ""
 
 from collections.abc import AsyncIterator, Awaitable, Callable  # noqa: E402
 from datetime import UTC, datetime  # noqa: E402
+from unittest.mock import AsyncMock  # noqa: E402
 
 import pytest  # noqa: E402
 import pytest_asyncio  # noqa: E402
 from aiogram import Bot  # noqa: E402
+from aiogram.types import User as TelegramUser  # noqa: E402
 from dishka import Provider, Scope, make_async_container, provide  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy import BigInteger  # noqa: E402
@@ -46,6 +48,7 @@ def _compile_big_integer_sqlite(element, compiler, **kw):  # noqa: ANN001, ARG00
     compilation override — it does not change production (Postgres) DDL.
     """
     return "INTEGER"
+
 
 from app.asgi.app import create_app  # noqa: E402
 from app.clients.bot import create_bot  # noqa: E402
@@ -71,6 +74,17 @@ from app.shared.security import TokenPayload, create_jwt_token  # noqa: E402
 @pytest.fixture(scope="session")
 def settings() -> Settings:
     return get_settings()
+
+
+@pytest.fixture(autouse=True)
+def _mock_bot_get_me(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`BotClient.username()` (used when building invite/product deep links)
+    calls `Bot.get_me()`, a real HTTP call to the Telegram Bot API — never
+    something a unit test should do, and it would fail anyway against the
+    fake `BOT_TOKEN` set above. Patched globally (autouse) rather than per
+    test, since any seller-side route may end up needing a deep link."""
+    fake_me = TelegramUser(id=1, is_bot=True, first_name="Test Bot", username="test_bot")
+    monkeypatch.setattr(Bot, "get_me", AsyncMock(return_value=fake_me))
 
 
 @pytest_asyncio.fixture

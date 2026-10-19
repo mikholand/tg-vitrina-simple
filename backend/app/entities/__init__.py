@@ -3,6 +3,7 @@ from app.entities.base import Base
 from app.entities.category import Category, ProductCategory
 from app.entities.contact import Contact, ContactType
 from app.entities.favorite import Favorite
+from app.entities.invite import Invite
 from app.entities.product import Availability, Product, ProductStatus
 from app.entities.raw_post import RawPost, RawPostStatus
 from app.entities.store_profile import StoreProfile
@@ -18,6 +19,7 @@ __all__ = [
     "Contact",
     "ContactType",
     "Favorite",
+    "Invite",
     "Availability",
     "Product",
     "ProductStatus",

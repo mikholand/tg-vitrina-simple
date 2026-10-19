@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, catalog, favorites, health, internal_sync
+from app.api import invites as invite_redeem
 from app.api.seller import (
     banners,
     categories,
@@ -16,6 +17,9 @@ from app.api.seller import (
     raw_posts,
     stats,
     sync,
+)
+from app.api.seller import (
+    invites as seller_invites,
 )
 from app.api.seller import settings as seller_settings
 from app.core.config import get_settings
@@ -73,6 +77,8 @@ def create_app() -> FastAPI:
         banners.router,
         moderators.router,
         contacts.router,
+        seller_invites.router,
+        invite_redeem.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

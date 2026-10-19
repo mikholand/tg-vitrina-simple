@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import type { AxiosError } from 'axios'
 import type { Moderator } from '@entities/moderator/types'
-import { addModerator, getModerators, removeModerator } from '@entities/moderator/api'
+import { getModerators, removeModerator } from '@entities/moderator/api'
+import type { Invite } from '@entities/invite/types'
+import { createInvite, getActiveInvite } from '@entities/invite/api'
+import { shareLink } from '@shared/telegram/sdk'
 
 const moderators = ref<Moderator[]>([])
 const moderatorsLoading = ref(true)
-const newModeratorId = ref('')
-const addingModerator = ref(false)
 const removingId = ref<number | null>(null)
 const moderatorError = ref<string | null>(null)
+
+const invite = ref<Invite | null>(null)
+const inviteLoading = ref(true)
+const generatingInvite = ref(false)
+const inviteError = ref<string | null>(null)
+const copiedAt = ref<number | null>(null)
 
 function moderatorLabel(moderator: Moderator): string {
   if (moderator.tg_username) return moderator.tg_username
@@ -25,30 +31,46 @@ async function loadModerators(): Promise<void> {
   }
 }
 
-async function onAddModerator(): Promise<void> {
-  const userId = Number(newModeratorId.value.trim())
-  if (!Number.isInteger(userId) || userId <= 0) {
-    moderatorError.value = 'Укажите корректный Telegram ID'
-    return
-  }
-
-  addingModerator.value = true
-  moderatorError.value = null
+async function loadInvite(): Promise<void> {
+  inviteLoading.value = true
   try {
-    const moderator = await addModerator(userId)
-    moderators.value = [...moderators.value, moderator]
-    newModeratorId.value = ''
-  } catch (err) {
-    const detail = (err as AxiosError<{ detail?: string }>).response?.data?.detail
-    if (detail === 'user_not_found_must_open_app_first') {
-      moderatorError.value = 'Этот пользователь ещё не открывал приложение'
-    } else if (detail === 'user_is_owner') {
-      moderatorError.value = 'Этот пользователь уже владелец магазина'
-    } else {
-      moderatorError.value = 'Не удалось добавить модератора'
-    }
+    invite.value = await getActiveInvite()
   } finally {
-    addingModerator.value = false
+    inviteLoading.value = false
+  }
+}
+
+// Приглашение одноразовое: тот, кто откроет ссылку, сразу становится
+// модератором — ни подтверждения, ни отдельного «принять приглашение»
+// экрана с нашей стороны (см. App.vue/router/index.ts).
+async function onGenerateInvite(): Promise<void> {
+  generatingInvite.value = true
+  inviteError.value = null
+  try {
+    invite.value = await createInvite()
+  } catch {
+    inviteError.value = 'Не удалось создать ссылку'
+  } finally {
+    generatingInvite.value = false
+  }
+}
+
+// На телефоне внутри Telegram открываем системную шторку «Поделиться» —
+// это быстрее, чем копировать ссылку и переключаться в другой чат самому.
+// Если недоступно (десктоп/обычный браузер), откатываемся на буфер обмена.
+async function onShareInvite(): Promise<void> {
+  if (!invite.value) return
+  const shared = shareLink(invite.value.url, 'Приглашение в команду магазина')
+  if (!shared) await onCopyInvite()
+}
+
+async function onCopyInvite(): Promise<void> {
+  if (!invite.value) return
+  try {
+    await navigator.clipboard.writeText(invite.value.url)
+    copiedAt.value = Date.now()
+  } catch {
+    inviteError.value = 'Не удалось скопировать ссылку'
   }
 }
 
@@ -67,6 +89,7 @@ async function onRemoveModerator(moderator: Moderator): Promise<void> {
 
 onMounted(() => {
   void loadModerators()
+  void loadInvite()
 })
 </script>
 
@@ -74,13 +97,56 @@ onMounted(() => {
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <div>
       <h1 class="text-xl font-semibold leading-tight text-sf-ink">Команда</h1>
-      <p class="text-sm text-sf-muted">
-        Доступ ко всему, кроме настроек магазина. Пользователь должен хотя бы раз открыть
-        приложение, прежде чем его можно назначить.
-      </p>
+      <p class="text-sm text-sf-muted">Доступ ко всему, кроме настроек магазина.</p>
     </div>
 
     <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+      <p class="text-sm font-medium text-sf-ink">Пригласить</p>
+      <p class="text-xs text-sf-muted">
+        Отправьте ссылку человеку, которого хотите добавить — как только он её откроет, он
+        станет модератором. Ссылка одноразовая: новая делает старую недействительной.
+      </p>
+
+      <p v-if="inviteLoading" class="py-2 text-center text-sm text-sf-muted">Загрузка…</p>
+
+      <template v-else-if="invite">
+        <div class="flex items-center gap-2 rounded-xl border border-sf-line p-2.5">
+          <span class="min-w-0 flex-1 truncate text-sm text-sf-ink">{{ invite.url }}</span>
+          <Button icon="pi pi-copy" text severity="secondary" @click="onCopyInvite" />
+        </div>
+        <Message v-if="copiedAt" severity="success" :closable="false">Ссылка скопирована</Message>
+        <div class="flex items-center gap-2">
+          <Button
+            label="Поделиться"
+            icon="pi pi-send"
+            class="flex-1"
+            @click="onShareInvite"
+          />
+          <Button
+            label="Новая ссылка"
+            icon="pi pi-refresh"
+            severity="secondary"
+            outlined
+            :loading="generatingInvite"
+            @click="onGenerateInvite"
+          />
+        </div>
+      </template>
+
+      <Button
+        v-else
+        label="Создать ссылку-приглашение"
+        icon="pi pi-link"
+        :loading="generatingInvite"
+        @click="onGenerateInvite"
+      />
+
+      <Message v-if="inviteError" severity="error" :closable="false">{{ inviteError }}</Message>
+    </div>
+
+    <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+      <p class="text-sm font-medium text-sf-ink">Модераторы</p>
+
       <p v-if="moderatorsLoading" class="py-4 text-center text-sm text-sf-muted">Загрузка…</p>
 
       <div v-else-if="moderators.length > 0" class="flex flex-col gap-2">
@@ -100,17 +166,6 @@ onMounted(() => {
         </div>
       </div>
       <p v-else class="text-sm text-sf-muted">Модераторов пока нет</p>
-
-      <div class="flex items-center gap-2">
-        <InputText
-          v-model="newModeratorId"
-          placeholder="Telegram ID"
-          inputmode="numeric"
-          fluid
-          @keyup.enter="onAddModerator"
-        />
-        <Button icon="pi pi-plus" :loading="addingModerator" @click="onAddModerator" />
-      </div>
 
       <Message v-if="moderatorError" severity="error" :closable="false">{{ moderatorError }}</Message>
     </div>

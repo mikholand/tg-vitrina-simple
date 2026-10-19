@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@entities/user/store'
+import { redeemInvite } from '@entities/invite/api'
+import { getStartParam } from '@shared/telegram/sdk'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -142,10 +144,43 @@ function ensureAuthInitialized(): Promise<void> {
   return authInitPromise
 }
 
+let inviteRedeemPromise: Promise<void> | null = null
+
+const INVITE_START_PARAM_PREFIX = 'invite_'
+
+/**
+ * A `startapp=invite_<token>` deep link (see `SellerTeamPage.vue`, which
+ * generates these) promotes whoever opens it to moderator — no separate
+ * "accept invite" screen, since the `isStaff` redirect below already sends
+ * a freshly-promoted moderator straight into the seller cabinet, which is
+ * confirmation enough. Runs at most once per page load, after
+ * `ensureAuthInitialized()` has settled, so there's a real logged-in user to
+ * redeem it for; invalid/expired/already-used tokens are silently ignored
+ * and just leave the visitor's role unchanged.
+ */
+function redeemPendingInvite(): Promise<void> {
+  if (!inviteRedeemPromise) {
+    inviteRedeemPromise = (async () => {
+      const startParam = getStartParam()
+      if (!startParam?.startsWith(INVITE_START_PARAM_PREFIX)) return
+
+      const token = startParam.slice(INVITE_START_PARAM_PREFIX.length)
+      try {
+        await redeemInvite(token)
+        await useAuthStore().fetchMe()
+      } catch {
+        // Invalid / expired / already redeemed — ignored.
+      }
+    })()
+  }
+  return inviteRedeemPromise
+}
+
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
   await ensureAuthInitialized()
+  await redeemPendingInvite()
 
   const isStaff =
     authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator'

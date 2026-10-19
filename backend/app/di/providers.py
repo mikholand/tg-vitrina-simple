@@ -12,6 +12,7 @@ from app.repositories.banner import BannerRepository
 from app.repositories.category import CategoryRepository
 from app.repositories.contact import ContactRepository
 from app.repositories.favorite import FavoriteRepository
+from app.repositories.invite import InviteRepository
 from app.repositories.product import ProductRepository
 from app.repositories.raw_post import RawPostRepository
 from app.repositories.store_profile import StoreProfileRepository
@@ -72,6 +73,7 @@ class RepositoryProvider(Provider):
     store_profile_repository = provide(StoreProfileRepository)
     banner_repository = provide(BannerRepository)
     contact_repository = provide(ContactRepository)
+    invite_repository = provide(InviteRepository)
 
 
 class ClientProvider(Provider):
