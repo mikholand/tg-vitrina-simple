@@ -1,3 +1,6 @@
+from app.entities.user import UserRole
+
+
 async def test_owner_can_list_and_remove_moderator(client, seller, moderator):
     _, seller_headers = seller
     moderator_user, moderator_headers = moderator
@@ -17,6 +20,18 @@ async def test_owner_can_list_and_remove_moderator(client, seller, moderator):
 
     products_response = await client.get("/api/v1/seller/products", headers=moderator_headers)
     assert products_response.status_code == 403
+
+
+async def test_moderator_list_includes_tg_photo_url(client, seller, make_user):
+    _, seller_headers = seller
+
+    mod = await make_user(4002, UserRole.MODERATOR, tg_photo_url="https://t.me/i/userpic/2.jpg")
+
+    response = await client.get("/api/v1/seller/moderators", headers=seller_headers)
+
+    assert response.status_code == 200
+    [body] = [m for m in response.json() if m["id"] == mod.id]
+    assert body["tg_photo_url"] == "https://t.me/i/userpic/2.jpg"
 
 
 async def test_moderator_cannot_manage_moderators(client, moderator):

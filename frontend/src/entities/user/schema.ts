@@ -13,5 +13,6 @@ export const meResponseSchema = z.object({
   tg_username: z.string().nullable(),
   tg_first_name: z.string().nullable(),
   tg_last_name: z.string().nullable(),
+  tg_photo_url: z.string().nullable(),
   role: userRoleSchema,
 })

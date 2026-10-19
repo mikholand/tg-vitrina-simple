@@ -8,3 +8,4 @@ class ModeratorSchema(BaseModel):
     tg_username: str | None
     tg_first_name: str | None
     tg_last_name: str | None
+    tg_photo_url: str | None

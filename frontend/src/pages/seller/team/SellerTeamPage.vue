@@ -9,6 +9,9 @@ const moderators = ref<Moderator[]>([])
 const moderatorsLoading = ref(true)
 const removingId = ref<number | null>(null)
 const moderatorError = ref<string | null>(null)
+// Telegram's photo_url can expire/rotate — if the <img> 404s we fall back to
+// the letter avatar instead of showing PrimeVue's broken-image placeholder.
+const brokenAvatarIds = ref(new Set<number>())
 
 const invite = ref<Invite | null>(null)
 const inviteLoading = ref(true)
@@ -23,6 +26,15 @@ function moderatorName(moderator: Moderator): string {
 
 function moderatorInitial(moderator: Moderator): string {
   return moderatorName(moderator)[0]?.toUpperCase() ?? '?'
+}
+
+function moderatorAvatarUrl(moderator: Moderator): string | undefined {
+  if (!moderator.tg_photo_url || brokenAvatarIds.value.has(moderator.id)) return undefined
+  return moderator.tg_photo_url
+}
+
+function onAvatarError(moderator: Moderator): void {
+  brokenAvatarIds.value.add(moderator.id)
 }
 
 async function loadModerators(): Promise<void> {
@@ -159,10 +171,13 @@ onMounted(() => {
           class="flex items-center gap-2.5 rounded-xl border border-sf-line p-2.5"
         >
           <Avatar
-            :label="moderatorInitial(moderator)"
+            :image="moderatorAvatarUrl(moderator)"
+            :label="moderatorAvatarUrl(moderator) ? undefined : moderatorInitial(moderator)"
             shape="circle"
             style="background-color: var(--sf-accent); color: #fff"
             class="shrink-0"
+            :pt="{ image: { class: 'object-cover object-center' } }"
+            @error="onAvatarError(moderator)"
           />
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm text-sf-ink">{{ moderatorName(moderator) }}</p>

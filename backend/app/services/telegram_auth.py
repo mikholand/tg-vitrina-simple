@@ -49,6 +49,7 @@ class TelegramAuthService:
             tg_username=tg_user.username,
             tg_first_name=tg_user.first_name,
             tg_last_name=tg_user.last_name,
+            tg_photo_url=tg_user.photo_url,
         )
 
         if tg_user.id in self._settings.security.super_admin_ids and user.role != UserRole.ADMIN:

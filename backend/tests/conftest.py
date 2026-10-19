@@ -208,9 +208,12 @@ async def make_user(
         user_id: int,
         role: UserRole = UserRole.CUSTOMER,
         tg_username: str | None = None,
+        tg_photo_url: str | None = None,
     ) -> User:
         async with session_factory() as session:
-            user = User(id=user_id, tg_username=tg_username, role=role)
+            user = User(
+                id=user_id, tg_username=tg_username, tg_photo_url=tg_photo_url, role=role
+            )
             session.add(user)
             await session.commit()
             await session.refresh(user)

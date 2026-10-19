@@ -17,6 +17,7 @@ class UserRepository:
         tg_username: str | None,
         tg_first_name: str | None,
         tg_last_name: str | None,
+        tg_photo_url: str | None = None,
     ) -> User:
         user = await self.get(user_id)
         if user is None:
@@ -25,12 +26,14 @@ class UserRepository:
                 tg_username=tg_username,
                 tg_first_name=tg_first_name,
                 tg_last_name=tg_last_name,
+                tg_photo_url=tg_photo_url,
             )
             self._session.add(user)
         else:
             user.tg_username = tg_username
             user.tg_first_name = tg_first_name
             user.tg_last_name = tg_last_name
+            user.tg_photo_url = tg_photo_url
         await self._session.flush()
         return user
 
