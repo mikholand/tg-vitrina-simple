@@ -2,7 +2,7 @@
 import BottomNav from '@widgets/nav/BottomNav.vue'
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
-import { showBackButton, onBackButtonClick } from '@shared/telegram/sdk'
+import { showBackButton, hideBackButton, onBackButtonClick } from '@shared/telegram/sdk'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,20 +22,32 @@ const bare = computed(() => route.name === 'product-detail')
 const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
 
 // Native Telegram Back Button, wired centrally here instead of per-page —
-// shown on every screen, including the BottomNav tabs themselves, so it's
-// always available to retrace whatever path got the user here.
-showBackButton()
+// shown on every screen except each role's true home ('home' for
+// customers, 'seller-dashboard' — labelled "Главное" in BottomNav — for
+// staff), which has nothing above it to go back to.
+const HOME_ROUTE_NAMES = new Set(['home', 'seller-dashboard'])
+
+watch(
+  () => route.name,
+  (name) => {
+    if (typeof name === 'string' && HOME_ROUTE_NAMES.has(name)) {
+      hideBackButton()
+    } else {
+      showBackButton()
+    }
+  },
+  { immediate: true },
+)
 
 // Logical parent for each route — used only as a fallback when there's no
 // in-app history to pop (e.g. the page was opened directly, or reloaded, so
 // `history.state.back` below is empty). Tab roots fall back to their own
-// "home" (BottomNav's first tab for that role); drill-in pages fall back to
-// wherever they're actually linked from — dashboard tiles / the settings
-// page's links, see DashboardPage.vue and SellerSettingsPage.vue.
+// role's home; drill-in pages fall back to wherever they're actually linked
+// from — dashboard tiles / the settings page's links, see
+// DashboardPage.vue and SellerSettingsPage.vue.
 const BACK_BUTTON_FALLBACK_PARENT: Partial<Record<string, string>> = {
   catalog: 'home',
   favorites: 'home',
-  'seller-dashboard': 'home',
   'seller-products': 'seller-dashboard',
   'seller-categories': 'seller-dashboard',
   'seller-statistics': 'seller-dashboard',
