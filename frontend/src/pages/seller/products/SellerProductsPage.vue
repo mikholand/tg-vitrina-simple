@@ -128,7 +128,17 @@ onMounted(() => {
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <div class="flex items-center justify-between gap-2">
       <h1 class="text-xl font-semibold leading-tight text-sf-ink">Товары</h1>
-      <Button label="Добавить" icon="pi pi-plus" size="small" class="shrink-0" @click="openCreateEditor" />
+      <!-- Plain button, not PrimeVue <Button> — the latter is pinned to a full
+           pill (rounded-full) app-wide via the theme preset, which every other
+           page's primary action intentionally keeps; this page's reference
+           design wants a rounded rectangle instead. -->
+      <button
+        type="button"
+        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-white"
+        @click="openCreateEditor"
+      >
+        <i class="pi pi-plus text-xs" /> Добавить
+      </button>
     </div>
 
     <div class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
@@ -136,7 +146,7 @@ onMounted(() => {
         v-for="tab in tabs"
         :key="tab.value"
         type="button"
-        class="shrink-0 rounded-full border px-3.5 py-1.5 text-sm"
+        class="shrink-0 rounded-full border px-3.5 py-1 text-sm"
         :class="
           activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-white' : 'border-sf-line bg-sf-card text-sf-ink'
         "
