@@ -12,6 +12,7 @@ import {
   uploadProductVideo,
 } from '@entities/product/api'
 import { useCategoryStore } from '@entities/category/store'
+import AppModal from '@shared/ui/AppModal.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -223,110 +224,113 @@ onMounted(() => {
 </script>
 
 <template>
-  <Dialog
+  <AppModal
     :visible="visible"
-    modal
-    :header="isCreateMode ? 'Новый товар' : 'Редактирование товара'"
-    class="w-[90vw] max-w-md"
+    :title="isCreateMode ? 'Новый товар' : 'Редактирование товара'"
     @update:visible="(value: boolean) => emit('update:visible', value)"
   >
-    <div class="flex flex-col gap-4">
+    <form class="flex flex-col gap-4" @submit.prevent="onSave">
+      <label class="flex flex-col gap-1.5 text-sm">
+        <span class="text-sf-muted">Название *</span>
+        <InputText v-model="name" placeholder="Например, Кроссовки Nike" fluid />
+      </label>
+
       <div class="flex flex-col gap-2">
-        <div class="flex gap-2 overflow-x-auto">
+        <span class="text-sm text-sf-muted">Фото</span>
+        <div class="grid grid-cols-4 gap-2">
           <div
-            v-for="photo in photoPaths"
+            v-for="(photo, index) in photoPaths"
             :key="photo"
-            class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-sf-line"
+            class="relative aspect-square overflow-hidden rounded-xl border border-sf-line bg-sf-soft"
           >
-            <img :src="photo" class="h-full w-full object-cover" alt="Фото товара" />
+            <img :src="photo" class="size-full object-cover" :alt="`Фото ${index + 1}`" />
+            <span
+              v-if="index === 0"
+              class="absolute inset-x-0 bottom-0 bg-black/50 py-0.5 text-center text-[0.6rem] text-white"
+            >
+              Обложка
+            </span>
           </div>
           <!-- Create mode only: picked, not-yet-uploaded photos — removable
                before the first save, unlike the already-persisted ones above. -->
           <div
             v-for="(staged, index) in stagedPhotos"
             :key="staged.previewUrl"
-            class="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-sf-line"
+            class="relative aspect-square overflow-hidden rounded-xl border border-sf-line bg-sf-soft"
           >
-            <img :src="staged.previewUrl" class="h-full w-full object-cover" alt="Фото товара" />
+            <img :src="staged.previewUrl" class="size-full object-cover" alt="Фото товара" />
+            <span
+              v-if="photoPaths.length === 0 && index === 0"
+              class="absolute inset-x-0 bottom-0 bg-black/50 py-0.5 text-center text-[0.6rem] text-white"
+            >
+              Обложка
+            </span>
             <button
               type="button"
-              class="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-black/60 text-white"
+              class="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/60 text-white"
               aria-label="Убрать фото"
               @click="removeStagedPhoto(index)"
             >
-              <i class="pi pi-times text-[10px]" />
+              <i class="pi pi-times text-[0.6rem]" />
             </button>
           </div>
           <button
             type="button"
-            class="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border border-dashed border-sf-line text-sf-muted"
+            class="flex aspect-square items-center justify-center rounded-xl border border-dashed border-sf-line text-sf-muted disabled:opacity-50"
             :disabled="uploading"
+            aria-label="Добавить фото"
             @click="triggerFilePicker"
           >
             <i v-if="!uploading" class="pi pi-plus" />
             <i v-else class="pi pi-spin pi-spinner" />
           </button>
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            class="hidden"
-            @change="onFileSelected"
-          />
         </div>
-
-        <div class="flex gap-2">
-          <div
-            v-if="videoPath || stagedVideo"
-            class="relative flex h-16 w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-sf-line bg-sf-soft text-xs text-sf-muted"
-          >
-            <i class="pi pi-video text-lg" />
-            <span>Видео</span>
-            <!-- Only the not-yet-uploaded staged video can be removed here —
-                 same asymmetry as photos: nothing already persisted has a
-                 delete control yet. -->
-            <button
-              v-if="stagedVideo"
-              type="button"
-              class="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-black/60 text-white"
-              aria-label="Убрать видео"
-              @click="removeStagedVideo"
-            >
-              <i class="pi pi-times text-[10px]" />
-            </button>
-          </div>
-          <button
-            v-else
-            type="button"
-            class="flex h-16 w-28 shrink-0 items-center justify-center gap-1.5 rounded-md border border-dashed border-sf-line text-xs text-sf-muted"
-            :disabled="uploadingVideo"
-            @click="triggerVideoPicker"
-          >
-            <i v-if="!uploadingVideo" class="pi pi-video" />
-            <i v-else class="pi pi-spin pi-spinner" />
-            <span>Видео</span>
-          </button>
-          <input
-            ref="videoInput"
-            type="file"
-            accept="video/*"
-            class="hidden"
-            @change="onVideoSelected"
-          />
-        </div>
+        <span class="text-xs text-sf-placeholder">Первое фото — обложка товара на витрине.</span>
+        <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected" />
       </div>
 
-      <label class="flex flex-col gap-1.5 text-sm">
-        <span class="text-sf-muted">Название</span>
-        <InputText v-model="name" fluid />
-      </label>
+      <div class="flex flex-col gap-2">
+        <span class="text-sm text-sf-muted">Видео</span>
+
+        <div
+          v-if="videoPath || stagedVideo"
+          class="flex items-center justify-between gap-2 rounded-xl border border-sf-line p-3"
+        >
+          <span class="flex items-center gap-2 text-sm text-sf-ink">
+            <i class="pi pi-video text-sf-muted" />
+            Видео добавлено
+          </span>
+          <!-- Only the not-yet-uploaded staged video can be removed here —
+               same asymmetry as photos: nothing already persisted has a
+               delete control yet. -->
+          <button
+            v-if="stagedVideo"
+            type="button"
+            class="flex items-center gap-1 text-xs text-sf-danger"
+            @click="removeStagedVideo"
+          >
+            <i class="pi pi-trash" /> Убрать
+          </button>
+        </div>
+        <button
+          v-else
+          type="button"
+          class="flex items-center justify-center gap-2 rounded-xl border border-dashed border-sf-line py-3 text-sm text-sf-muted disabled:opacity-50"
+          :disabled="uploadingVideo"
+          @click="triggerVideoPicker"
+        >
+          <i :class="uploadingVideo ? 'pi pi-spin pi-spinner' : 'pi pi-video'" />
+          {{ uploadingVideo ? 'Загрузка…' : 'Добавить видео' }}
+        </button>
+        <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="onVideoSelected" />
+      </div>
 
       <div class="flex gap-3">
         <label class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Цена</span>
-          <InputText v-model="price" fluid />
+          <InputText v-model="price" placeholder="990.00" fluid />
         </label>
-        <label class="flex flex-1 flex-col gap-1.5 text-sm">
+        <label class="flex w-24 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Валюта</span>
           <InputText v-model="currency" fluid />
         </label>
@@ -376,11 +380,14 @@ onMounted(() => {
         <span class="text-sf-muted">Публикация в канал</span>
         <ToggleSwitch v-model="publishToChannel" />
       </label>
-    </div>
 
-    <template #footer>
-      <Button label="Отмена" text @click="close" />
-      <Button label="Сохранить" :loading="saving" :disabled="!name.trim()" @click="onSave" />
-    </template>
-  </Dialog>
+      <button
+        type="submit"
+        :disabled="saving || !name.trim()"
+        class="mt-2 rounded-xl bg-sf-accent py-3 font-semibold text-white disabled:opacity-50"
+      >
+        {{ saving ? 'Сохранение…' : 'Сохранить' }}
+      </button>
+    </form>
+  </AppModal>
 </template>
