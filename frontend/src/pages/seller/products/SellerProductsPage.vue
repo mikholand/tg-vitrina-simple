@@ -206,7 +206,7 @@ onMounted(() => {
             <div class="mt-auto flex items-center gap-2 pt-2">
               <button
                 type="button"
-                class="rounded-lg border border-sf-line px-2 py-1 text-xs text-sf-ink disabled:opacity-50"
+                class="inline-flex items-center justify-center gap-1 rounded-lg border border-sf-line px-2 py-1.5 text-xs text-sf-ink disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 @click="openEditor(product)"
               >
@@ -215,7 +215,7 @@ onMounted(() => {
               <button
                 v-if="product.status !== 'published'"
                 type="button"
-                class="rounded-lg border border-sf-line px-2 py-1 text-xs text-sf-success disabled:opacity-50"
+                class="inline-flex items-center justify-center gap-1 rounded-lg border border-sf-line px-2 py-1.5 text-xs text-sf-success disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 @click="onTogglePublish(product)"
               >
@@ -224,17 +224,17 @@ onMounted(() => {
               <button
                 v-else
                 type="button"
-                class="rounded-lg border border-sf-line px-2 py-1 text-xs text-sf-ink disabled:opacity-50"
+                class="inline-flex items-center justify-center gap-1 rounded-lg border border-sf-line px-2 py-1.5 text-xs text-sf-ink disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 @click="onTogglePublish(product)"
               >
-                Скрыть
+                <i class="pi pi-eye-slash" /> Скрыть
               </button>
               <!-- Rightmost and borderless: an irreversible action shouldn't
                    sit flush against "Изменить" and catch a mis-tap. -->
               <button
                 type="button"
-                class="ml-auto rounded-lg px-2 py-1 text-xs text-sf-danger disabled:opacity-50"
+                class="ml-auto inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs text-sf-danger disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 aria-label="Удалить товар"
                 @click="askDelete(product)"
