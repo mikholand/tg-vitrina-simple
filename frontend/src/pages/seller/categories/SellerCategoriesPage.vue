@@ -143,13 +143,13 @@ onMounted(() => {
         <li
           v-for="category in found"
           :key="category.id"
-          class="flex items-center gap-2 rounded-2xl border border-sf-line bg-sf-card p-3"
+          class="flex items-center gap-2 rounded-2xl border border-sf-line bg-sf-card px-3 py-2"
           :class="category.is_hidden ? 'opacity-60' : ''"
         >
           <span class="min-w-0 flex-1 truncate text-sm text-sf-ink">{{ pathById.get(category.id) }}</span>
           <button
             type="button"
-            class="flex size-8 shrink-0 items-center justify-center text-sf-muted disabled:opacity-50"
+            class="shrink-0 text-sf-muted disabled:opacity-50"
             :aria-label="category.is_hidden ? 'Показывать' : 'Скрыть'"
             :disabled="togglingId === category.id"
             @click="onToggleVisibility(category)"
@@ -164,13 +164,13 @@ onMounted(() => {
           <button
             v-if="!category.is_fallback"
             type="button"
-            class="flex size-8 shrink-0 items-center justify-center text-sf-muted disabled:opacity-50"
+            class="shrink-0 text-sf-muted disabled:opacity-50"
             aria-label="Удалить"
             :disabled="deletingId === category.id"
             @click="onDeleteCategory(category)"
           >
-            <i v-if="deletingId !== category.id" class="pi pi-trash" />
-            <i v-else class="pi pi-spin pi-spinner" />
+            <i v-if="deletingId !== category.id" class="pi pi-trash text-sm" />
+            <i v-else class="pi pi-spin pi-spinner text-sm" />
           </button>
         </li>
         <li v-if="!found.length" class="py-8 text-center text-sm text-sf-muted">Ничего не найдено</li>
