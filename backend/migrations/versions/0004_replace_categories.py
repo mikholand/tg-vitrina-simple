@@ -2,9 +2,10 @@
 
 The original 0001 tree (Одежда/Обувь/Электроника/...) was a generic
 placeholder, never the real catalog. The seller wants exactly these flat
-categories instead: Новогодний товар, Посуда, летний товар, Мыло,
-Электросомокати, Бытовая Химия, plus the mandatory fallback (now named
-"Другие" instead of "Другое").
+categories instead: Новогодний товар, Посуда, Летний товар, Мыло,
+Электросамокаты, Бытовая химия, plus the mandatory fallback (now named
+"Другие" instead of "Другое"). (Three of these names had typos fixed later,
+in 0006_fix_category_typos — this docstring reflects the corrected spelling.)
 
 This drops every existing category row (cascades into `product_categories`,
 so any product tagged with an old category simply loses that tag — no
