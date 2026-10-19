@@ -2,7 +2,7 @@
 import BottomNav from '@widgets/nav/BottomNav.vue'
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
-import { showBackButton, hideBackButton, onBackButtonClick } from '@shared/telegram/sdk'
+import { showBackButton, onBackButtonClick } from '@shared/telegram/sdk'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,27 +21,25 @@ const bare = computed(() => route.name === 'product-detail')
 
 const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
 
-// Native Telegram Back Button, wired centrally here instead of per-page.
-// Hidden on every screen that's a direct BottomNav target — those are
-// already one tap away from each other, so a "go back" affordance there is
-// ambiguous (back to what?). Shown everywhere else.
-const TAB_ROOT_ROUTE_NAMES = new Set([
-  'home',
-  'catalog',
-  'favorites',
-  'seller-dashboard',
-  'seller-products',
-  'seller-categories',
-  'seller-statistics',
-  'seller-settings',
-])
+// Native Telegram Back Button, wired centrally here instead of per-page —
+// shown on every screen, including the BottomNav tabs themselves, so it's
+// always available to retrace whatever path got the user here.
+showBackButton()
 
-// Logical parent for routes reached by drilling in from somewhere other than
-// the bottom nav (dashboard tiles, the settings page's own links) — used
-// only when there's no in-app history to pop (e.g. the page was opened
-// directly, or reloaded). Mirrors how each page is actually linked to: see
-// DashboardPage.vue's tiles and SellerSettingsPage.vue's links.
+// Logical parent for each route — used only as a fallback when there's no
+// in-app history to pop (e.g. the page was opened directly, or reloaded, so
+// `history.state.back` below is empty). Tab roots fall back to their own
+// "home" (BottomNav's first tab for that role); drill-in pages fall back to
+// wherever they're actually linked from — dashboard tiles / the settings
+// page's links, see DashboardPage.vue and SellerSettingsPage.vue.
 const BACK_BUTTON_FALLBACK_PARENT: Partial<Record<string, string>> = {
+  catalog: 'home',
+  favorites: 'home',
+  'seller-dashboard': 'home',
+  'seller-products': 'seller-dashboard',
+  'seller-categories': 'seller-dashboard',
+  'seller-statistics': 'seller-dashboard',
+  'seller-settings': 'seller-dashboard',
   'product-detail': 'catalog',
   'seller-raw-posts': 'seller-dashboard',
   'seller-sync': 'seller-dashboard',
@@ -60,22 +58,11 @@ function onBackButtonPressed(): void {
   }
   const name = typeof route.name === 'string' ? route.name : undefined
   const fallback = (name && BACK_BUTTON_FALLBACK_PARENT[name]) || 'home'
+  if (fallback === name) return // already at the true root — nothing to do
   void router.replace({ name: fallback })
 }
 
 onBackButtonClick(onBackButtonPressed)
-
-watch(
-  () => route.name,
-  (name) => {
-    if (typeof name === 'string' && TAB_ROOT_ROUTE_NAMES.has(name)) {
-      hideBackButton()
-    } else {
-      showBackButton()
-    }
-  },
-  { immediate: true },
-)
 
 onMounted(() => {
   // /catalog/store не требует авторизации, так что одного и того же
