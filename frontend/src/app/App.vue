@@ -76,10 +76,35 @@ function onBackButtonPressed(): void {
 
 onBackButtonClick(onBackButtonPressed)
 
+// Telegram's in-app WebView doesn't reliably close the on-screen keyboard
+// just because the focused input scrolled out of view or lost visual focus
+// ring — tapping anywhere else on the page should explicitly blur() the
+// field to dismiss it, same as native apps. Capture phase so this fires
+// before any component's own click handler can stopPropagation() it away;
+// pointerdown (not click) so the keyboard starts closing immediately on
+// touch-down rather than waiting for the tap to fully resolve.
+function dismissKeyboardOnOutsideTap(event: PointerEvent): void {
+  const active = document.activeElement as HTMLElement | null
+  if (!active) return
+  const isEditableField =
+    active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable
+  if (!isEditableField) return
+  // Tapping inside the focused field itself (its own clear/eye icon etc.)
+  // shouldn't blur it — only taps genuinely outside should.
+  if (event.target instanceof Node && active.contains(event.target)) return
+  active.blur()
+}
+
 onMounted(() => {
   // /catalog/store не требует авторизации, так что одного и того же
   // fetchStoreInfo хватает и покупательской шапке, и шапке продавца ниже.
   void storeInfoStore.fetchStoreInfo()
+
+  document.addEventListener('pointerdown', dismissKeyboardOnOutsideTap, { capture: true })
+})
+
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', dismissKeyboardOnOutsideTap, { capture: true })
 })
 
 // Заголовок вкладки/PWA по умолчанию — "Store" (см. index.html, он нужен
