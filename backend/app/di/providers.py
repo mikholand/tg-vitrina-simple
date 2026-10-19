@@ -10,6 +10,7 @@ from app.core.config import Settings, get_settings
 from app.core.db import create_engine, create_session_factory
 from app.repositories.banner import BannerRepository
 from app.repositories.category import CategoryRepository
+from app.repositories.contact import ContactRepository
 from app.repositories.favorite import FavoriteRepository
 from app.repositories.product import ProductRepository
 from app.repositories.raw_post import RawPostRepository
@@ -70,6 +71,7 @@ class RepositoryProvider(Provider):
     sync_state_repository = provide(SyncStateRepository)
     store_profile_repository = provide(StoreProfileRepository)
     banner_repository = provide(BannerRepository)
+    contact_repository = provide(ContactRepository)
 
 
 class ClientProvider(Provider):

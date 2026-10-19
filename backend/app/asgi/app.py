@@ -7,7 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, catalog, favorites, health, internal_sync
-from app.api.seller import banners, categories, moderators, products, raw_posts, stats, sync
+from app.api.seller import (
+    banners,
+    categories,
+    contacts,
+    moderators,
+    products,
+    raw_posts,
+    stats,
+    sync,
+)
 from app.api.seller import settings as seller_settings
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -45,7 +54,9 @@ def create_app() -> FastAPI:
     # so it's correct regardless of the underlying OS's mime.types file.
     mimetypes.add_type("image/webp", ".webp")
 
-    app.mount("/media", StaticFiles(directory=settings.app.MEDIA_ROOT, check_dir=False), name="media")
+    app.mount(
+        "/media", StaticFiles(directory=settings.app.MEDIA_ROOT, check_dir=False), name="media"
+    )
 
     for router in (
         health.router,
@@ -61,6 +72,7 @@ def create_app() -> FastAPI:
         stats.router,
         banners.router,
         moderators.router,
+        contacts.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

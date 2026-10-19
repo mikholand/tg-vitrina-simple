@@ -82,6 +82,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@pages/seller/settings/SellerSettingsPage.vue'),
     meta: { requiresOwner: true },
   },
+  {
+    path: '/seller/contacts',
+    name: 'seller-contacts',
+    component: () => import('@pages/seller/contacts/SellerContactsPage.vue'),
+    meta: { requiresOwner: true },
+  },
+  {
+    path: '/seller/team',
+    name: 'seller-team',
+    component: () => import('@pages/seller/team/SellerTeamPage.vue'),
+    meta: { requiresOwner: true },
+  },
 ]
 
 export const router = createRouter({

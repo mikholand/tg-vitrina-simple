@@ -7,6 +7,9 @@ import ProductGallery from '@entities/product/ui/ProductGallery.vue'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
 import { useCategoryStore } from '@entities/category/store'
+import type { PublicContact } from '@entities/contact/types'
+import { getCatalogContacts } from '@entities/contact/api'
+import ContactPicker from '@features/contact-picker/ContactPicker.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -14,6 +17,9 @@ const router = useRouter()
 const favoriteStore = useFavoriteStore()
 const storeInfoStore = useStoreInfoStore()
 const categoryStore = useCategoryStore()
+
+const contacts = ref<PublicContact[]>([])
+const contactPickerVisible = ref(false)
 
 const product = ref<Product | null>(null)
 const loading = ref(true)
@@ -60,16 +66,16 @@ const categoryNames = computed<string[]>(() => {
   return product.value.category_ids.map((id) => names.get(id)).filter((name): name is string => !!name)
 })
 
-const contactLink = computed(() => {
-  const contact = storeInfoStore.storeInfo?.contact_tg
-  if (!contact) return null
-  const handle = contact.replace(/^@/, '')
-  return `https://t.me/${handle}`
-})
-
+// Шторка выбора нужна только когда менеджеров несколько — с единственным её
+// показ был бы лишним экраном между «хочу спросить» и чатом, и кнопка ведёт
+// к нему напрямую.
 function contactSeller(): void {
-  if (!contactLink.value) return
-  window.open(contactLink.value, '_blank', 'noopener,noreferrer')
+  if (contacts.value.length === 0) return
+  if (contacts.value.length === 1) {
+    window.open(contacts.value[0].url, '_blank', 'noopener,noreferrer')
+    return
+  }
+  contactPickerVisible.value = true
 }
 
 // По deep-link карточка может открыться первой страницей — истории нет, и
@@ -87,13 +93,15 @@ async function toggleFavorite(): Promise<void> {
 async function load(): Promise<void> {
   loading.value = true
   try {
-    const [loadedProduct] = await Promise.all([
+    const [loadedProduct, loadedContacts] = await Promise.all([
       getCatalogProduct(Number(props.id)),
+      getCatalogContacts(),
       favoriteStore.fetchFavorites(),
       storeInfoStore.fetchStoreInfo(),
       categoryStore.fetchCategories(),
     ])
     product.value = loadedProduct
+    contacts.value = loadedContacts
   } catch {
     product.value = null
   } finally {
@@ -182,7 +190,7 @@ onMounted(load)
             <p class="truncate text-lg font-semibold text-sf-ink">{{ price }}</p>
           </div>
           <button
-            v-if="contactLink"
+            v-if="contacts.length"
             type="button"
             class="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-sf-accent px-6 py-3 font-medium text-white"
             @click="contactSeller"
@@ -193,6 +201,8 @@ onMounted(load)
           <span v-else class="ml-auto text-sm text-sf-muted">Контакты не указаны</span>
         </div>
       </div>
+
+      <ContactPicker v-model:visible="contactPickerVisible" :contacts="contacts" />
     </template>
   </div>
 </template>

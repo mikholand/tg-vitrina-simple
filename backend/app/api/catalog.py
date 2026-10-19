@@ -4,19 +4,20 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.api.deps import OptionalUser, VisitorKey
 from app.dto.banner import BannerSchema
 from app.dto.category import CategorySchema
+from app.dto.contact import PublicContactSchema, contact_url
 from app.dto.product import ProductSchema
+from app.entities.contact import ContactType
 from app.entities.product import Product
 from app.repositories.banner import BannerRepository
 from app.repositories.category import CategoryRepository
+from app.repositories.contact import ContactRepository
 from app.repositories.product import ProductRepository
 from app.repositories.store_profile import StoreProfileRepository
 from app.services.view import ViewService
 from app.shared.media import media_url
 from app.shared.pagination import Paginated
 
-router = APIRouter(
-    route_class=DishkaRoute,
-    prefix="/catalog", tags=["catalog"])
+router = APIRouter(route_class=DishkaRoute, prefix="/catalog", tags=["catalog"])
 
 
 def _to_schema(product: Product, category_ids: list[int]) -> ProductSchema:
@@ -53,6 +54,40 @@ async def list_banners(
 ) -> list[BannerSchema]:
     banners = await banner_repository.list_all()
     return [BannerSchema.model_validate(b) for b in banners]
+
+
+@router.get("/contacts")
+async def list_contacts(
+    contact_repository: FromDishka[ContactRepository],
+    store_profile_repository: FromDishka[StoreProfileRepository],
+) -> list[PublicContactSchema]:
+    """Кому покупатель может написать или позвонить.
+
+    Пока продавец не завёл менеджеров, отдаём прежний `contact_tg`
+    синтетической записью — иначе кнопка «Написать продавцу» пропала бы
+    ровно там, где контакт указан, но список менеджеров ещё пуст.
+    """
+    contacts = await contact_repository.list_active()
+    if contacts:
+        return [
+            PublicContactSchema(
+                id=c.id, label=c.label, type=c.type, value=c.value, url=contact_url(c.type, c.value)
+            )
+            for c in contacts
+        ]
+    profile = await store_profile_repository.get()
+    fallback = (profile.contact_tg or "").strip()
+    if not fallback:
+        return []
+    return [
+        PublicContactSchema(
+            id=0,
+            label="Продавец",
+            type=ContactType.TELEGRAM,
+            value=fallback,
+            url=contact_url(ContactType.TELEGRAM, fallback),
+        )
+    ]
 
 
 @router.get("/categories")
