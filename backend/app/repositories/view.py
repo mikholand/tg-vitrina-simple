@@ -1,9 +1,10 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.entities.product import Product
 from app.entities.view import ProductView, StoreView
 
 
@@ -41,6 +42,37 @@ class ViewRepository:
     async def count_store_views(self) -> int:
         return len((await self._session.execute(select(StoreView.id))).scalars().all())
 
-    async def count_store_views_on(self, view_date: date) -> int:
-        stmt = select(StoreView.id).where(StoreView.view_date == view_date)
-        return len((await self._session.execute(stmt)).scalars().all())
+    async def count_store_views_since(self, since: date) -> int:
+        stmt = select(func.count(StoreView.id)).where(StoreView.view_date >= since)
+        return (await self._session.scalar(stmt)) or 0
+
+    async def count_product_views_total(self) -> int:
+        """Every logged open, across all products, all time — the
+        denominator shown next to `count_store_views()` on the "Всё время"
+        statistics period (see `api/seller/stats.py`)."""
+        stmt = select(func.count(ProductView.id))
+        return (await self._session.scalar(stmt)) or 0
+
+    async def count_product_views_since(self, since: datetime) -> int:
+        stmt = select(func.count(ProductView.id)).where(ProductView.created_at >= since)
+        return (await self._session.scalar(stmt)) or 0
+
+    async def list_top_products_since(
+        self, since: datetime, limit: int
+    ) -> list[tuple[int, str, int]]:
+        """Top products by view count within the window — unlike
+        `ProductRepository.list_top_viewed`, which just sorts by the
+        denormalized all-time `views_total` column, this counts rows from
+        `product_views` directly so "7 дней"/"30 дней" periods only reflect
+        views logged in that window."""
+        views = func.count(ProductView.id)
+        stmt = (
+            select(Product.id, Product.name, views.label("views"))
+            .join(ProductView, ProductView.product_id == Product.id)
+            .where(ProductView.created_at >= since)
+            .group_by(Product.id, Product.name)
+            .order_by(views.desc(), Product.id)
+            .limit(limit)
+        )
+        rows = (await self._session.execute(stmt)).all()
+        return [(row[0], row[1], row[2]) for row in rows]

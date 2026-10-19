@@ -1,22 +1,56 @@
 <script setup lang="ts">
-import type { SellerStats } from '@entities/seller-settings/types'
+import type { SellerStats, StatsPeriod } from '@entities/seller-settings/types'
 import { getSellerStats } from '@entities/seller-settings/api'
 
+// Labels/values match tg-vitrina's statistics screen verbatim.
+const periods: { value: StatsPeriod; label: string }[] = [
+  { value: 'all', label: 'Всё время' },
+  { value: '7d', label: '7 дней' },
+  { value: '30d', label: '30 дней' },
+]
+
+const period = ref<StatsPeriod>('all')
 const stats = ref<SellerStats | null>(null)
 const loading = ref(true)
 
-onMounted(async () => {
+async function load(): Promise<void> {
+  loading.value = true
   try {
-    stats.value = await getSellerStats(10)
+    stats.value = await getSellerStats(period.value, 10)
   } finally {
     loading.value = false
   }
-})
+}
+
+function setPeriod(value: StatsPeriod): void {
+  if (period.value === value) return
+  period.value = value
+  void load()
+}
+
+onMounted(load)
 </script>
 
 <template>
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <h1 class="text-xl font-semibold leading-tight text-sf-ink">Статистика</h1>
+
+    <div class="flex gap-2">
+      <button
+        v-for="option in periods"
+        :key="option.value"
+        type="button"
+        class="flex-1 rounded-full border border-sf-line py-1.5 text-sm transition-colors"
+        :class="
+          period === option.value
+            ? 'border-sf-accent bg-sf-accent font-medium text-white'
+            : 'bg-sf-card text-sf-muted'
+        "
+        @click="setPeriod(option.value)"
+      >
+        {{ option.label }}
+      </button>
+    </div>
 
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
 
@@ -24,11 +58,11 @@ onMounted(async () => {
       <div class="grid grid-cols-2 gap-2.5">
         <div class="rounded-2xl border border-sf-line bg-sf-card p-3.5">
           <p class="text-2xl font-semibold text-sf-accent">{{ stats.store_views_total }}</p>
-          <p class="text-xs text-sf-muted">Просмотров всего</p>
+          <p class="text-xs text-sf-muted">Просмотры магазина</p>
         </div>
         <div class="rounded-2xl border border-sf-line bg-sf-card p-3.5">
-          <p class="text-2xl font-semibold text-sf-accent">{{ stats.store_views_today }}</p>
-          <p class="text-xs text-sf-muted">Просмотров сегодня</p>
+          <p class="text-2xl font-semibold text-sf-accent">{{ stats.product_views_total }}</p>
+          <p class="text-xs text-sf-muted">Просмотры товаров</p>
         </div>
       </div>
 

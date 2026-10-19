@@ -19,8 +19,11 @@ export interface TopProduct {
   views_total: number
 }
 
+/** Matches the backend's `period` query param on `GET /seller/stats`. */
+export type StatsPeriod = 'all' | '7d' | '30d'
+
 export interface SellerStats {
   store_views_total: number
-  store_views_today: number
+  product_views_total: number
   top_products: TopProduct[]
 }

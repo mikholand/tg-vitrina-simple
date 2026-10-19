@@ -1,5 +1,5 @@
 import { http } from '@shared/api/http'
-import type { SellerSettings, SellerSettingsUpdatePayload, SellerStats } from './types'
+import type { SellerSettings, SellerSettingsUpdatePayload, SellerStats, StatsPeriod } from './types'
 
 export async function getSellerSettings(): Promise<SellerSettings> {
   const { data } = await http.get<SellerSettings>('/seller/settings')
@@ -22,9 +22,12 @@ export async function uploadStoreLogo(file: File): Promise<SellerSettings> {
   return data
 }
 
-export async function getSellerStats(topLimit?: number): Promise<SellerStats> {
+export async function getSellerStats(
+  period: StatsPeriod = 'all',
+  topLimit?: number,
+): Promise<SellerStats> {
   const { data } = await http.get<SellerStats>('/seller/stats', {
-    params: topLimit !== undefined ? { top_limit: topLimit } : undefined,
+    params: { period, ...(topLimit !== undefined ? { top_limit: topLimit } : {}) },
   })
   return data
 }
