@@ -4,6 +4,8 @@ import {
   miniApp,
   themeParams,
   backButton,
+  mountSwipeBehavior,
+  disableVerticalSwipes,
   retrieveLaunchParams,
   retrieveRawInitData,
   shareURL,
@@ -82,6 +84,23 @@ function mountBackButton(): void {
 }
 
 /**
+ * A swipe-down anywhere on the page is Telegram's own gesture to minimize/
+ * close the Mini App — same gesture ProductGallery's photo/video slides use
+ * to scroll vertically-adjacent content, and the one a user swiping down to
+ * dismiss the on-screen keyboard or just scroll a long description would
+ * hit by accident. Disabled app-wide right after boot so none of that
+ * accidentally collapses the app.
+ */
+function disableSwipeToClose(): void {
+  try {
+    if (mountSwipeBehavior.isAvailable()) mountSwipeBehavior()
+    if (disableVerticalSwipes.isAvailable()) disableVerticalSwipes()
+  } catch {
+    // Unavailable on this client — the gesture just behaves as before.
+  }
+}
+
+/**
  * Bootstraps the Telegram Mini App SDK: initializes the environment, mounts
  * the viewport/theme/mini-app components and syncs their CSS variables onto
  * :root (safe-area insets, theme colors, etc). Safe to call outside of
@@ -117,6 +136,7 @@ export async function initTelegram(): Promise<void> {
   void mountMiniApp()
   void mountThemeParams()
   mountBackButton()
+  disableSwipeToClose()
 
   await viewportMounted
 
@@ -136,6 +156,23 @@ export async function initTelegram(): Promise<void> {
   } catch {
     // Not supported by this client / request rejected — the app still
     // works fine in the regular expanded (non-fullscreen) viewport.
+  }
+}
+
+/**
+ * True when running inside an actual Telegram client (launch params parsed
+ * successfully), false in a plain browser (local dev, a desktop web preview
+ * outside Telegram). Used to hide UI that would duplicate what Telegram's
+ * own chrome already provides there — e.g. ProductDetailPage's own
+ * "Назад" button, redundant next to the native Back Button `showBackButton()`
+ * already puts in Telegram's header.
+ */
+export function isInsideTelegram(): boolean {
+  try {
+    retrieveLaunchParams()
+    return true
+  } catch {
+    return false
   }
 }
 

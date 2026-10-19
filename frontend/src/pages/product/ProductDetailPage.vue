@@ -10,9 +10,16 @@ import { useCategoryStore } from '@entities/category/store'
 import type { PublicContact } from '@entities/contact/types'
 import { getCatalogContacts } from '@entities/contact/api'
 import ContactPicker from '@features/contact-picker/ContactPicker.vue'
-import { shareLink } from '@shared/telegram/sdk'
+import { shareLink, isInsideTelegram } from '@shared/telegram/sdk'
 
 const props = defineProps<{ id: string }>()
+
+// Внутри Telegram нативная кнопка "Назад" уже есть в шапке (см. App.vue,
+// showBackButton()) — своя поверх галереи там лишняя и только путается под
+// нативной. Показываем её только вне Telegram (обычный браузер), где
+// нативной кнопки нет. Launch-параметры не меняются за время жизни
+// страницы, так что достаточно посчитать один раз.
+const showOwnBackButton = !isInsideTelegram()
 
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
@@ -162,35 +169,48 @@ onMounted(load)
     <template v-else>
       <ProductGallery :photos="product.photo_paths" :video="product.video_path" :alt="product.name">
         <template #overlay>
-          <div class="absolute inset-x-0 top-0 flex flex-col items-center gap-2 px-4 pt-safe-top">
-            <div class="flex w-full items-start justify-between">
+          <!-- `pt-[max(...)]`, not plain `pt-safe-top`: Telegram's native
+               header (Back/collapse/"...") floats as an overlay on top of
+               the content in fullscreen mode (requestFullscreen() in
+               sdk.ts), and `--tg-content-safe-area-inset-top` is meant to
+               account for exactly that — but some clients under-report it,
+               which used to leave these buttons tucked behind the native
+               header instead of below it. The 3.5rem floor is a worst-case
+               guess at that header's height, same "floor under an
+               unreliable/absent CSS var" move App.vue's outer padding
+               already makes with `max(1rem, var(--tg-safe-area-inset-top))`. -->
+          <div
+            class="absolute inset-x-0 top-0 flex flex-col items-center gap-2 px-4 pt-[max(3.5rem,var(--tg-content-safe-area-inset-top,0px))]"
+          >
+            <div class="flex w-full items-start">
               <button
+                v-if="showOwnBackButton"
                 type="button"
-                class="mt-4 flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+                class="flex size-10 items-center justify-center rounded-full bg-black/45 backdrop-blur"
                 aria-label="Назад"
                 @click="goBack"
               >
-                <i class="pi pi-arrow-left text-sf-ink" />
+                <i class="pi pi-arrow-left text-white" />
               </button>
-              <div class="mt-4 flex gap-2">
+              <div class="ml-auto flex gap-2">
                 <button
                   v-if="product?.share_url"
                   type="button"
-                  class="flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+                  class="flex size-10 items-center justify-center rounded-full bg-black/45 backdrop-blur"
                   aria-label="Поделиться"
                   @click="onShare"
                 >
-                  <i class="pi pi-share-alt text-sm text-sf-ink" />
+                  <i class="pi pi-share-alt text-sm text-white" />
                 </button>
                 <button
                   type="button"
-                  class="flex size-10 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+                  class="flex size-10 items-center justify-center rounded-full bg-black/45 backdrop-blur"
                   :aria-label="isFavorite ? 'Убрать из избранного' : 'В избранное'"
                   @click="toggleFavorite"
                 >
                   <i
                     class="pi text-sm"
-                    :class="isFavorite ? 'pi-heart-fill text-sf-danger' : 'pi-heart text-sf-ink'"
+                    :class="isFavorite ? 'pi-heart-fill text-sf-danger' : 'pi-heart text-white'"
                   />
                 </button>
               </div>
