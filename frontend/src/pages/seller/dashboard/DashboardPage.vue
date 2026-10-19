@@ -34,14 +34,15 @@ const tiles = computed<Tile[]>(() => {
 
 <template>
   <div class="flex flex-col gap-4 px-4 sm:px-6 md:px-8 lg:px-10">
-    <h1 class="text-xl font-semibold leading-tight text-sf-ink">Главное</h1>
-
+    <!-- tg-vitrina's "Главное" is a pure launcher grid — the shop name in
+         the header above already says where you are, so no repeat heading
+         here, same as there. -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
       <RouterLink
         v-for="tile in tiles"
         :key="tile.to"
         :to="tile.to"
-        class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-sf-line bg-sf-card p-6 text-center transition-transform active:scale-95"
+        class="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white p-6 text-center shadow-sm transition-transform active:scale-95"
       >
         <i :class="`pi pi-${tile.icon}`" class="text-2xl text-sf-accent" />
         <span class="text-sm font-medium text-sf-ink">{{ tile.label }}</span>
