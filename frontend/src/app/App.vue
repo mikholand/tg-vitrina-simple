@@ -24,9 +24,9 @@ const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpper
 // Store↔admin switcher next to the settings gear in the seller/moderator
 // header. Every /seller/* route name is prefixed "seller-" (dashboard
 // included), so that's enough to tell which side we're on without a
-// separate route-meta flag: from admin it jumps to the public catalog (a
-// quick "view as customer"), from anywhere else it jumps back into the
-// cabinet.
+// separate route-meta flag: from admin it jumps to "Витрина" — the
+// storefront home, same as BottomNav's first customer tab — for a quick
+// "view as customer", from anywhere else it jumps back into the cabinet.
 const isInAdminSection = computed(
   () => typeof route.name === 'string' && route.name.startsWith('seller'),
 )
@@ -196,7 +196,7 @@ watch(
         </RouterLink>
         <div class="flex shrink-0 items-center gap-3">
           <RouterLink
-            :to="isInAdminSection ? { name: 'catalog' } : { name: 'seller-dashboard' }"
+            :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
             class="text-sf-muted"
             :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
           >
