@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CategoryTreeNode } from '@entities/category/types'
 import type {
   Product,
   ProductAvailability,
@@ -6,6 +7,9 @@ import type {
   SellerProductPatch,
 } from '@entities/product/types'
 import {
+  MAX_PHOTO_BYTES,
+  MAX_PHOTOS,
+  MAX_VIDEO_BYTES,
   createSellerProduct,
   updateSellerProduct,
   uploadProductPhoto,
@@ -13,6 +17,7 @@ import {
 } from '@entities/product/api'
 import { useCategoryStore } from '@entities/category/store'
 import AppModal from '@shared/ui/AppModal.vue'
+import CategoryPickNode from '@entities/category/ui/CategoryPickNode.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -67,6 +72,40 @@ const uploadingVideo = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const videoInput = ref<HTMLInputElement | null>(null)
 
+/** Already-persisted photos plus not-yet-uploaded staged ones — the number
+ * the "N / 10" counter and the add-photo cap both need to agree on. */
+const totalPhotoCount = computed(() => photoPaths.value.length + stagedPhotos.value.length)
+
+interface FlatCategory {
+  id: number
+  name: string
+  /** Full breadcrumb from root — the shared catalog repeats names across
+   * branches ("Игрушки" under both dogs and cats), so a search hit without
+   * its path is unidentifiable. */
+  path: string
+}
+
+function flattenCategories(nodes: CategoryTreeNode[], parents: string[] = []): FlatCategory[] {
+  const acc: FlatCategory[] = []
+  for (const node of nodes) {
+    acc.push({ id: node.id, name: node.name, path: [...parents, node.name].join(' → ') })
+    acc.push(...flattenCategories(node.children, [...parents, node.name]))
+  }
+  return acc
+}
+
+const categoryQuery = ref('')
+
+const flatCategories = computed(() => flattenCategories(categoryStore.tree))
+
+/** Empty query returns nothing — with no search the tree renders instead, so
+ * there's no flat several-hundred-row list to fall back to. */
+const foundCategories = computed(() => {
+  const query = categoryQuery.value.trim().toLowerCase()
+  if (!query) return []
+  return flatCategories.value.filter((category) => category.name.toLowerCase().includes(query))
+})
+
 function clearStaged(): void {
   for (const staged of stagedPhotos.value) URL.revokeObjectURL(staged.previewUrl)
   stagedPhotos.value = []
@@ -85,6 +124,7 @@ function resetForm(product: Product | null): void {
   publishToChannel.value = product?.publish_to_channel ?? false
   photoPaths.value = product ? [...product.photo_paths] : []
   videoPath.value = product?.video_path ?? null
+  categoryQuery.value = ''
   clearStaged()
 }
 
@@ -122,6 +162,15 @@ async function onFileSelected(event: Event): Promise<void> {
   target.value = ''
   if (!file) return
 
+  if (totalPhotoCount.value >= MAX_PHOTOS) {
+    window.alert(`Можно добавить не более ${MAX_PHOTOS} фото.`)
+    return
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    window.alert('Файл слишком большой: фото принимаются до 5 МБ.')
+    return
+  }
+
   if (isCreateMode.value) {
     stagedPhotos.value.push({ file, previewUrl: URL.createObjectURL(file) })
     return
@@ -147,6 +196,11 @@ async function onVideoSelected(event: Event): Promise<void> {
   const file = target.files?.[0]
   target.value = ''
   if (!file) return
+
+  if (file.size > MAX_VIDEO_BYTES) {
+    window.alert('Файл слишком большой: видео принимается до 50 МБ.')
+    return
+  }
 
   if (isCreateMode.value) {
     stagedVideo.value = file
@@ -236,7 +290,10 @@ onMounted(() => {
       </label>
 
       <div class="flex flex-col gap-2">
-        <span class="text-sm text-sf-muted">Фото</span>
+        <div class="flex items-baseline justify-between">
+          <span class="text-sm text-sf-muted">Фото</span>
+          <span class="text-xs text-sf-placeholder">{{ totalPhotoCount }} / {{ MAX_PHOTOS }}</span>
+        </div>
         <div class="grid grid-cols-4 gap-2">
           <div
             v-for="(photo, index) in photoPaths"
@@ -275,6 +332,7 @@ onMounted(() => {
             </button>
           </div>
           <button
+            v-if="totalPhotoCount < MAX_PHOTOS"
             type="button"
             class="flex aspect-square items-center justify-center rounded-xl border border-dashed border-sf-line text-sf-muted disabled:opacity-50"
             :disabled="uploading"
@@ -285,7 +343,7 @@ onMounted(() => {
             <i v-else class="pi pi-spin pi-spinner" />
           </button>
         </div>
-        <span class="text-xs text-sf-placeholder">Первое фото — обложка товара на витрине.</span>
+        <span class="text-xs text-sf-placeholder">Первое фото — обложка. JPG/PNG/WebP, до 5 МБ.</span>
         <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected" />
       </div>
 
@@ -322,6 +380,7 @@ onMounted(() => {
           <i :class="uploadingVideo ? 'pi pi-spin pi-spinner' : 'pi pi-video'" />
           {{ uploadingVideo ? 'Загрузка…' : 'Добавить видео' }}
         </button>
+        <span class="text-xs text-sf-placeholder">Одно видео, MP4/MOV/WebM, до 50 МБ.</span>
         <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="onVideoSelected" />
       </div>
 
@@ -363,18 +422,44 @@ onMounted(() => {
         </label>
       </div>
 
-      <label class="flex flex-col gap-1.5 text-sm">
-        <span class="text-sf-muted">Категории</span>
-        <MultiSelect
-          v-model="categoryIds"
-          :options="categoryStore.categories"
-          option-label="name"
-          option-value="id"
-          placeholder="Выберите категории"
-          display="chip"
-          fluid
+      <div v-if="categoryStore.tree.length" class="flex flex-col gap-2">
+        <div class="flex items-baseline justify-between">
+          <span class="text-sm text-sf-muted">Категории</span>
+          <span v-if="categoryIds.length" class="text-xs text-sf-placeholder">
+            выбрано: {{ categoryIds.length }}
+          </span>
+        </div>
+        <!-- The shared catalog can be large; without search the seller would
+             scroll past hundreds of rows for one category. -->
+        <input
+          v-model="categoryQuery"
+          type="search"
+          placeholder="Поиск категории"
+          class="w-full rounded-xl border border-sf-line bg-white px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
         />
-      </label>
+        <div class="max-h-56 overflow-y-auto rounded-xl border border-sf-line bg-white p-2">
+          <template v-if="categoryQuery.trim()">
+            <label
+              v-for="category in foundCategories"
+              :key="category.id"
+              class="flex items-center gap-2 py-1 text-sm text-sf-ink"
+            >
+              <input v-model="categoryIds" type="checkbox" :value="category.id" class="size-4" />
+              <span>{{ category.path }}</span>
+            </label>
+            <p v-if="!foundCategories.length" class="py-1 text-sm text-sf-placeholder">Ничего не найдено</p>
+          </template>
+
+          <ul v-else>
+            <CategoryPickNode
+              v-for="node in categoryStore.tree"
+              :key="node.id"
+              v-model="categoryIds"
+              :category="node"
+            />
+          </ul>
+        </div>
+      </div>
 
       <label class="flex items-center justify-between text-sm">
         <span class="text-sf-muted">Публикация в канал</span>

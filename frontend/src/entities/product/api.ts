@@ -9,6 +9,15 @@ import type {
   SellerProductPatch,
 } from './types'
 
+/** Mirrors backend MAX_PHOTO_BYTES (app/shared/uploads.py) — checked before
+ * upload so an oversized file is rejected locally instead of after a slow
+ * upload only to be bounced by the server's 413. */
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024
+/** Mirrors backend MAX_VIDEO_BYTES. */
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024
+/** Mirrors the client-only cap tg-vitrina's own editor enforces (no backend limit on count, just UX). */
+export const MAX_PHOTOS = 10
+
 export async function getCatalogProducts(
   params: CatalogProductListParams = {},
 ): Promise<Paginated<Product>> {

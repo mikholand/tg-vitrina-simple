@@ -1,12 +1,18 @@
 import uuid
 from pathlib import Path
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile, status
 
 from app.core.config import Settings
 
 ALLOWED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 ALLOWED_VIDEO_SUFFIXES = {".mp4", ".mov", ".webm"}
+
+# Mirrors tg-vitrina's seller upload caps (_MAX_PHOTO_BYTES / MAX_VIDEO_BYTES) —
+# the product editor's helper text promises these limits, so they need to
+# actually be enforced here, not just stated in the UI.
+MAX_PHOTO_BYTES = 5 * 1024 * 1024
+MAX_VIDEO_BYTES = 50 * 1024 * 1024
 
 
 async def save_product_photo(settings: Settings, product_id: int, upload: UploadFile) -> str:
@@ -23,6 +29,8 @@ async def save_product_photo(settings: Settings, product_id: int, upload: Upload
     abs_path = abs_dir / filename
 
     content = await upload.read()
+    if len(content) > MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="photo_too_large")
     abs_path.write_bytes(content)
     return rel_path
 
@@ -46,6 +54,8 @@ async def save_product_video(settings: Settings, product_id: int, upload: Upload
     abs_path = abs_dir / filename
 
     content = await upload.read()
+    if len(content) > MAX_VIDEO_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="video_too_large")
     abs_path.write_bytes(content)
     return rel_path
 

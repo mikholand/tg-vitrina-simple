@@ -68,7 +68,11 @@ const SfPreset = definePreset(Aura, {
     colorScheme: {
       light: {
         formField: {
-          background: '{surface.50}',
+          // White, not {surface.50} (a faint off-white) — same call as the
+          // hand-rolled bg-sf-card -> bg-white switch on the categories page:
+          // against the gray seller-cabinet background, off-white read as
+          // barely distinguishable from the surrounding card.
+          background: '#ffffff',
           borderColor: '{surface.200}',
           hoverBorderColor: '{surface.300}',
           color: '{surface.900}',
