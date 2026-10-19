@@ -21,6 +21,16 @@ const bare = computed(() => route.name === 'product-detail')
 
 const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
 
+// Store↔admin switcher next to the settings gear in the seller/moderator
+// header. Every /seller/* route name is prefixed "seller-" (dashboard
+// included), so that's enough to tell which side we're on without a
+// separate route-meta flag: from admin it jumps to the public catalog (a
+// quick "view as customer"), from anywhere else it jumps back into the
+// cabinet.
+const isInAdminSection = computed(
+  () => typeof route.name === 'string' && route.name.startsWith('seller'),
+)
+
 // Native Telegram Back Button, wired centrally here instead of per-page —
 // shown on every screen except each role's true home ('home' for
 // customers, 'seller-dashboard' — labelled "Главное" in BottomNav — for
@@ -170,14 +180,18 @@ watch(
         <RouterLink to="/seller" class="truncate text-lg font-semibold leading-tight text-sf-ink">
           {{ storeInfoStore.storeInfo.name }}
         </RouterLink>
-        <RouterLink
-          v-if="isOwner"
-          to="/seller/settings"
-          class="shrink-0 text-sf-muted"
-          aria-label="Настройки"
-        >
-          <i class="pi pi-cog text-xl" />
-        </RouterLink>
+        <div class="flex shrink-0 items-center gap-3">
+          <RouterLink
+            :to="isInAdminSection ? { name: 'catalog' } : { name: 'seller-dashboard' }"
+            class="text-sf-muted"
+            :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
+          >
+            <i :class="isInAdminSection ? 'pi pi-shop' : 'pi pi-briefcase'" class="text-xl" />
+          </RouterLink>
+          <RouterLink v-if="isOwner" to="/seller/settings" class="text-sf-muted" aria-label="Настройки">
+            <i class="pi pi-cog text-xl" />
+          </RouterLink>
+        </div>
       </header>
 
       <router-view />
