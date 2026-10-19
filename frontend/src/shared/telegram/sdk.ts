@@ -3,6 +3,7 @@ import {
   viewport,
   miniApp,
   themeParams,
+  backButton,
   retrieveLaunchParams,
   retrieveRawInitData,
   shareURL,
@@ -66,6 +67,21 @@ async function mountThemeParams(): Promise<void> {
 }
 
 /**
+ * Unlike viewport/miniApp/themeParams, `mount()` here is synchronous (no
+ * server round-trip) — it just restores the button's last known state.
+ * Still wrapped the same way so `showBackButton()`/`hideBackButton()` below
+ * stay no-ops on clients without the component instead of throwing.
+ */
+function mountBackButton(): void {
+  try {
+    if (backButton.mount.isAvailable()) backButton.mount()
+  } catch {
+    // Back button unavailable on this client — show/hide calls below are
+    // no-ops too, so pages just never get one.
+  }
+}
+
+/**
  * Bootstraps the Telegram Mini App SDK: initializes the environment, mounts
  * the viewport/theme/mini-app components and syncs their CSS variables onto
  * :root (safe-area insets, theme colors, etc). Safe to call outside of
@@ -100,6 +116,7 @@ export async function initTelegram(): Promise<void> {
   const viewportMounted = mountViewport()
   void mountMiniApp()
   void mountThemeParams()
+  mountBackButton()
 
   await viewportMounted
 
@@ -175,4 +192,40 @@ export function shareLink(url: string, text?: string): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * Shows Telegram's native top-left Back Button. Driven centrally from
+ * `App.vue` (one watcher on the current route), not from individual pages —
+ * see `backButton` section there for which routes get one.
+ */
+export function showBackButton(): void {
+  try {
+    if (backButton.show.isAvailable()) backButton.show()
+  } catch {
+    // Not supported by this client — page just won't have a back button.
+  }
+}
+
+/** Hides the native Back Button — used on each tab's root screen. */
+export function hideBackButton(): void {
+  try {
+    if (backButton.hide.isAvailable()) backButton.hide()
+  } catch {
+    // Not supported — no-op.
+  }
+}
+
+/**
+ * Registers a Back Button click handler and returns an unsubscribe function.
+ * Outside Telegram (or on clients without the component) the handler simply
+ * never fires — callers don't need to branch on support themselves.
+ */
+export function onBackButtonClick(fn: () => void): VoidFunction {
+  try {
+    if (backButton.onClick.isAvailable()) return backButton.onClick(fn)
+  } catch {
+    // Not supported — listener just never gets attached.
+  }
+  return () => {}
 }

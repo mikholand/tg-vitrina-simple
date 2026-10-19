@@ -2,8 +2,10 @@
 import BottomNav from '@widgets/nav/BottomNav.vue'
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
+import { showBackButton, hideBackButton, onBackButtonClick } from '@shared/telegram/sdk'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const storeInfoStore = useStoreInfoStore()
 
@@ -18,6 +20,62 @@ const isOwner = computed(() => authStore.role === 'seller' || authStore.role ===
 const bare = computed(() => route.name === 'product-detail')
 
 const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
+
+// Native Telegram Back Button, wired centrally here instead of per-page.
+// Hidden on every screen that's a direct BottomNav target — those are
+// already one tap away from each other, so a "go back" affordance there is
+// ambiguous (back to what?). Shown everywhere else.
+const TAB_ROOT_ROUTE_NAMES = new Set([
+  'home',
+  'catalog',
+  'favorites',
+  'seller-dashboard',
+  'seller-products',
+  'seller-categories',
+  'seller-statistics',
+  'seller-settings',
+])
+
+// Logical parent for routes reached by drilling in from somewhere other than
+// the bottom nav (dashboard tiles, the settings page's own links) — used
+// only when there's no in-app history to pop (e.g. the page was opened
+// directly, or reloaded). Mirrors how each page is actually linked to: see
+// DashboardPage.vue's tiles and SellerSettingsPage.vue's links.
+const BACK_BUTTON_FALLBACK_PARENT: Partial<Record<string, string>> = {
+  'product-detail': 'catalog',
+  'seller-raw-posts': 'seller-dashboard',
+  'seller-sync': 'seller-dashboard',
+  'seller-banners': 'seller-dashboard',
+  'seller-contacts': 'seller-settings',
+  'seller-team': 'seller-settings',
+}
+
+function onBackButtonPressed(): void {
+  // vue-router's html5 history stores `back` (the path of the previous
+  // in-app entry, or null if there isn't one) on `history.state` — more
+  // reliable than a module-level counter since it survives page reloads.
+  if (window.history.state?.back) {
+    router.back()
+    return
+  }
+  const name = typeof route.name === 'string' ? route.name : undefined
+  const fallback = (name && BACK_BUTTON_FALLBACK_PARENT[name]) || 'home'
+  void router.replace({ name: fallback })
+}
+
+onBackButtonClick(onBackButtonPressed)
+
+watch(
+  () => route.name,
+  (name) => {
+    if (typeof name === 'string' && TAB_ROOT_ROUTE_NAMES.has(name)) {
+      hideBackButton()
+    } else {
+      showBackButton()
+    }
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   // /catalog/store не требует авторизации, так что одного и того же
