@@ -144,7 +144,7 @@ async function onLogoSelected(event: Event): Promise<void> {
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
 
     <div v-else-if="settings" class="flex flex-col gap-3">
-      <div class="flex items-center gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
+      <div class="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
         <button
           type="button"
           class="relative flex shrink-0 appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none outline-none disabled:opacity-60"
@@ -191,7 +191,7 @@ async function onLogoSelected(event: Event): Promise<void> {
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
+      <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
         <label class="flex flex-col gap-1 text-sm">
           <span class="text-sf-muted">Название магазина</span>
           <InputText v-model="name" fluid />
@@ -216,7 +216,7 @@ async function onLogoSelected(event: Event): Promise<void> {
         <Button label="Сохранить" :loading="saving" fluid @click="onSave" />
       </div>
 
-      <div class="flex flex-col gap-2 rounded-2xl border border-sf-line bg-sf-card p-3.5 text-sm">
+      <div class="flex flex-col gap-2 rounded-2xl bg-white p-3.5 shadow-sm text-sm">
         <div class="flex items-center justify-between gap-2">
           <span class="text-sf-muted">ID канала Telegram</span>
           <span class="truncate text-sf-ink">{{ settings.telegram_channel_id }}</span>
@@ -234,7 +234,7 @@ async function onLogoSelected(event: Event): Promise<void> {
         </p>
       </div>
 
-      <div class="flex flex-col gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
+      <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
         <div>
           <h2 class="text-sm font-medium text-sf-ink">Модераторы</h2>
           <p class="text-xs text-sf-muted">
