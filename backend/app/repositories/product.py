@@ -66,16 +66,26 @@ class ProductRepository:
         return list(result.scalars().all())
 
     async def list_seller(
-        self, status: ProductStatus | None, limit: int, offset: int
+        self, status: ProductStatus | None, search: str | None, limit: int, offset: int
     ) -> tuple[list[Product], int]:
         stmt = select(Product).order_by(Product.created_at.desc())
         count_stmt = select(func.count()).select_from(Product)
         if status is not None:
             stmt = stmt.where(Product.status == status)
             count_stmt = count_stmt.where(Product.status == status)
+        if search:
+            stmt = stmt.where(Product.name.ilike(f"%{search}%"))
+            count_stmt = count_stmt.where(Product.name.ilike(f"%{search}%"))
         total = (await self._session.execute(count_stmt)).scalar_one()
         result = await self._session.execute(stmt.limit(limit).offset(offset))
         return list(result.scalars().all()), total
+
+    async def delete(self, product_id: int) -> None:
+        """A plain row delete — ProductCategory/Favorite/View all reference
+        products.id with ON DELETE CASCADE, and raw_posts.product_id with ON
+        DELETE SET NULL, so everything downstream of the row is handled at
+        the DB level without touching those tables here."""
+        await self._session.execute(delete(Product).where(Product.id == product_id))
 
     async def list_catalog(
         self,

@@ -27,10 +27,11 @@ async def list_products(
     _: CurrentStaff,
     product_repository: FromDishka[ProductRepository],
     status_filter: ProductStatus | None = Query(default=None, alias="status"),
+    q: str | None = Query(default=None),
     limit: int = Query(default=20, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> Paginated[ProductSchema]:
-    products, total = await product_repository.list_seller(status_filter, limit, offset)
+    products, total = await product_repository.list_seller(status_filter, q, limit, offset)
     items = [_to_schema(p, await product_repository.get_category_ids(p.id)) for p in products]
     return Paginated[ProductSchema](items=items, total=total, limit=limit, offset=offset)
 
@@ -103,6 +104,23 @@ async def upload_video(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="product_not_found")
     product.video_path = await save_product_video(settings, product_id, file)
     return _to_schema(product, await product_repository.get_category_ids(product.id))
+
+
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product(
+    product_id: int,
+    _: CurrentStaff,
+    product_repository: FromDishka[ProductRepository],
+    product_service: FromDishka[ProductService],
+) -> None:
+    """Delete a product permanently, media included. There is no undo — the
+    seller confirms that in the dialog before this is ever called;
+    `POST /{id}/hide` stays the reversible way to pull it off the storefront.
+    """
+    product = await product_repository.get(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="product_not_found")
+    await product_service.delete_product(product)
 
 
 @router.post("/{product_id}/publish")

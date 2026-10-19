@@ -1,14 +1,17 @@
 from decimal import Decimal
 
+from app.core.config import Settings
 from app.dto.product import ProductCreateSchema, ProductUpdateSchema
 from app.entities.product import Availability, Product, ProductStatus
 from app.repositories.product import ProductRepository
+from app.shared.media import media_abs_path
 from app.shared.stock import resolve_availability
 
 
 class ProductService:
-    def __init__(self, product_repository: ProductRepository) -> None:
+    def __init__(self, product_repository: ProductRepository, settings: Settings) -> None:
         self._product_repository = product_repository
+        self._settings = settings
 
     async def create_by_seller(self, payload: ProductCreateSchema) -> Product:
         """A seller-authored product starts out exactly like an
@@ -107,3 +110,19 @@ class ProductService:
     async def set_status(self, product: Product, status: ProductStatus) -> Product:
         product.status = status
         return product
+
+    async def delete_product(self, product: Product) -> None:
+        """Erase a product for good, together with the media it owned.
+
+        Irreversible by design — the seller confirms this in the dialog
+        before the request is ever sent. `POST /{id}/hide` stays the
+        reversible way to pull a product off the storefront.
+        """
+        # Read paths before delete(): the row is gone afterwards, so nothing
+        # downstream could recover them from the product object anymore.
+        media = [*product.photo_paths]
+        if product.video_path:
+            media.append(product.video_path)
+        await self._product_repository.delete(product.id)
+        for path in media:
+            media_abs_path(self._settings, path).unlink(missing_ok=True)

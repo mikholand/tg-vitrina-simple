@@ -82,3 +82,9 @@ export async function hideProduct(id: number): Promise<Product> {
   const { data } = await http.post(`/seller/products/${id}/hide`)
   return productSchema.parse(data)
 }
+
+/** Permanent, media included — there is no undo. `hideProduct` is the
+ * reversible way to pull a product off the storefront. */
+export async function deleteProduct(id: number): Promise<void> {
+  await http.delete(`/seller/products/${id}`)
+}

@@ -30,6 +30,7 @@ export interface CatalogProductListParams {
 
 export interface SellerProductListParams {
   status?: ProductStatus
+  q?: string
   limit?: number
   offset?: number
 }

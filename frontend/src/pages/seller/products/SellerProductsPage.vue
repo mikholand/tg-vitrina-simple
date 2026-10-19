@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { Product, ProductStatus } from '@entities/product/types'
-import { getSellerProducts, hideProduct, publishProduct } from '@entities/product/api'
+import { deleteProduct, getSellerProducts, hideProduct, publishProduct } from '@entities/product/api'
 import { productStatusChipClasses, productStatusLabels } from '@entities/product/labels'
 import ProductEditor from '@features/product-editor/ProductEditor.vue'
+import DeleteConfirm from '@features/product-delete/DeleteConfirm.vue'
 
 const PAGE_SIZE = 20
+const SEARCH_DEBOUNCE_MS = 300
 
 type StatusFilter = ProductStatus | 'all'
 
@@ -16,6 +18,7 @@ const tabs: { label: string; value: StatusFilter }[] = [
 ]
 
 const activeTab = ref<StatusFilter>('all')
+const search = ref('')
 const products = ref<Product[]>([])
 const total = ref(0)
 const offset = ref(0)
@@ -24,6 +27,9 @@ const loadingMore = ref(false)
 const actionLoadingId = ref<number | null>(null)
 const editorVisible = ref(false)
 const editingProduct = ref<Product | null>(null)
+const deleteVisible = ref(false)
+const deletingProduct = ref<Product | null>(null)
+const deleting = ref(false)
 
 const hasMore = computed(() => products.value.length < total.value)
 
@@ -38,6 +44,7 @@ async function loadProducts(reset: boolean): Promise<void> {
   try {
     const result = await getSellerProducts({
       status: activeTab.value === 'all' ? undefined : activeTab.value,
+      q: search.value.trim() || undefined,
       limit: PAGE_SIZE,
       offset: reset ? 0 : offset.value,
     })
@@ -83,6 +90,31 @@ async function onTogglePublish(product: Product): Promise<void> {
   }
 }
 
+function askDelete(product: Product): void {
+  deletingProduct.value = product
+  deleteVisible.value = true
+}
+
+async function confirmDelete(): Promise<void> {
+  const target = deletingProduct.value
+  if (!target) return
+  deleting.value = true
+  try {
+    await deleteProduct(target.id)
+    deleteVisible.value = false
+    products.value = products.value.filter((p) => p.id !== target.id)
+    total.value -= 1
+  } finally {
+    deleting.value = false
+  }
+}
+
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(search, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => loadProducts(true), SEARCH_DEBOUNCE_MS)
+})
+
 watch(activeTab, () => {
   void loadProducts(true)
 })
@@ -114,6 +146,15 @@ onMounted(() => {
       </button>
     </div>
 
+    <!-- Shared storage can grow past a quick scroll — search narrows it to
+         what the seller is actually looking for. -->
+    <input
+      v-model="search"
+      type="search"
+      placeholder="Поиск по названию"
+      class="rounded-xl border border-sf-line bg-white px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
+    />
+
     <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
 
     <template v-else>
@@ -126,7 +167,7 @@ onMounted(() => {
         <article
           v-for="product in products"
           :key="product.id"
-          class="flex gap-3 rounded-2xl border border-sf-line bg-sf-card p-3"
+          class="flex gap-3 rounded-2xl bg-white p-3 shadow-sm"
         >
           <img
             v-if="product.photo_paths[0]"
@@ -152,10 +193,10 @@ onMounted(() => {
             <p class="text-sm font-semibold text-sf-ink">{{ product.price ?? 'Цена по запросу' }} {{ product.currency }}</p>
             <p class="text-xs text-sf-muted">{{ product.views_total }} просм.</p>
 
-            <div class="mt-auto flex gap-2 pt-2">
+            <div class="mt-auto flex items-center gap-2 pt-2">
               <button
                 type="button"
-                class="rounded-full border border-sf-line px-2.5 py-1 text-xs text-sf-ink disabled:opacity-50"
+                class="rounded-lg border border-sf-line px-2 py-1 text-xs text-sf-ink disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 @click="openEditor(product)"
               >
@@ -164,7 +205,7 @@ onMounted(() => {
               <button
                 v-if="product.status !== 'published'"
                 type="button"
-                class="rounded-full border border-sf-line px-2.5 py-1 text-xs text-sf-success disabled:opacity-50"
+                class="rounded-lg border border-sf-line px-2 py-1 text-xs text-sf-success disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 @click="onTogglePublish(product)"
               >
@@ -173,11 +214,22 @@ onMounted(() => {
               <button
                 v-else
                 type="button"
-                class="rounded-full border border-sf-line px-2.5 py-1 text-xs text-sf-ink disabled:opacity-50"
+                class="rounded-lg border border-sf-line px-2 py-1 text-xs text-sf-ink disabled:opacity-50"
                 :disabled="actionLoadingId === product.id"
                 @click="onTogglePublish(product)"
               >
                 Скрыть
+              </button>
+              <!-- Rightmost and borderless: an irreversible action shouldn't
+                   sit flush against "Изменить" and catch a mis-tap. -->
+              <button
+                type="button"
+                class="ml-auto rounded-lg px-2 py-1 text-xs text-sf-danger disabled:opacity-50"
+                :disabled="actionLoadingId === product.id"
+                aria-label="Удалить товар"
+                @click="askDelete(product)"
+              >
+                <i class="pi pi-trash" />
               </button>
             </div>
           </div>
@@ -197,5 +249,13 @@ onMounted(() => {
     </template>
 
     <ProductEditor v-model:visible="editorVisible" :product="editingProduct" @saved="onSaved" />
+
+    <DeleteConfirm
+      :visible="deleteVisible"
+      :product="deletingProduct"
+      :busy="deleting"
+      @update:visible="deleteVisible = $event"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>

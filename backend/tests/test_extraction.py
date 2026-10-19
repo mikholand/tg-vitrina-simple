@@ -35,7 +35,7 @@ def _build_service(db_session, settings, fake_client) -> ExtractionService:
     product_repository = ProductRepository(db_session)
     category_repository = CategoryRepository(db_session)
     category_service = CategoryService(category_repository)
-    product_service = ProductService(product_repository)
+    product_service = ProductService(product_repository, settings)
     return ExtractionService(
         settings=settings,
         raw_post_repository=raw_post_repository,
