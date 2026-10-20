@@ -9,6 +9,7 @@ import {
   retrieveLaunchParams,
   retrieveRawInitData,
   shareURL,
+  type InitOptions,
   type ViewportGetCSSVarNameKey,
 } from '@telegram-apps/sdk'
 
@@ -28,6 +29,76 @@ function tgCssVarName(key: ViewportGetCSSVarNameKey): string {
  *  window and don't need it). */
 function isMobilePlatform(platform: string): boolean {
   return platform === 'ios' || platform === 'android' || platform === 'android_x'
+}
+
+type FallbackLaunchParams = NonNullable<InitOptions['launchParams']>
+
+/**
+ * Direct Link Mini Apps (`t.me/<bot>/<short_name>?startapp=...`, this
+ * project's share/invite link format — see `BotClient.mini_app_url()`)
+ * were observed, on Telegram Web specifically, landing with *only* a bare
+ * `?tgWebAppStartParam=...` query string: no `tgWebAppPlatform`, no
+ * `tgWebAppVersion`, nothing else. Native clients apparently pass the full
+ * launch-params handshake some other way (the bug never reproduced there),
+ * but Telegram Web — a plain cross-origin iframe with no native bridge —
+ * can only hand data to the page through the URL, and for this link shape
+ * it only puts the start param there.
+ *
+ * The SDK's `retrieveLaunchParams()` requires `tgWebAppPlatform`/
+ * `tgWebAppVersion` unconditionally and throws on anything less — and
+ * `init()` calls that *internally* before it does anything else (see
+ * `@telegram-apps/sdk`'s `init.js`, which calls `configure()`, which calls
+ * `retrieveLaunchParams()`). So on this exact link shape `init()` itself
+ * throws before ever mounting a single component or sending
+ * `iframe_ready` to the host. Telegram Web, having never heard back from
+ * the Mini App, repeatedly sends it a `reload_iframe` command to retry —
+ * and the SDK's own `init()` listens for that and calls
+ * `window.location.reload()` in response. Since the reloaded URL is
+ * identical every time, this reproduces forever: an infinite full-page
+ * reload loop (observed directly in the user's Network tab — thousands of
+ * identical `GET /?tgWebAppStartParam=...` requests), not just a blank
+ * screen.
+ *
+ * `init()` accepts a `launchParams` override specifically to bypass its
+ * internal `retrieveLaunchParams()` call, so `initTelegram()` below
+ * retries with this minimal, self-constructed object instead of giving up
+ * — `tgWebAppPlatform`/`tgWebAppVersion` are fabricated (we have no way to
+ * know the real values here), but `tgWebAppPlatform: 'unknown'` safely
+ * resolves to "not mobile" in `isMobilePlatform()` further down, so this
+ * never mis-triggers the mobile-only fullscreen request. `tgWebAppVersion`
+ * is picked high enough (not `'0.0'`, the SDK's own pre-init placeholder)
+ * that `.isAvailable()` feature-detection elsewhere in this file doesn't
+ * spuriously disable every component.
+ *
+ * Returns null when there's no start param either — i.e. genuinely outside
+ * Telegram (plain browser, local dev), where giving up is correct.
+ */
+function fallbackLaunchParams(): FallbackLaunchParams | null {
+  const startParam = new URLSearchParams(window.location.search).get('tgWebAppStartParam')
+  if (!startParam) return null
+  return {
+    tgWebAppPlatform: 'unknown',
+    tgWebAppVersion: '8.0',
+    tgWebAppStartParam: startParam,
+  } as FallbackLaunchParams
+}
+
+/**
+ * `retrieveLaunchParams()` wrapped to survive the Direct-Link-on-Telegram-
+ * Web scenario `fallbackLaunchParams()` documents above. Every place in
+ * this file that previously called the SDK's `retrieveLaunchParams()`
+ * directly goes through this instead, so none of them individually have to
+ * special-case that scenario (`isInsideTelegram()`, in particular, used to
+ * wrongly report "not inside Telegram" here, which showed a redundant
+ * second back button on `ProductDetailPage.vue` on top of the native one).
+ * Returns null only when truly outside Telegram.
+ */
+function safeRetrieveLaunchParams(): ReturnType<typeof retrieveLaunchParams> | FallbackLaunchParams | null {
+  try {
+    return retrieveLaunchParams()
+  } catch {
+    return fallbackLaunchParams()
+  }
 }
 
 /**
@@ -54,6 +125,25 @@ async function mountMiniApp(): Promise<void> {
     }
   } catch {
     // Mini app component unavailable — no theme-driven CSS vars from it.
+  }
+}
+
+/**
+ * Tells the Telegram client the app has finished loading and its own
+ * loading placeholder (a generic grey icon shown over the host-provided
+ * iframe/webview) can be dismissed. Without this call Telegram only hides
+ * that placeholder once the *page* finishes loading — which, for an SPA,
+ * can leave it stuck over fully-rendered, interactive content (observed on
+ * Telegram Web opening a product deep link: blank panel, stuck placeholder
+ * icon, nothing clickable, despite the page itself having loaded fine).
+ * Safe to call as early as possible; unlike `bindCssVars`, it doesn't
+ * require `miniApp` to be mounted first.
+ */
+function markMiniAppReady(): void {
+  try {
+    if (miniApp.ready.isAvailable()) miniApp.ready()
+  } catch {
+    // Not supported by this client — no placeholder to dismiss anyway.
   }
 }
 
@@ -123,14 +213,38 @@ function disableSwipeToClose(): void {
  * (as this used to do) tripled the round-trip latency on first launch for
  * no reason. `miniApp`/`themeParams` are left to mount in the background;
  * only `viewport` is awaited before expand/fullscreen.
+ *
+ * `markMiniAppReady()` fires right after `init()`, ahead of every
+ * mount/expand/fullscreen call below — unlike `bindCssVars()` it has no
+ * dependency on `miniApp` being mounted, and Telegram's own docs say to
+ * call it "as early as possible". Waiting until after the other
+ * (round-trip) calls resolve left the host's loading placeholder up over
+ * an already-rendered, already-interactive app for a very visible stretch
+ * — the "blank panel with a stuck grey icon" symptom seen opening a
+ * product deep link on Telegram Web.
+ *
+ * `init()` is retried once with `fallbackLaunchParams()` (see its docstring
+ * above) before giving up — without this retry, a Direct Link opened on
+ * Telegram Web throws here on every single attempt (same URL every reload)
+ * and the function returns immediately, never mounting anything and never
+ * sending `iframe_ready` — which is what drove the infinite reload loop,
+ * not just a blank screen.
  */
 export async function initTelegram(): Promise<void> {
   try {
     init()
   } catch {
-    // Not running inside Telegram (e.g. a plain browser during local dev).
-    return
+    const fallback = fallbackLaunchParams()
+    if (!fallback) return // Genuinely outside Telegram — no start param either.
+    try {
+      init({ launchParams: fallback })
+    } catch {
+      // Even the fallback didn't help — bail out same as before.
+      return
+    }
   }
+
+  markMiniAppReady()
 
   const viewportMounted = mountViewport()
   void mountMiniApp()
@@ -149,8 +263,12 @@ export async function initTelegram(): Promise<void> {
   }
 
   try {
-    const platform = retrieveLaunchParams().tgWebAppPlatform
-    if (isMobilePlatform(platform) && viewport.requestFullscreen.isAvailable()) {
+    const launchParams = safeRetrieveLaunchParams()
+    if (
+      launchParams &&
+      isMobilePlatform(launchParams.tgWebAppPlatform) &&
+      viewport.requestFullscreen.isAvailable()
+    ) {
       await viewport.requestFullscreen()
     }
   } catch {
@@ -168,12 +286,7 @@ export async function initTelegram(): Promise<void> {
  * already puts in Telegram's header.
  */
 export function isInsideTelegram(): boolean {
-  try {
-    retrieveLaunchParams()
-    return true
-  } catch {
-    return false
-  }
+  return safeRetrieveLaunchParams() !== null
 }
 
 /**
@@ -187,11 +300,8 @@ export function isInsideTelegram(): boolean {
  * entirely (no launch params → no fullscreen → no overlap either).
  */
 export function isMobileTelegramPlatform(): boolean {
-  try {
-    return isMobilePlatform(retrieveLaunchParams().tgWebAppPlatform)
-  } catch {
-    return false
-  }
+  const launchParams = safeRetrieveLaunchParams()
+  return launchParams !== null && isMobilePlatform(launchParams.tgWebAppPlatform)
 }
 
 /**
@@ -211,12 +321,7 @@ export function getInitDataRaw(): string {
  * unavailable (e.g. running outside Telegram).
  */
 export function getTelegramUser() {
-  try {
-    const { tgWebAppData } = retrieveLaunchParams()
-    return tgWebAppData?.user ?? null
-  } catch {
-    return null
-  }
+  return safeRetrieveLaunchParams()?.tgWebAppData?.user ?? null
 }
 
 /**
@@ -224,13 +329,22 @@ export function getTelegramUser() {
  * from the `https://t.me/<bot>?startapp=...` link that opened this app), or
  * null when absent / outside Telegram. Checked once at boot to detect an
  * invite link (`startapp=invite_<token>`) — see `app/router/index.ts`.
+ *
+ * `retrieveLaunchParams()` validates the *entire* launch-params blob, which
+ * requires `tgWebAppPlatform`/`tgWebAppVersion` to be present alongside
+ * `tgWebAppStartParam` — fine for the regular "Main Mini App" launch (full
+ * handshake in the URL hash), but Direct Link Mini Apps
+ * (`t.me/<bot>/<short_name>?startapp=...`, used for this project's share/
+ * invite links, see `BotClient.mini_app_url()`) were observed in production
+ * access logs landing as a bare `GET /?tgWebAppStartParam=product_3` query
+ * string with nothing else — Telegram's own documented mechanism for
+ * exposing the start param to a page before/without the full handshake.
+ * `safeRetrieveLaunchParams()` already falls back to reading
+ * `tgWebAppStartParam` straight off `location.search` for exactly this case
+ * (see `fallbackLaunchParams()`), so this just reads through it.
  */
 export function getStartParam(): string | null {
-  try {
-    return retrieveLaunchParams().tgWebAppStartParam ?? null
-  } catch {
-    return null
-  }
+  return safeRetrieveLaunchParams()?.tgWebAppStartParam ?? null
 }
 
 /**
