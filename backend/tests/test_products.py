@@ -106,6 +106,12 @@ async def test_catalog_product_detail_includes_share_url(client, make_product):
     response = await client.get(f"/api/v1/catalog/products/{product.id}")
     assert response.status_code == 200
     assert response.json()["share_url"] == f"https://t.me/test_bot?startapp=product_{product.id}"
+    # Regression guard: an embedded webview (observed on Telegram Desktop)
+    # serving a stale cached copy of this exact response from before
+    # `share_url` existed on the schema is what made the "Поделиться" button
+    # silently vanish for a real user — nothing upstream (FastAPI, nginx)
+    # sets Cache-Control on API responses otherwise, see asgi/app.py.
+    assert response.headers["cache-control"] == "no-store"
 
     list_response = await client.get("/api/v1/catalog/products")
     assert list_response.json()["items"][0]["share_url"] is None

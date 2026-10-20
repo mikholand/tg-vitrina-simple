@@ -2,7 +2,7 @@ import mimetypes
 from contextlib import asynccontextmanager
 
 from dishka.integrations.fastapi import setup_dishka
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -48,6 +48,26 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Neither FastAPI/Starlette nor nginx's `/api/` proxy block (see
+    # nginx.conf — it only sets Cache-Control on hashed static assets and
+    # index.html, not /api/) ever set a Cache-Control header on JSON API
+    # responses. That leaves embedded Telegram webviews (observed on
+    # Telegram Desktop) free to apply their own heuristic caching to GET
+    # requests and keep serving a response body captured long ago — e.g. a
+    # product fetched before `share_url` existed on ProductSchema, with the
+    # field simply absent from the cached JSON rather than null. A client
+    # reloading the Mini App page doesn't necessarily re-issue/bypass-cache
+    # that underlying XHR. Blanket `no-store` on everything under API_PREFIX
+    # forces every client to always refetch; deliberately scoped to the API
+    # prefix only so cacheable results (StaticFiles images/video under
+    # `/media`) are unaffected.
+    @app.middleware("http")
+    async def no_store_api_responses(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith(API_PREFIX):
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     # Starlette's StaticFiles relies on Python's mimetypes module to derive
     # Content-Type from the file extension, and that module's table doesn't
