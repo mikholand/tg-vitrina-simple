@@ -177,6 +177,24 @@ export function isInsideTelegram(): boolean {
 }
 
 /**
+ * True only on mobile Telegram clients (ios/android/android_x) — the same
+ * check `initTelegram()` uses above to decide whether to request
+ * fullscreen. Desktop/web Telegram clients never go fullscreen, so they
+ * never get the floating native header that overlaps page content; pages
+ * that compensate for that overlap (see ProductDetailPage.vue) need to know
+ * this *in addition to* `isInsideTelegram()` — applying the same clearance
+ * on desktop just pushes content down for no reason. False outside Telegram
+ * entirely (no launch params → no fullscreen → no overlap either).
+ */
+export function isMobileTelegramPlatform(): boolean {
+  try {
+    return isMobilePlatform(retrieveLaunchParams().tgWebAppPlatform)
+  } catch {
+    return false
+  }
+}
+
+/**
  * Returns the raw Telegram WebApp init data string, or an empty string when
  * unavailable (e.g. running outside Telegram).
  */

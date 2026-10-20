@@ -10,7 +10,7 @@ import { useCategoryStore } from '@entities/category/store'
 import type { PublicContact } from '@entities/contact/types'
 import { getCatalogContacts } from '@entities/contact/api'
 import ContactPicker from '@features/contact-picker/ContactPicker.vue'
-import { shareLink, isInsideTelegram } from '@shared/telegram/sdk'
+import { shareLink, isInsideTelegram, isMobileTelegramPlatform } from '@shared/telegram/sdk'
 
 const props = defineProps<{ id: string }>()
 
@@ -20,6 +20,16 @@ const props = defineProps<{ id: string }>()
 // нативной кнопки нет. Launch-параметры не меняются за время жизни
 // страницы, так что достаточно посчитать один раз.
 const showOwnBackButton = !isInsideTelegram()
+
+// Та же причина, по которой sdk.ts запрашивает fullscreen только на мобильных
+// клиентах: именно fullscreen даёт плавающую нативную шапку (Back/"..."),
+// перекрывающую верх галереи, — десктопный/веб-клиент Telegram в fullscreen
+// не уходит и такой проблемы не имеет. Единый отступ под оба случая либо
+// не спасал от перекрытия на мобильном, либо зря утапливал кнопки на
+// десктопе — считаем один раз, как и showOwnBackButton выше.
+const overlayTopPaddingClass = isMobileTelegramPlatform()
+  ? 'pt-[max(5.5rem,var(--tg-content-safe-area-inset-top,0px))]'
+  : 'pt-[max(1rem,var(--tg-content-safe-area-inset-top,0px))]'
 
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
@@ -175,12 +185,16 @@ onMounted(load)
                sdk.ts), and `--tg-content-safe-area-inset-top` is meant to
                account for exactly that — but some clients under-report it,
                which used to leave these buttons tucked behind the native
-               header instead of below it. The 3.5rem floor is a worst-case
-               guess at that header's height, same "floor under an
-               unreliable/absent CSS var" move App.vue's outer padding
-               already makes with `max(1rem, var(--tg-safe-area-inset-top))`. -->
+               header instead of below it. The floor is a worst-case guess at
+               that header's height, same "floor under an unreliable/absent
+               CSS var" move App.vue's outer padding already makes with
+               `max(1rem, var(--tg-safe-area-inset-top))` — but unlike that
+               one it must only apply on mobile (see overlayTopPaddingClass
+               above): desktop/web Telegram never goes fullscreen, so the
+               same floor there just pushes the buttons down for nothing. -->
           <div
-            class="absolute inset-x-0 top-0 flex flex-col items-center gap-2 px-4 pt-[max(3.5rem,var(--tg-content-safe-area-inset-top,0px))]"
+            class="absolute inset-x-0 top-0 flex flex-col items-center gap-2 px-4"
+            :class="overlayTopPaddingClass"
           >
             <div class="flex w-full items-start">
               <button
