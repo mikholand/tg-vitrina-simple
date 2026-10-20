@@ -28,7 +28,7 @@ const showOwnBackButton = !isInsideTelegram()
 // не спасал от перекрытия на мобильном, либо зря утапливал кнопки на
 // десктопе — считаем один раз, как и showOwnBackButton выше.
 const overlayTopPaddingClass = isMobileTelegramPlatform()
-  ? 'pt-[max(5.5rem,var(--tg-content-safe-area-inset-top,0px))]'
+  ? 'pt-[max(6rem,var(--tg-content-safe-area-inset-top,0px))]'
   : 'pt-[max(1rem,var(--tg-content-safe-area-inset-top,0px))]'
 
 const router = useRouter()
