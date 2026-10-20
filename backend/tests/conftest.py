@@ -161,8 +161,8 @@ class _TestCoreProvider(Provider):
         return create_bot(settings)
 
     @provide
-    def provide_bot_client(self, bot: Bot) -> BotClient:
-        return BotClient(bot)
+    def provide_bot_client(self, bot: Bot, settings: Settings) -> BotClient:
+        return BotClient(bot, settings.app.MINI_APP_SHORT_NAME)
 
 
 @pytest_asyncio.fixture

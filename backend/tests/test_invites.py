@@ -5,7 +5,7 @@ async def test_owner_generates_link_and_customer_redeems_it(client, seller, cust
     create_response = await client.post("/api/v1/seller/invites", headers=seller_headers)
     assert create_response.status_code == 200
     invite = create_response.json()
-    assert invite["url"] == f"https://t.me/test_bot?startapp=invite_{invite['token']}"
+    assert invite["url"] == f"https://t.me/test_bot/menu?startapp=invite_{invite['token']}"
 
     active_response = await client.get("/api/v1/seller/invites", headers=seller_headers)
     assert active_response.status_code == 200

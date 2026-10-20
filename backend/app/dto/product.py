@@ -45,13 +45,14 @@ class ProductSchema(BaseModel):
     updated_at: datetime
     category_ids: list[int] = []
     # Mini App deep link for the "Поделиться" button on the product detail
-    # page — same `startapp=product_<id>` convention `BotClient` already
-    # uses for the "Открыть в витрине" button on channel posts. Only ever
-    # set on the catalog detail response (`GET /catalog/products/{id}`,
-    # which needs `BotClient.username()` for it); left `None` everywhere
-    # else (list endpoints, seller admin endpoints) rather than making every
-    # other `ProductSchema.model_validate(product)` call site plumb a bot
-    # username through just to populate a field nothing there needs.
+    # page — built by `BotClient.mini_app_url()`, same Direct Link format
+    # (`https://t.me/<bot>/<short_name>?startapp=product_<id>`) already used
+    # for the "Открыть в витрине" button on channel posts. Only ever set on
+    # the catalog detail response (`GET /catalog/products/{id}`, which needs
+    # a `BotClient` round-trip for it); left `None` everywhere else (list
+    # endpoints, seller admin endpoints) rather than making every other
+    # `ProductSchema.model_validate(product)` call site plumb a bot client
+    # through just to populate a field nothing there needs.
     share_url: str | None = None
 
 

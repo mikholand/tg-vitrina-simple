@@ -57,8 +57,8 @@ class CoreProvider(Provider):
     # `Bot.get_me()` every time would add a needless Telegram API round-trip
     # to every visitor's product page load.
     @provide
-    def bot_client(self, bot: Bot) -> BotClient:
-        return BotClient(bot)
+    def bot_client(self, bot: Bot, settings: Settings) -> BotClient:
+        return BotClient(bot, settings.app.MINI_APP_SHORT_NAME)
 
 
 class SessionProvider(Provider):

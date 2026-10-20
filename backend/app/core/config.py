@@ -95,6 +95,15 @@ class AppSettings(BaseSettings):
     # WebApp button URLs to be https, so this is left unset (button omitted)
     # rather than defaulting to something like http://localhost.
     WEBAPP_URL: str = ""
+    # Short name of the Mini App's Direct Link, set up once in @BotFather
+    # ("Bot Settings → Mini App → Direct Links → Create Direct Link"). A bare
+    # `https://t.me/<bot>?startapp=...` link does NOT launch the Mini App
+    # unless the bot's default Menu Button is itself a Web App — it just
+    # opens the bot's chat. A Direct Link does launch it, but only via
+    # `https://t.me/<bot>/<short_name>?startapp=...` — the short name must be
+    # in the URL. "menu" matches this deployment's existing Direct Link;
+    # override via env if it's ever renamed in BotFather.
+    MINI_APP_SHORT_NAME: str = "menu"
 
     @property
     def cors_origins(self) -> list[str]:
