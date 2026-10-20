@@ -19,6 +19,12 @@ const props = defineProps<{ id: string }>()
 // нативной. Показываем её только вне Telegram (обычный браузер), где
 // нативной кнопки нет. Launch-параметры не меняются за время жизни
 // страницы, так что достаточно посчитать один раз.
+//
+// Даже вне Telegram кнопка нужна только на мобильном: у десктопного браузера
+// уже есть своя стрелка "назад" в хроме окна, и дублировать её прямо под ней
+// нашей — лишнее. Это чисто про ширину окна, а не про платформу, так что
+// решается CSS-брейкпоинтом (`md:hidden` на самой кнопке в шаблоне), а не ещё
+// одной веткой здесь.
 const showOwnBackButton = !isInsideTelegram()
 
 // Та же причина, по которой sdk.ts запрашивает fullscreen только на мобильных
@@ -200,7 +206,7 @@ onMounted(load)
               <button
                 v-if="showOwnBackButton"
                 type="button"
-                class="flex size-10 items-center justify-center rounded-full bg-black/45 backdrop-blur"
+                class="flex size-10 items-center justify-center rounded-full bg-black/45 backdrop-blur md:hidden"
                 aria-label="Назад"
                 @click="goBack"
               >

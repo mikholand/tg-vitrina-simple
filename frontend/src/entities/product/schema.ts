@@ -21,6 +21,13 @@ export const productSchema = z.object({
   created_at: z.string(),
   updated_at: z.string(),
   category_ids: z.array(z.number()),
+  // Zod strips any key not listed here on `.parse()` — this field was added
+  // to the backend's ProductSchema and the frontend's `Product` type for the
+  // "Поделиться" button, but missed here, so every parsed product silently
+  // lost `share_url` even though the raw API response always had it. That's
+  // what made the button vanish for real users while curl/DevTools kept
+  // showing the field present — the response was fine, the parse wasn't.
+  share_url: z.string().nullable().default(null),
 })
 
 export const paginatedProductSchema = z.object({
