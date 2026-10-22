@@ -35,10 +35,15 @@ api:
   dashboard: true
   insecure: false
 
-# certificatesResolvers:
-#   letsencrypt:
-#     acme:
-#       email: "admin@example.com"
-#       storage: "/letsencrypt/acme.json"
-#       httpChallenge:
-#         entryPoint: web
+# Uncomment on production hosts once DOMAIN DNS points here (see README).
+# preferredChain keeps the served chain anchored at ISRG Root X1 — without
+# it Let's Encrypt may issue via the new Root YR hierarchy, which many
+# mobile clients (especially older iOS / in-app WebViews) do not trust yet.
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "admin@example.com"
+      storage: "/letsencrypt/acme.json"
+      preferredChain: "ISRG Root X1"
+      httpChallenge:
+        entryPoint: web
