@@ -5,6 +5,7 @@ from aiogram.types import FSInputFile, InlineKeyboardButton, InlineKeyboardMarku
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.core.config import Settings
+from app.core.start_param import encode_start_param
 
 
 def create_bot(settings: Settings) -> Bot:
@@ -42,6 +43,19 @@ class BotClient:
         username = await self.username()
         return f"https://t.me/{username}/{self._mini_app_short_name}?startapp={start_param}"
 
+    async def product_mini_app_url(self, product_id: int) -> str:
+        """Share link for a single product — the `startapp` value is just
+        `/product/<id>` base64url-encoded (see `app/core/start_param.py`),
+        decoded by the frontend router guard straight into that route."""
+        return await self.mini_app_url(encode_start_param(f"/product/{product_id}"))
+
+    async def invite_mini_app_url(self, token: str) -> str:
+        """Team invite link — `startapp` encodes `/invite/<token>`; the
+        frontend guard recognizes that prefix specially (redeems the invite
+        via an API call, it's not an actual page route) rather than
+        navigating to it like a product link."""
+        return await self.mini_app_url(encode_start_param(f"/invite/{token}"))
+
     def _mini_app_keyboard(self, url: str) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
         builder.add(InlineKeyboardButton(text="Открыть в витрине", url=url))
@@ -50,7 +64,7 @@ class BotClient:
     async def publish_product(
         self, channel_id: int, product_id: int, caption: str, photo_path: str | None
     ) -> int:
-        url = await self.mini_app_url(f"product_{product_id}")
+        url = await self.product_mini_app_url(product_id)
         keyboard = self._mini_app_keyboard(url)
 
         if photo_path:

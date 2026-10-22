@@ -19,7 +19,8 @@ export interface Product {
   created_at: string
   updated_at: string
   category_ids: number[]
-  /** Mini App deep link (`https://t.me/<bot>?startapp=product_<id>`) for the
+  /** Mini App deep link (`https://t.me/<bot>/<short>?startapp=<encoded>`,
+   *  where `<encoded>` is `/product/<id>` base64url-encoded) for the
    *  "Поделиться" button — only populated on `GET /catalog/products/{id}`
    *  (the detail endpoint), null everywhere else this type is reused
    *  (catalog/seller list endpoints). */

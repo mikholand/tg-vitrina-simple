@@ -1,3 +1,4 @@
+from app.core.start_param import encode_start_param
 from app.entities.product import ProductStatus
 
 
@@ -97,15 +98,20 @@ async def test_catalog_only_returns_published_products_with_pagination_shape(
 
 async def test_catalog_product_detail_includes_share_url(client, make_product):
     """`share_url` powers the "Поделиться" button on the product detail
-    page — the `startapp=product_<id>` deep-link format `BotClient` already
-    stamps on channel-post buttons. Only the detail endpoint sets it
-    (`GET /catalog/products/{id}`); the list endpoint leaves it null since
-    nothing there needs a per-item bot round-trip."""
+    page — the `startapp=<encoded /product/<id>>` deep-link format
+    `BotClient.product_mini_app_url()` already stamps on channel-post
+    buttons. Only the detail endpoint sets it (`GET /catalog/products/{id}`);
+    the list endpoint leaves it null since nothing there needs a per-item bot
+    round-trip."""
     product = await make_product(status=ProductStatus.PUBLISHED)
 
     response = await client.get(f"/api/v1/catalog/products/{product.id}")
     assert response.status_code == 200
-    assert response.json()["share_url"] == f"https://t.me/test_bot/menu?startapp=product_{product.id}"
+    expected_start_param = encode_start_param(f"/product/{product.id}")
+    assert (
+        response.json()["share_url"]
+        == f"https://t.me/test_bot/menu?startapp={expected_start_param}"
+    )
     # Regression guard: an embedded webview (observed on Telegram Desktop)
     # serving a stale cached copy of this exact response from before
     # `share_url` existed on the schema is what made the "Поделиться" button

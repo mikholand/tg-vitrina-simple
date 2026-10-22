@@ -134,5 +134,5 @@ async def get_product(
 
     category_ids = await product_repository.get_category_ids(product.id)
     schema = _to_schema(product, category_ids)
-    schema.share_url = await bot_client.mini_app_url(f"product_{product_id}")
+    schema.share_url = await bot_client.product_mini_app_url(product_id)
     return schema

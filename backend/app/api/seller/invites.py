@@ -17,7 +17,7 @@ router = APIRouter(route_class=DishkaRoute, prefix="/seller/invites", tags=["sel
 async def _to_schema(invite: Invite, bot_client: BotClient) -> InviteSchema:
     return InviteSchema(
         token=invite.token,
-        url=await bot_client.mini_app_url(f"invite_{invite.token}"),
+        url=await bot_client.invite_mini_app_url(invite.token),
         expires_at=invite.expires_at,
     )
 

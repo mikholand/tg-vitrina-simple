@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationRaw, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@entities/user/store'
 import { redeemInvite } from '@entities/invite/api'
 import { getStartParam } from '@shared/telegram/sdk'
@@ -146,43 +146,111 @@ function ensureAuthInitialized(): Promise<void> {
 
 let inviteRedeemPromise: Promise<void> | null = null
 
-const INVITE_START_PARAM_PREFIX = 'invite_'
-const PRODUCT_START_PARAM_PREFIX = 'product_'
+// Not a page route — recognized specially below instead of being navigated
+// to literally. See `decodeStartPath()`'s doc comment for the overall
+// scheme.
+const INVITE_PATH_PREFIX = '/invite/'
 
 /**
- * A `startapp=product_<id>` deep link — the format `BotClient` already
- * stamps on the "Открыть в витрине" button under channel posts, and that
- * `ProductDetailPage.vue`'s "Поделиться" button now hands out too (see
- * `share_url` on `GET /catalog/products/{id}`). Resolved once per page load,
- * same shape as `redeemPendingInvite()` below — returns the product route to
- * redirect to on the very first navigation, or null when there's no such
- * param / it's not a product link.
+ * Decodes the Mini App `startapp` deep-link value into the app-relative
+ * path it encodes (e.g. `/product/5`, `/invite/<token>`). The backend is the
+ * sole producer of this value — `BotClient.product_mini_app_url()` /
+ * `invite_mini_app_url()`, via `app/core/start_param.py`'s
+ * `encode_start_param()` — which base64url-encodes the path so it survives
+ * as Telegram's `startapp`/`start_param` (`^[A-Za-z0-9_-]{1,64}$`, no
+ * slashes allowed there otherwise).
+ *
+ * This replaced the old `product_<id>`/`invite_<token>` prefix scheme: that
+ * required this file to hard-code a route (`name: 'product-detail'`) per
+ * prefix, which is exactly the kind of place a mismatch between what the
+ * backend stamps and what the frontend expects can silently break deep
+ * links. Encoding the destination path itself means the guard below just
+ * navigates there directly — no per-destination logic to keep in sync.
  */
-function pendingProductRedirect(): { name: string; params: { id: string } } | null {
+function decodeStartPath(startParam: string): string | null {
+  try {
+    const base64 = startParam.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const binary = atob(padded)
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+    const path = new TextDecoder().decode(bytes)
+    return path.startsWith('/') ? path : null
+  } catch {
+    return null
+  }
+}
+
+// Set the instant a redirect is actually issued — NOT just "whether we've
+// looked", see `pendingStartRedirect()`'s doc comment for why that
+// distinction is the whole fix for a real infinite-loop bug found live
+// (reproduced in a plain browser tab: `?tgWebAppStartParam=...` froze the
+// page solid, CDP `Runtime.evaluate` timing out after 45s — not a "blank
+// page", a genuinely hung main thread).
+let startRedirectIssued = false
+
+/**
+ * A shared product/page deep link — returns the route to redirect to on the
+ * very first navigation, or null when there's no start param / it decodes to
+ * something that isn't a plain page path (e.g. an invite link — handled
+ * separately, below) / it's already been issued once this page load.
+ *
+ * That last case is load-bearing, not a nicety: `router.beforeEach` below
+ * only calls this while `from.matched.length === 0`, meant as a "just the
+ * once, on first navigation" guard — but `from` is vue-router's *last
+ * confirmed* route, and a navigation a guard redirects away from never
+ * confirms. So for the whole chain of redirects `beforeEach` triggers during
+ * the very first navigation (`/` → `/product/5`, then whatever the next
+ * guard call decides), `from` stays `START_LOCATION` throughout — meaning
+ * `from.matched.length === 0` is true on *every single one* of those calls,
+ * not just the first. A non-memoized version of this function (what both
+ * this file's previous `pendingProductRedirect()` and this function's own
+ * first draft this session did) recomputes and returns the *same* redirect
+ * every time it's asked — so the guard redirects to `/product/5`, is asked
+ * again (`from` still empty), redirects to `/product/5` again, forever.
+ * Confirmed live: loading a deep link in a plain browser tab hangs it solid,
+ * matching the "blank page that never finishes loading" symptom in
+ * Telegram. One `return null` after the first successful redirect is the
+ * entire fix.
+ */
+function pendingStartRedirect(): RouteLocationRaw | null {
+  if (startRedirectIssued) return null
+
   const startParam = getStartParam()
-  if (!startParam?.startsWith(PRODUCT_START_PARAM_PREFIX)) return null
-  const id = startParam.slice(PRODUCT_START_PARAM_PREFIX.length)
-  if (!id) return null
-  return { name: 'product-detail', params: { id } }
+  if (!startParam) return null
+  const path = decodeStartPath(startParam)
+  if (!path || path.startsWith(INVITE_PATH_PREFIX)) return null
+
+  // Guards against a blank screen: an unmatched `path` would otherwise make
+  // `router.beforeEach` redirect straight into a dead end (no route, so
+  // `<RouterView>` renders nothing) instead of just falling through to the
+  // normal home page below — malformed/stale/unknown encoded paths should
+  // degrade to "ignore it", not "break the app".
+  if (router.resolve(path).matched.length === 0) return null
+
+  startRedirectIssued = true
+  return { path }
 }
 
 /**
- * A `startapp=invite_<token>` deep link (see `SellerTeamPage.vue`, which
- * generates these) promotes whoever opens it to moderator — no separate
- * "accept invite" screen, since the `isStaff` redirect below already sends
- * a freshly-promoted moderator straight into the seller cabinet, which is
- * confirmation enough. Runs at most once per page load, after
- * `ensureAuthInitialized()` has settled, so there's a real logged-in user to
- * redeem it for; invalid/expired/already-used tokens are silently ignored
- * and just leave the visitor's role unchanged.
+ * A `startapp`-encoded `/invite/<token>` deep link (see `SellerTeamPage.vue`,
+ * which generates these) promotes whoever opens it to moderator — no
+ * separate "accept invite" screen, since the `isStaff` redirect below
+ * already sends a freshly-promoted moderator straight into the seller
+ * cabinet, which is confirmation enough. Runs at most once per page load,
+ * after `ensureAuthInitialized()` has settled, so there's a real logged-in
+ * user to redeem it for; invalid/expired/already-used tokens are silently
+ * ignored and just leave the visitor's role unchanged.
  */
 function redeemPendingInvite(): Promise<void> {
   if (!inviteRedeemPromise) {
     inviteRedeemPromise = (async () => {
       const startParam = getStartParam()
-      if (!startParam?.startsWith(INVITE_START_PARAM_PREFIX)) return
+      if (!startParam) return
+      const path = decodeStartPath(startParam)
+      if (!path?.startsWith(INVITE_PATH_PREFIX)) return
 
-      const token = startParam.slice(INVITE_START_PARAM_PREFIX.length)
+      const token = path.slice(INVITE_PATH_PREFIX.length)
+      if (!token) return
       try {
         await redeemInvite(token)
         await useAuthStore().fetchMe()
@@ -200,14 +268,14 @@ router.beforeEach(async (to, from) => {
   await ensureAuthInitialized()
   await redeemPendingInvite()
 
-  // A shared product link (`startapp=product_<id>`) takes priority over the
-  // staff auto-redirect right below — a seller/moderator opening a link a
-  // customer sent them should land on that product, not get bounced to
-  // their own dashboard. Only on the very first navigation, same
-  // `from.matched.length === 0` guard as `redeemPendingInvite()`'s caller.
+  // A shared deep link takes priority over the staff auto-redirect right
+  // below — a seller/moderator opening a link a customer sent them should
+  // land on that page, not get bounced to their own dashboard. Only on the
+  // very first navigation, same `from.matched.length === 0` guard as
+  // `redeemPendingInvite()`'s caller.
   if (from.matched.length === 0) {
-    const productRedirect = pendingProductRedirect()
-    if (productRedirect) return productRedirect
+    const startRedirect = pendingStartRedirect()
+    if (startRedirect) return startRedirect
   }
 
   const isStaff =

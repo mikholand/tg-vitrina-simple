@@ -1,3 +1,6 @@
+from app.core.start_param import encode_start_param
+
+
 async def test_owner_generates_link_and_customer_redeems_it(client, seller, customer):
     _, seller_headers = seller
     customer_user, customer_headers = customer
@@ -5,7 +8,8 @@ async def test_owner_generates_link_and_customer_redeems_it(client, seller, cust
     create_response = await client.post("/api/v1/seller/invites", headers=seller_headers)
     assert create_response.status_code == 200
     invite = create_response.json()
-    assert invite["url"] == f"https://t.me/test_bot/menu?startapp=invite_{invite['token']}"
+    expected_start_param = encode_start_param(f"/invite/{invite['token']}")
+    assert invite["url"] == f"https://t.me/test_bot/menu?startapp={expected_start_param}"
 
     active_response = await client.get("/api/v1/seller/invites", headers=seller_headers)
     assert active_response.status_code == 200
