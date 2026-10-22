@@ -209,6 +209,24 @@ watch(
       </header>
 
       <router-view />
+
+      <!-- Agency credit, shown in every page's footer (skipped only on the
+           edge-to-edge product card, same as the header above) so visitors
+           always see who built the store and how to order their own. -->
+      <footer
+        v-if="!bare"
+        class="px-4 pb-4 pt-6 text-center text-xs text-sf-muted sm:px-6 md:px-8 lg:px-10"
+      >
+        Разработано Polki Tech · Хотите такой же магазин?
+        <a
+          href="https://t.me/polki_tech"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sf-accent"
+        >
+          Напишите нам
+        </a>
+      </footer>
     </div>
     <BottomNav v-if="!bare" />
   </div>
