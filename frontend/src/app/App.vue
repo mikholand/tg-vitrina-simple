@@ -210,11 +210,12 @@ watch(
 
       <router-view />
 
-      <!-- Agency credit, shown in every page's footer (skipped only on the
-           edge-to-edge product card, same as the header above) so visitors
-           always see who built the store and how to order their own. -->
+      <!-- Agency credit — customer-facing storefront only (same condition as
+           the customer header above): the seller/moderator cabinet is a
+           work tool for the shop's own staff, not a page meant to pitch
+           them on ordering another store. -->
       <footer
-        v-if="!bare"
+        v-if="!isInAdminSection && !bare"
         class="px-4 pb-4 pt-6 text-center text-xs text-sf-muted sm:px-6 md:px-8 lg:px-10"
       >
         Разработано Polki Tech · Хотите такой же магазин?
