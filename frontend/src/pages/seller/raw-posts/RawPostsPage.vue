@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RawPost, RawPostStatus } from '@entities/raw-post/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { getRawPosts } from '@entities/raw-post/api'
 import { rawPostStatusChipClasses, rawPostStatusLabels } from '@entities/raw-post/labels'
 
@@ -79,7 +80,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <div v-if="posts.length === 0" class="flex flex-col items-center gap-2 py-16 text-center text-sf-muted">

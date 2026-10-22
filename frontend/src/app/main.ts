@@ -121,4 +121,17 @@ app.use(PrimeVue, {
 })
 app.use(ToastService)
 
-app.mount('#app')
+// Delayed until the router's initial navigation — including the async
+// ensureAuthInitialized() / redeemPendingInvite() / pendingStartRedirect()
+// guard chain in router/index.ts — fully resolves. app.mount() synchronously
+// replaces #app's contents the instant it runs, regardless of whether that
+// guard chain has decided where the app actually lands; without this, a
+// deep link (e.g. a shared product) would render the home page first (the
+// initial `to` before the guard redirects it) and only flash over to the
+// real destination once the redirect lands, instead of going there
+// directly. The static HTML/CSS preloader in index.html fills the screen
+// for this entire window, so there's nothing to flash — it's swapped out
+// for the final, already-correct page in one shot.
+void router.isReady().then(() => {
+  app.mount('#app')
+})

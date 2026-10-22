@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Moderator } from '@entities/moderator/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { getModerators, removeModerator } from '@entities/moderator/api'
 import type { Invite } from '@entities/invite/types'
 import { createInvite, getActiveInvite } from '@entities/invite/api'
@@ -122,7 +123,7 @@ onMounted(() => {
         станет модератором. Ссылка одноразовая: новая делает старую недействительной.
       </p>
 
-      <p v-if="inviteLoading" class="py-2 text-center text-sm text-sf-muted">Загрузка…</p>
+      <AppSpinner v-if="inviteLoading" compact />
 
       <template v-else-if="invite">
         <div class="flex items-center gap-2 rounded-xl border border-sf-line p-2.5">
@@ -162,7 +163,7 @@ onMounted(() => {
     <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
       <p class="text-sm font-medium text-sf-ink">Модераторы</p>
 
-      <p v-if="moderatorsLoading" class="py-4 text-center text-sm text-sf-muted">Загрузка…</p>
+      <AppSpinner v-if="moderatorsLoading" compact />
 
       <div v-else-if="moderators.length > 0" class="flex flex-col gap-2">
         <div

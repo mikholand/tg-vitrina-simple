@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SellerStats, StatsPeriod } from '@entities/seller-settings/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { getSellerStats } from '@entities/seller-settings/api'
 
 // Labels/values match tg-vitrina's statistics screen verbatim.
@@ -52,7 +53,7 @@ onMounted(load)
       </button>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else-if="stats">
       <!-- bg-white + shadow-sm, not bg-sf-card — this page sits on the

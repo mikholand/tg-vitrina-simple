@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Banner } from '@entities/banner/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { createBanner, deleteBanner, getSellerBanners, updateBanner } from '@entities/banner/api'
 
 const MAX_BANNERS = 3
@@ -96,7 +97,7 @@ onMounted(() => {
       <p class="text-sm text-sf-muted">Карусель на главной — до {{ MAX_BANNERS }} баннеров</p>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>

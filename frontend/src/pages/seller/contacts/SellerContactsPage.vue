@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Contact, ContactType } from '@entities/contact/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { createContact, deleteContact, getSellerContacts, updateContact } from '@entities/contact/api'
 import {
   contactTypeIcons,
@@ -95,7 +96,7 @@ onMounted(load)
       </p>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <div

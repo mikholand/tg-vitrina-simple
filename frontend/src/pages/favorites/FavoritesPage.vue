@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product } from '@entities/product/types'
 import { getCatalogProduct } from '@entities/product/api'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import ProductCard from '@entities/product/ui/ProductCard.vue'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useAuthStore } from '@entities/user/store'
@@ -50,7 +51,7 @@ onMounted(async () => {
       <p class="text-sm text-sf-muted">{{ subtitle }}</p>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <div v-if="products.length === 0" class="flex flex-col items-center gap-2 py-16 text-center text-sf-muted">

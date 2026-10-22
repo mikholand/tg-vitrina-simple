@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product } from '@entities/product/types'
 import type { CategoryTreeNode } from '@entities/category/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { getCatalogProduct } from '@entities/product/api'
 import { availabilityLabels, formatPrice } from '@entities/product/labels'
 import ProductGallery from '@entities/product/ui/ProductGallery.vue'
@@ -168,7 +169,7 @@ onMounted(load)
 
 <template>
   <div class="mx-auto flex w-full max-w-2xl flex-col">
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <div v-else-if="!product" class="flex flex-col items-center gap-2 py-16 text-center text-sf-muted">
       <i class="pi pi-box text-4xl" />

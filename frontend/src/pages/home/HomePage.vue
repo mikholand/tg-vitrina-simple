@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { addToHomeScreen, checkHomeScreenStatus } from '@telegram-apps/sdk'
+import { addToHomeScreen, checkHomeScreenStatus } from '@shared/telegram/sdk'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import type { Product } from '@entities/product/types'
 import { getCatalogProducts } from '@entities/product/api'
 import ProductCard from '@entities/product/ui/ProductCard.vue'
@@ -42,27 +43,18 @@ function goToCatalog(): void {
  * в отличие от веб-версии tg-vitrina, здесь витрина открывается только
  * внутри Telegram, так что нативный способ — единственный и самый простой.
  */
-async function promptAddToHome(): Promise<void> {
-  if (!addToHomeScreen.isAvailable()) return
-  try {
-    addToHomeScreen()
-  } catch {
-    // Пользователь мог отказаться или диалог недоступен прямо сейчас —
-    // кнопка просто останется на месте для повторной попытки.
-  }
+function promptAddToHome(): void {
+  // `addToHomeScreen()` already feature-detects and swallows failures
+  // internally — a refused/unavailable dialog just leaves the button in
+  // place for another try.
+  addToHomeScreen()
 }
 
 onMounted(async () => {
   storeInfoStore.recordVisit()
 
-  if (addToHomeScreen.isAvailable()) {
-    try {
-      const status = checkHomeScreenStatus.isAvailable() ? await checkHomeScreenStatus() : 'unknown'
-      canAddToHome.value = status !== 'added'
-    } catch {
-      canAddToHome.value = true
-    }
-  }
+  const status = await checkHomeScreenStatus()
+  canAddToHome.value = status !== 'added' && status !== 'unsupported'
 
   loading.value = true
   try {
@@ -137,7 +129,7 @@ onMounted(async () => {
       <RouterLink to="/catalog" class="shrink-0 text-sm text-sf-accent"> Весь каталог </RouterLink>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <div v-else-if="items.length === 0" class="flex flex-col items-center gap-2 py-16 text-center text-sf-muted">
       <i class="pi pi-box text-4xl" />

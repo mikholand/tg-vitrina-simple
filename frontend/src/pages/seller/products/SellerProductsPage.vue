@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Product, ProductStatus } from '@entities/product/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { deleteProduct, getSellerProducts, hideProduct, publishProduct } from '@entities/product/api'
 import { productStatusChipClasses, productStatusLabels } from '@entities/product/labels'
 import ProductEditor from '@features/product-editor/ProductEditor.vue'
@@ -165,7 +166,7 @@ onMounted(() => {
       class="rounded-xl border border-sf-line bg-white px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
     />
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <div v-if="products.length === 0" class="flex flex-col items-center gap-2 py-16 text-center text-sf-muted">

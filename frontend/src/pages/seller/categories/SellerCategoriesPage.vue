@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Category, CategoryTreeNode } from '@entities/category/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import {
   createSellerCategory,
   deleteSellerCategory,
@@ -134,7 +135,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <input

@@ -10,12 +10,105 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="color-scheme" content="light dark" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
     <!-- Static fallback shown before JS loads store info — App.vue overwrites
          this with the real shop name (document.title) once it's fetched. -->
     <title>Магазин</title>
+    <!-- Pure CSS, no JS/framework dependency — paints on first frame, before
+         the bundled JS has even been fetched/parsed, let alone before
+         router.isReady() resolves (main.ts delays app.mount() until then so
+         a deep link lands directly on its real destination instead of
+         flashing the home page first — see main.ts for the full story).
+         Colors match --sf-bg/--sf-accent/--sf-line from styles/main.css,
+         hardcoded here since this markup renders before that stylesheet (or
+         any Vue CSS) is applied. -->
+    <style>
+      #app-preloader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+      }
+      #app-preloader__spinner {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        border: 3px solid #e2e8f0;
+        border-top-color: #2563eb;
+        animation: app-preloader-spin 0.8s linear infinite;
+      }
+      @keyframes app-preloader-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- Vue's app.mount('#app') replaces this entire subtree the instant
+           it actually runs, so there's no manual teardown to wire up. -->
+      <div id="app-preloader">
+        <div id="app-preloader__spinner"></div>
+      </div>
+    </div>
+    <!-- Dismisses Telegram's own native launch placeholder (the chat-header
+         chrome + "Загрузка…" text + bot name shown while the client is still
+         setting up the WebView) the instant that's possible — right here,
+         right after the static preloader above has been parsed, so the
+         handoff Telegram does is placeholder -> our spinner, not
+         placeholder -> a blank unstyled page.
+         This is a hand-written, minimal reimplementation of the single
+         `web_app_ready` event that `telegram-web-app.js`'s `WebApp.ready()`
+         posts (see that file's `postEvent()` — the three branches below
+         mirror it exactly: native app bridge, old-style `window.external`
+         bridge, or `postMessage` to the parent frame for Telegram
+         Web/Desktop). It's duplicated here, by hand, specifically so this
+         one event doesn't have to wait on fetching+parsing+executing the
+         *entire* 120KB telegram-web-app.js file first — that full script is
+         still loaded right below (other calls, like `expand()` and
+         `disableVerticalSwipes()` in `initTelegram()`, do need all of it),
+         but only this one event is time-critical enough to justify a
+         hand-rolled duplicate. Calling the real `WebApp.ready()` again below
+         once the full script loads is harmless/idempotent — Telegram simply
+         ignores a second `web_app_ready`. -->
+    <script>
+      (function () {
+        try {
+          var isIframe = window.parent != null && window != window.parent
+          if (window.TelegramWebviewProxy !== undefined) {
+            TelegramWebviewProxy.postEvent('web_app_ready', JSON.stringify(''))
+          } else if (window.external && 'notify' in window.external) {
+            window.external.notify(JSON.stringify({ eventType: 'web_app_ready', eventData: '' }))
+          } else if (isIframe) {
+            window.parent.postMessage(
+              JSON.stringify({ eventType: 'web_app_ready', eventData: '' }),
+              '*',
+            )
+          }
+        } catch (e) {
+          // Not inside Telegram (or an unrecognized client) — no placeholder
+          // to dismiss anyway.
+        }
+      })()
+    </script>
+    <!-- Non-module script: executes immediately, in order, before the
+         deferred `type="module"` script below — so `window.Telegram.WebApp`
+         exists by the time `main.ts`/`initTelegram()` runs. Self-hosted
+         copy; see the comment at the top of that file for why. -->
+    <script src="/js/telegram-web-app.js"></script>
+    <script>
+      try {
+        window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.ready()
+      } catch (e) {
+        // Not supported by this client — no placeholder to dismiss anyway
+        // (and the hand-rolled call above already covered the clients that
+        // do have one).
+      }
+    </script>
     <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>

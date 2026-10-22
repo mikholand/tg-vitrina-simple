@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SellerSettings } from '@entities/seller-settings/types'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { getSellerSettings, updateSellerSettings, uploadStoreLogo } from '@entities/seller-settings/api'
 
 const settings = ref<SellerSettings | null>(null)
@@ -72,7 +73,7 @@ async function onLogoSelected(event: Event): Promise<void> {
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <h1 class="text-xl font-semibold leading-tight text-sf-ink">Настройки магазина</h1>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <div v-else-if="settings" class="flex flex-col gap-3">
       <div class="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSyncStore } from '@entities/sync/store'
+import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { syncStatusChipClasses, syncStatusLabels } from '@entities/sync/labels'
 
 // tg-vitrina's SyncPage also has a channel-connect form and a "post
@@ -71,7 +72,7 @@ onUnmounted(() => {
   <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
     <h1 class="text-xl font-semibold leading-tight text-sf-ink">Синхронизация</h1>
 
-    <p v-if="loading" class="py-16 text-center text-sf-muted">Загрузка…</p>
+    <AppSpinner v-if="loading" />
 
     <template v-else>
       <div class="flex flex-col gap-3 rounded-2xl border border-sf-line bg-sf-card p-3.5">
