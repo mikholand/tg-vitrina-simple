@@ -210,20 +210,29 @@ watch(
 
       <router-view />
 
-      <!-- Agency credit — customer-facing storefront only (same condition as
-           the customer header above): the seller/moderator cabinet is a
-           work tool for the shop's own staff, not a page meant to pitch
-           them on ordering another store. -->
+      <!-- Agency credit — customers only, never staff: gated on `!isSeller`
+           rather than `!isInAdminSection` so it also stays hidden while a
+           seller/moderator is previewing the storefront via the
+           store<->admin switcher above, not just inside the cabinet
+           itself — a pitch to "order your own store" makes no sense aimed
+           at the person who already runs this one. -->
       <footer
-        v-if="!isInAdminSection && !bare"
+        v-if="!isSeller && !bare"
         class="px-4 pb-4 pt-6 text-center text-xs text-sf-muted sm:px-6 md:px-8 lg:px-10"
       >
         Разработано Polki Tech · Хотите такой же магазин?
+        <!-- `sm:hidden` break + `whitespace-nowrap` on the link: at
+             mobile/web-app widths this phrase is the one most likely to
+             spill onto a third line, so it gets dropped to its own line
+             instead of wrapping into a single orphaned word ("нам" alone
+             below "Напишите"); wide screens have room, so the <br> is
+             suppressed and it just flows inline there. -->
+        <br class="sm:hidden" />
         <a
           href="https://t.me/polki_tech"
           target="_blank"
           rel="noopener noreferrer"
-          class="text-sf-accent"
+          class="whitespace-nowrap text-sf-accent"
         >
           Напишите нам
         </a>
