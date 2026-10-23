@@ -15,7 +15,7 @@ const error = ref<string | null>(null)
 const linkDrafts = ref<Record<number, string>>({})
 
 // A new banner needs both crops before it can be submitted — picked
-// separately (mobile 16:9, desktop 4:1) and held here until both are set.
+// separately (mobile 16:9, desktop 3:1) and held here until both are set.
 const mobileFile = ref<File | null>(null)
 const desktopFile = ref<File | null>(null)
 const mobileInput = ref<HTMLInputElement | null>(null)
@@ -138,9 +138,9 @@ onMounted(() => {
               <img
                 :src="banner.image_path_desktop ?? banner.image_path_mobile"
                 alt=""
-                class="aspect-[4/1] w-full rounded-xl object-cover"
+                class="aspect-[3/1] w-full rounded-xl object-cover"
               />
-              <p class="mt-1 text-center text-xs text-sf-muted">Десктоп 4:1</p>
+              <p class="mt-1 text-center text-xs text-sf-muted">Десктоп 3:1</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -169,6 +169,7 @@ onMounted(() => {
         class="flex flex-col gap-2 rounded-2xl border border-dashed border-sf-line p-3"
       >
         <p class="text-sm text-sf-muted">Новый баннер — нужны обе версии изображения</p>
+        <p class="text-xs text-sf-muted">Рекомендуемый размер: моб. 1672×941, десктоп 2172×724</p>
         <div class="flex flex-col gap-2 sm:flex-row">
           <input
             ref="mobileInput"
@@ -193,7 +194,7 @@ onMounted(() => {
             @change="onDesktopFileSelected"
           />
           <Button
-            :label="desktopFile ? desktopFile.name : 'Фото 4:1 (десктоп)'"
+            :label="desktopFile ? desktopFile.name : 'Фото 3:1 (десктоп)'"
             icon="pi pi-desktop"
             severity="secondary"
             class="flex-1"

@@ -10,7 +10,7 @@ function onBannerClick(banner: Banner): void {
 
 // Banners uploaded before the mobile/desktop split only have the 16:9 crop
 // — fall back to it on wide screens too rather than showing nothing until
-// the seller re-uploads a dedicated 4:1 image.
+// the seller re-uploads a dedicated 3:1 image.
 function desktopSrc(banner: Banner): string {
   return banner.image_path_desktop ?? banner.image_path_mobile
 }
@@ -21,17 +21,17 @@ function desktopSrc(banner: Banner): string {
        page — no carousel/gallery library in this codebase, so a second one
        for 1-3 slides would be overkill. Snaps to one slide at a time since
        each is full-bleed width, unlike the multi-card product shelf. -->
-  <div class="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto px-4">
+  <div class="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
     <button
       v-for="banner in banners"
       :key="banner.id"
       type="button"
-      class="relative aspect-[16/9] w-full shrink-0 snap-start overflow-hidden rounded-3xl bg-sf-soft md:aspect-[4/1]"
+      class="relative aspect-[16/9] w-full shrink-0 snap-start overflow-hidden rounded-3xl bg-sf-soft md:aspect-[3/1]"
       :class="banner.link_url ? 'cursor-pointer' : 'cursor-default'"
       @click="onBannerClick(banner)"
     >
       <!-- Mobile crop (16:9) — swapped out below the `md` breakpoint for
-           the wide 4:1 desktop crop, the same cutoff the rest of the layout
+           the wide 3:1 desktop crop, the same cutoff the rest of the layout
            (App.vue's max-width steps, HomePage's padding) switches at. -->
       <!-- Blurred cover fills the slot edge-to-edge regardless of the
            uploaded image's own aspect ratio, so the foreground image below
@@ -55,7 +55,7 @@ function desktopSrc(banner: Banner): string {
         loading="lazy"
       />
 
-      <!-- Desktop crop (4:1), same blurred-background + sharp-foreground
+      <!-- Desktop crop (3:1), same blurred-background + sharp-foreground
            pairing as the mobile pair above. -->
       <img
         :src="desktopSrc(banner)"
