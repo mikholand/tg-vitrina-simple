@@ -19,6 +19,7 @@ dependencies = [
     "pyjwt>=2.9",
     "python-multipart>=0.0.12",
     "structlog>=24.4",
+    "pillow>=13.0.0",
 ]
 
 [dependency-groups]

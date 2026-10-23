@@ -1,9 +1,24 @@
+import io
+import os
+
+from PIL import Image
+
 from app.core.start_param import encode_start_param
 from app.entities.product import ProductStatus
 
 
 def _fake_video() -> dict:
     return {"file": ("clip.mp4", b"fake-video-bytes", "video/mp4")}
+
+
+def _fake_image_bytes(fmt: str = "JPEG") -> bytes:
+    """A real (if tiny) encoded image — save_product_photo now decodes the
+    upload with Pillow to re-encode it as WebP, so a plain byte string like
+    the old `b"fake-image-bytes"` fixture no longer passes as a valid
+    upload."""
+    buffer = io.BytesIO()
+    Image.new("RGB", (2, 2), color="red").save(buffer, format=fmt)
+    return buffer.getvalue()
 
 
 async def test_seller_list_products_default_and_filtered(client, seller, make_product):
@@ -152,12 +167,15 @@ async def test_create_product_then_attach_photo_and_video(client, seller):
     photo_response = await client.post(
         f"/api/v1/seller/products/{product_id}/photos",
         headers=headers,
-        files={"file": ("photo.jpg", b"fake-image-bytes", "image/jpeg")},
+        files={"file": ("photo.jpg", _fake_image_bytes(), "image/jpeg")},
     )
     assert photo_response.status_code == 200
     photo_paths = photo_response.json()["photo_paths"]
     assert len(photo_paths) == 1
     assert photo_paths[0].startswith(f"/media/products/{product_id}/")
+    # Re-encoded to WebP regardless of the uploaded file's own extension —
+    # see _encode_product_photo in app/shared/uploads.py.
+    assert photo_paths[0].endswith(".webp")
 
     video_response = await client.post(
         f"/api/v1/seller/products/{product_id}/video", headers=headers, files=_fake_video()
@@ -173,3 +191,40 @@ async def test_create_product_then_attach_photo_and_video(client, seller):
     )
     assert second_video_response.status_code == 200
     assert second_video_response.json()["video_path"] != video_path
+
+
+async def test_product_photo_upload_is_reencoded_to_webp(client, seller, make_product):
+    """The file actually written to disk is WebP-encoded, independent of
+    what format/extension the seller uploaded — not just the `.webp` name
+    `test_create_product_then_attach_photo_and_video` already checks on the
+    returned path."""
+    product = await make_product()
+    _, headers = seller
+
+    response = await client.post(
+        f"/api/v1/seller/products/{product.id}/photos",
+        headers=headers,
+        files={"file": ("photo.png", _fake_image_bytes("PNG"), "image/png")},
+    )
+    assert response.status_code == 200
+    photo_path = response.json()["photo_paths"][0]
+
+    disk_path = os.path.join("/tmp/vitrina-test-media", photo_path.removeprefix("/media/"))
+    with Image.open(disk_path) as saved:
+        assert saved.format == "WEBP"
+
+
+async def test_product_photo_upload_rejects_non_image_bytes(client, seller, make_product):
+    """The upload is now actually decoded (to re-encode as WebP), not just
+    checked by filename extension — garbage bytes with an image/* content
+    type and a plausible filename must still be rejected, not silently
+    written to disk as-is like before."""
+    product = await make_product()
+    _, headers = seller
+
+    response = await client.post(
+        f"/api/v1/seller/products/{product.id}/photos",
+        headers=headers,
+        files={"file": ("photo.jpg", b"not-actually-an-image", "image/jpeg")},
+    )
+    assert response.status_code == 400
