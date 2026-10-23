@@ -174,7 +174,7 @@ async def test_create_product_then_attach_photo_and_video(client, seller):
     assert len(photo_paths) == 1
     assert photo_paths[0].startswith(f"/media/products/{product_id}/")
     # Re-encoded to WebP regardless of the uploaded file's own extension —
-    # see _encode_product_photo in app/shared/uploads.py.
+    # see _encode_image_to_webp in app/shared/uploads.py.
     assert photo_paths[0].endswith(".webp")
 
     video_response = await client.post(
