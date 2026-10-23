@@ -1,6 +1,7 @@
 export interface Banner {
   id: number
-  image_path: string
+  image_path_mobile: string
+  image_path_desktop: string | null
   link_url: string | null
   sort_order: number
 }

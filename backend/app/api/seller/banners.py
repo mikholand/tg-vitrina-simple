@@ -22,15 +22,17 @@ async def list_banners(
 
 @router.post("")
 async def create_banner(
-    file: UploadFile,
+    file_mobile: UploadFile,
+    file_desktop: UploadFile,
     _: CurrentStaff,
     settings: FromDishka[Settings],
     banner_repository: FromDishka[BannerRepository],
 ) -> BannerSchema:
     existing = await banner_repository.list_all()
-    rel_path = await save_banner_image(settings, file)
+    rel_path_mobile = await save_banner_image(settings, file_mobile)
+    rel_path_desktop = await save_banner_image(settings, file_desktop)
     try:
-        banner = await banner_repository.create(rel_path, None, len(existing))
+        banner = await banner_repository.create(rel_path_mobile, rel_path_desktop, None, len(existing))
     except BannerLimitExceededError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return BannerSchema.model_validate(banner)

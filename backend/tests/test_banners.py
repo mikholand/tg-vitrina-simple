@@ -1,16 +1,21 @@
-def _fake_image() -> dict:
-    return {"file": ("banner.jpg", b"fake-image-bytes", "image/jpeg")}
+def _fake_images() -> dict:
+    return {
+        "file_mobile": ("banner-mobile.jpg", b"fake-image-bytes-mobile", "image/jpeg"),
+        "file_desktop": ("banner-desktop.jpg", b"fake-image-bytes-desktop", "image/jpeg"),
+    }
 
 
 async def test_create_and_list_banner(client, seller):
     _, headers = seller
 
     response = await client.post(
-        "/api/v1/seller/banners", headers=headers, files=_fake_image()
+        "/api/v1/seller/banners", headers=headers, files=_fake_images()
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["image_path"].startswith("/media/slides/")
+    assert body["image_path_mobile"].startswith("/media/slides/")
+    assert body["image_path_desktop"].startswith("/media/slides/")
+    assert body["image_path_mobile"] != body["image_path_desktop"]
     assert body["link_url"] is None
 
     catalog_response = await client.get("/api/v1/catalog/banners")
@@ -22,7 +27,7 @@ async def test_moderator_can_manage_banners_but_not_settings(client, moderator):
     _, headers = moderator
 
     create_response = await client.post(
-        "/api/v1/seller/banners", headers=headers, files=_fake_image()
+        "/api/v1/seller/banners", headers=headers, files=_fake_images()
     )
     assert create_response.status_code == 200
 
@@ -38,17 +43,17 @@ async def test_banner_limit_enforced(client, seller):
 
     for _ in range(3):
         response = await client.post(
-            "/api/v1/seller/banners", headers=headers, files=_fake_image()
+            "/api/v1/seller/banners", headers=headers, files=_fake_images()
         )
         assert response.status_code == 200
 
-    response = await client.post("/api/v1/seller/banners", headers=headers, files=_fake_image())
+    response = await client.post("/api/v1/seller/banners", headers=headers, files=_fake_images())
     assert response.status_code == 400
 
 
 async def test_update_and_delete_banner(client, seller):
     _, headers = seller
-    created = await client.post("/api/v1/seller/banners", headers=headers, files=_fake_image())
+    created = await client.post("/api/v1/seller/banners", headers=headers, files=_fake_images())
     banner_id = created.json()["id"]
 
     update_response = await client.patch(

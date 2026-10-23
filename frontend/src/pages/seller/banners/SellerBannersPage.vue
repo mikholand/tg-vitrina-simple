@@ -14,9 +14,15 @@ const error = ref<string | null>(null)
 
 const linkDrafts = ref<Record<number, string>>({})
 
-const fileInput = ref<HTMLInputElement | null>(null)
+// A new banner needs both crops before it can be submitted — picked
+// separately (mobile 16:9, desktop 4:1) and held here until both are set.
+const mobileFile = ref<File | null>(null)
+const desktopFile = ref<File | null>(null)
+const mobileInput = ref<HTMLInputElement | null>(null)
+const desktopInput = ref<HTMLInputElement | null>(null)
 
 const canAddMore = computed(() => banners.value.length < MAX_BANNERS)
+const canSubmitNewBanner = computed(() => !!mobileFile.value && !!desktopFile.value)
 
 function syncDrafts(): void {
   linkDrafts.value = Object.fromEntries(banners.value.map((b) => [b.id, b.link_url ?? '']))
@@ -32,23 +38,29 @@ async function loadBanners(): Promise<void> {
   }
 }
 
-function triggerFilePicker(): void {
-  if (!canAddMore.value) return
-  fileInput.value?.click()
+function onMobileFileSelected(event: Event): void {
+  const target = event.target as HTMLInputElement
+  mobileFile.value = target.files?.[0] ?? null
 }
 
-async function onFileSelected(event: Event): Promise<void> {
+function onDesktopFileSelected(event: Event): void {
   const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  target.value = ''
-  if (!file) return
+  desktopFile.value = target.files?.[0] ?? null
+}
+
+async function onSubmitNewBanner(): Promise<void> {
+  if (!mobileFile.value || !desktopFile.value) return
 
   uploading.value = true
   error.value = null
   try {
-    const banner = await createBanner(file)
+    const banner = await createBanner(mobileFile.value, desktopFile.value)
     banners.value = [...banners.value, banner]
     syncDrafts()
+    mobileFile.value = null
+    desktopFile.value = null
+    if (mobileInput.value) mobileInput.value.value = ''
+    if (desktopInput.value) desktopInput.value.value = ''
   } catch {
     error.value = 'Не удалось загрузить баннер'
   } finally {
@@ -113,7 +125,24 @@ onMounted(() => {
           :key="banner.id"
           class="flex flex-col gap-2 rounded-2xl border border-sf-line bg-sf-card p-3"
         >
-          <img :src="banner.image_path" alt="" class="aspect-[16/7] w-full rounded-xl object-cover" />
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <img
+                :src="banner.image_path_mobile"
+                alt=""
+                class="aspect-[16/9] w-full rounded-xl object-cover"
+              />
+              <p class="mt-1 text-center text-xs text-sf-muted">Моб. 16:9</p>
+            </div>
+            <div class="flex-1">
+              <img
+                :src="banner.image_path_desktop ?? banner.image_path_mobile"
+                alt=""
+                class="aspect-[4/1] w-full rounded-xl object-cover"
+              />
+              <p class="mt-1 text-center text-xs text-sf-muted">Десктоп 4:1</p>
+            </div>
+          </div>
           <div class="flex items-center gap-2">
             <IconField class="flex-1">
               <InputIcon class="pi pi-link" />
@@ -135,16 +164,53 @@ onMounted(() => {
         </div>
       </div>
 
-      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected" />
-      <Button
-        label="Добавить баннер"
-        icon="pi pi-plus"
-        :disabled="!canAddMore"
-        :loading="uploading"
-        fluid
-        @click="triggerFilePicker"
-      />
-      <p v-if="!canAddMore" class="text-center text-xs text-sf-muted">
+      <div
+        v-if="canAddMore"
+        class="flex flex-col gap-2 rounded-2xl border border-dashed border-sf-line p-3"
+      >
+        <p class="text-sm text-sf-muted">Новый баннер — нужны обе версии изображения</p>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <input
+            ref="mobileInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="onMobileFileSelected"
+          />
+          <Button
+            :label="mobileFile ? mobileFile.name : 'Фото 16:9 (моб.)'"
+            icon="pi pi-mobile"
+            severity="secondary"
+            class="flex-1"
+            fluid
+            @click="mobileInput?.click()"
+          />
+          <input
+            ref="desktopInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="onDesktopFileSelected"
+          />
+          <Button
+            :label="desktopFile ? desktopFile.name : 'Фото 4:1 (десктоп)'"
+            icon="pi pi-desktop"
+            severity="secondary"
+            class="flex-1"
+            fluid
+            @click="desktopInput?.click()"
+          />
+        </div>
+        <Button
+          label="Добавить баннер"
+          icon="pi pi-plus"
+          :disabled="!canSubmitNewBanner"
+          :loading="uploading"
+          fluid
+          @click="onSubmitNewBanner"
+        />
+      </div>
+      <p v-else class="text-center text-xs text-sf-muted">
         Достигнут лимит в {{ MAX_BANNERS }} баннера — удалите один, чтобы добавить новый
       </p>
     </template>

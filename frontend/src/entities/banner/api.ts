@@ -12,9 +12,10 @@ export async function getSellerBanners(): Promise<Banner[]> {
   return bannerListSchema.parse(data)
 }
 
-export async function createBanner(file: File): Promise<Banner> {
+export async function createBanner(fileMobile: File, fileDesktop: File): Promise<Banner> {
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file_mobile', fileMobile)
+  formData.append('file_desktop', fileDesktop)
   const { data } = await http.post('/seller/banners', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })

@@ -7,14 +7,20 @@ class BannerSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    image_path: str
+    image_path_mobile: str
+    image_path_desktop: str | None
     link_url: str | None
     sort_order: int
 
-    @field_validator("image_path")
+    @field_validator("image_path_mobile")
     @classmethod
-    def _to_url(cls, v: str) -> str:
+    def _to_url_mobile(cls, v: str) -> str:
         return media_url(v)
+
+    @field_validator("image_path_desktop")
+    @classmethod
+    def _to_url_desktop(cls, v: str | None) -> str | None:
+        return media_url(v) if v else None
 
 
 class BannerUpdateSchema(BaseModel):

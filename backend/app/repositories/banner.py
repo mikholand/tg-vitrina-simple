@@ -19,11 +19,22 @@ class BannerRepository:
     async def get(self, banner_id: int) -> Banner | None:
         return await self._session.get(Banner, banner_id)
 
-    async def create(self, image_path: str, link_url: str | None, sort_order: int) -> Banner:
+    async def create(
+        self,
+        image_path_mobile: str,
+        image_path_desktop: str | None,
+        link_url: str | None,
+        sort_order: int,
+    ) -> Banner:
         existing = await self.list_all()
         if len(existing) >= MAX_BANNERS:
             raise BannerLimitExceededError(f"at most {MAX_BANNERS} banners are allowed")
-        banner = Banner(image_path=image_path, link_url=link_url, sort_order=sort_order)
+        banner = Banner(
+            image_path_mobile=image_path_mobile,
+            image_path_desktop=image_path_desktop,
+            link_url=link_url,
+            sort_order=sort_order,
+        )
         self._session.add(banner)
         await self._session.flush()
         return banner

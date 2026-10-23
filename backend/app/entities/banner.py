@@ -15,6 +15,11 @@ class Banner(Base, TimestampMixin):
     __tablename__ = "banners"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    image_path: Mapped[str] = mapped_column(String(300), nullable=False)
+    # 16:9 crop, shown on narrow/mobile screens.
+    image_path_mobile: Mapped[str] = mapped_column(String(300), nullable=False)
+    # 4:1 crop, shown on wide/desktop screens. Nullable so banners created
+    # before this split still load — the frontend falls back to the mobile
+    # image on desktop too until the seller re-uploads one.
+    image_path_desktop: Mapped[str | None] = mapped_column(String(300), nullable=True)
     link_url: Mapped[str | None] = mapped_column(String(500))
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
