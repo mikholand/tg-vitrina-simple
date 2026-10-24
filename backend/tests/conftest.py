@@ -19,6 +19,7 @@ os.environ["OPENROUTER_API_KEY"] = ""
 
 from collections.abc import AsyncIterator, Awaitable, Callable  # noqa: E402
 from datetime import UTC, datetime  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
 from unittest.mock import AsyncMock  # noqa: E402
 
 import pytest  # noqa: E402
@@ -85,6 +86,20 @@ def _mock_bot_get_me(monkeypatch: pytest.MonkeyPatch) -> None:
     test, since any seller-side route may end up needing a deep link."""
     fake_me = TelegramUser(id=1, is_bot=True, first_name="Test Bot", username="test_bot")
     monkeypatch.setattr(Bot, "get_me", AsyncMock(return_value=fake_me))
+
+
+@pytest.fixture
+def mock_bot_send_message(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    """`BotClient.notify_order` (checkout) and `BotClient.publish_product`
+    both call `Bot.send_message`/`Bot.send_photo` — real Telegram API calls
+    that would fail against the fake `BOT_TOKEN` above. Not autouse (unlike
+    `_mock_bot_get_me`, which nearly every test indirectly needs for deep
+    links): only order/publishing tests care, and they can assert on the
+    mock's calls by requesting this fixture directly."""
+    mock = AsyncMock(return_value=SimpleNamespace(message_id=1))
+    monkeypatch.setattr(Bot, "send_message", mock)
+    monkeypatch.setattr(Bot, "send_photo", mock)
+    return mock
 
 
 @pytest_asyncio.fixture

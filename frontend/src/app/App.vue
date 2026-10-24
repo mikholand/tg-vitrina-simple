@@ -58,6 +58,7 @@ watch(
 const BACK_BUTTON_FALLBACK_PARENT: Partial<Record<string, string>> = {
   catalog: 'home',
   favorites: 'home',
+  cart: 'home',
   'seller-products': 'seller-dashboard',
   'seller-categories': 'seller-dashboard',
   'seller-statistics': 'seller-dashboard',

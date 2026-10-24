@@ -1,19 +1,23 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.api.deps import OptionalUser, VisitorKey
+from app.api.deps import CurrentUser, OptionalUser, VisitorKey
 from app.clients.bot import BotClient
 from app.dto.banner import BannerSchema
 from app.dto.category import CategorySchema
 from app.dto.contact import PublicContactSchema, contact_url
+from app.dto.order import CheckoutRequestSchema, OrderItemSchema, OrderSchema
 from app.dto.product import ProductSchema
 from app.entities.contact import ContactType
+from app.entities.order import Order, OrderItem
 from app.entities.product import Product
 from app.repositories.banner import BannerRepository
 from app.repositories.category import CategoryRepository
 from app.repositories.contact import ContactRepository
+from app.repositories.order import OrderRepository
 from app.repositories.product import ProductRepository
 from app.repositories.store_profile import StoreProfileRepository
+from app.services.order import OrderService
 from app.services.view import ViewService
 from app.shared.media import media_url
 from app.shared.pagination import Paginated
@@ -24,6 +28,12 @@ router = APIRouter(route_class=DishkaRoute, prefix="/catalog", tags=["catalog"])
 def _to_schema(product: Product, category_ids: list[int]) -> ProductSchema:
     schema = ProductSchema.model_validate(product)
     schema.category_ids = category_ids
+    return schema
+
+
+def _order_to_schema(order: Order, items: list[OrderItem]) -> OrderSchema:
+    schema = OrderSchema.model_validate(order)
+    schema.items = [OrderItemSchema.model_validate(item) for item in items]
     return schema
 
 
@@ -136,3 +146,22 @@ async def get_product(
     schema = _to_schema(product, category_ids)
     schema.share_url = await bot_client.product_mini_app_url(product_id)
     return schema
+
+
+@router.post("/orders", status_code=status.HTTP_201_CREATED)
+async def checkout(
+    payload: CheckoutRequestSchema,
+    user: CurrentUser,
+    order_service: FromDishka[OrderService],
+    order_repository: FromDishka[OrderRepository],
+) -> OrderSchema:
+    try:
+        order = await order_service.checkout(
+            user,
+            [(item.product_id, item.quantity) for item in payload.items],
+            payload.comment,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    items = await order_repository.list_items(order.id)
+    return _order_to_schema(order, items)

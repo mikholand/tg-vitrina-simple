@@ -21,6 +21,9 @@ from app.api.seller import (
 from app.api.seller import (
     invites as seller_invites,
 )
+from app.api.seller import (
+    orders as seller_orders,
+)
 from app.api.seller import settings as seller_settings
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -99,6 +102,7 @@ def create_app() -> FastAPI:
         contacts.router,
         seller_invites.router,
         invite_redeem.router,
+        seller_orders.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

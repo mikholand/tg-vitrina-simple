@@ -60,3 +60,9 @@ class StoreProfileRepository:
         profile.logo = logo_path
         await self._session.flush()
         return profile
+
+    async def set_order_notification_chat(self, chat_id: int) -> StoreProfile:
+        profile = await self.get()
+        profile.order_notification_chat_id = chat_id
+        await self._session.flush()
+        return profile

@@ -20,3 +20,8 @@ class SellerSettingsSchema(BaseModel):
     store_contact_tg: str | None
     telegram_channel_id: int
     extractor_configured: bool
+    # Set only via the admin-only `/setorderchat` bot command (see
+    # `app/telegram/commands.py`), never through this PATCH form — surfaced
+    # here read-only just so the seller can see at a glance whether order
+    # notifications are configured at all.
+    order_notification_chat_id: int | None

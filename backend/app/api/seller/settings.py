@@ -22,6 +22,7 @@ def _to_schema(profile: StoreProfile, settings: Settings) -> SellerSettingsSchem
         store_contact_tg=profile.contact_tg,
         telegram_channel_id=settings.store.TELEGRAM_CHANNEL_ID,
         extractor_configured=settings.extractor.is_configured(),
+        order_notification_chat_id=profile.order_notification_chat_id,
     )
 
 

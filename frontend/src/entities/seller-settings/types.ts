@@ -5,6 +5,8 @@ export interface SellerSettings {
   store_contact_tg: string | null
   telegram_channel_id: number
   extractor_configured: boolean
+  // Set only via the admin-only /setorderchat bot command — read-only here.
+  order_notification_chat_id: number | null
 }
 
 export interface SellerSettingsUpdatePayload {

@@ -2,6 +2,7 @@
 import type { Product } from '@entities/product/types'
 import { availabilityChipClasses, availabilityLabels, formatPrice } from '@entities/product/labels'
 import { useFavoriteStore } from '@entities/favorite/store'
+import { useCartStore } from '@entities/cart/store'
 
 // Tint placeholders: colour is pinned to the product id, so the same
 // product always looks the same and an image-less grid doesn't read as
@@ -11,6 +12,7 @@ const TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', '
 const props = defineProps<{ product: Product }>()
 
 const favoriteStore = useFavoriteStore()
+const cartStore = useCartStore()
 
 const isFavorite = computed(() => favoriteStore.isFavorite(props.product.id))
 const thumbnail = computed(() => props.product.photo_paths[0] ?? null)
@@ -24,10 +26,25 @@ const availabilityLabel = computed(() => {
   return props.product.quantity ? `${label} · ${props.product.quantity} шт.` : label
 })
 
+// Tracked stock (quantity !== null) that's run out blocks adding more —
+// untracked (null) is always "available" per the same convention the
+// backend's checkout validation uses (see OrderService.checkout).
+const outOfStock = computed(
+  () => props.product.quantity !== null && props.product.quantity <= 0,
+)
+const cartQuantity = computed(() => cartStore.quantityOf(props.product.id))
+
 async function onToggleFavorite(event: Event): Promise<void> {
   event.preventDefault()
   event.stopPropagation()
   await favoriteStore.toggleFavorite(props.product.id)
+}
+
+function onAddToCart(event: Event): void {
+  event.preventDefault()
+  event.stopPropagation()
+  if (outOfStock.value) return
+  cartStore.addItem(props.product.id)
 }
 </script>
 
@@ -61,6 +78,22 @@ async function onToggleFavorite(event: Event): Promise<void> {
           class="pi text-sm"
           :class="isFavorite ? 'pi-heart-fill text-sf-danger' : 'pi-heart text-sf-muted'"
         />
+      </button>
+
+      <button
+        v-if="!outOfStock"
+        type="button"
+        class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-sf-accent text-white shadow-sm"
+        aria-label="В корзину"
+        @click="onAddToCart"
+      >
+        <i class="pi pi-shopping-cart text-sm" />
+        <span
+          v-if="cartQuantity > 0"
+          class="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white"
+        >
+          {{ cartQuantity }}
+        </span>
       </button>
     </div>
 

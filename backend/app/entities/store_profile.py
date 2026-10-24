@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text
+from sqlalchemy import BigInteger, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.entities.base import Base, TimestampMixin
@@ -23,3 +23,10 @@ class StoreProfile(Base, TimestampMixin):
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
     logo: Mapped[str | None] = mapped_column(String(300))
     contact_tg: Mapped[str | None] = mapped_column(String(100))
+    # Telegram chat id a checkout's order notification is sent to. Set only
+    # via the admin-only `/setorderchat` bot command (see
+    # `app/telegram/commands.py`) — not exposed on the settings PATCH form —
+    # since whoever runs that command does so from inside the target chat
+    # itself, which is the whole point: no risk of mistyping a chat id by
+    # hand. Null until an admin runs the command once.
+    order_notification_chat_id: Mapped[int | None] = mapped_column(BigInteger)

@@ -79,3 +79,12 @@ class BotClient:
                 chat_id=channel_id, text=caption, reply_markup=keyboard
             )
         return message.message_id
+
+    async def notify_order(self, chat_id: int, text: str) -> None:
+        """Forwards a checked-out cart to the seller's configured chat
+        (`StoreProfile.order_notification_chat_id`, set via the admin-only
+        `/setorderchat` bot command). Plain text, no keyboard — unlike
+        `publish_product` this isn't a storefront post, just an internal
+        heads-up, so there's nothing to deep-link back into the Mini App for.
+        """
+        await self._bot.send_message(chat_id=chat_id, text=text)

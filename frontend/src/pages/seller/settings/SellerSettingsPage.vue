@@ -187,6 +187,18 @@ async function onLogoSelected(event: Event): Promise<void> {
         <p class="text-xs text-sf-muted">
           Эти два параметра заданы на сервере переменными окружения и не редактируются здесь.
         </p>
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-sf-muted">Уведомления о заказах</span>
+          <Tag
+            :severity="settings.order_notification_chat_id ? 'success' : 'warn'"
+            :value="settings.order_notification_chat_id ? 'Настроены' : 'Не настроены'"
+            rounded
+          />
+        </div>
+        <p class="text-xs text-sf-muted">
+          Чтобы заказы из корзины приходили в чат, администратор магазина должен отправить
+          команду /setorderchat боту прямо в этом чате.
+        </p>
       </div>
     </div>
   </div>

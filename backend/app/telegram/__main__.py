@@ -19,7 +19,7 @@ async def main() -> None:
     bot = await container.get(Bot)
 
     dispatcher = Dispatcher()
-    dispatcher.include_router(build_commands_router(settings))
+    dispatcher.include_router(build_commands_router(container, settings))
     dispatcher.include_router(build_channel_router(container, settings, bot))
 
     logger.info("telegram_bot_starting", channel_id=settings.store.TELEGRAM_CHANNEL_ID)

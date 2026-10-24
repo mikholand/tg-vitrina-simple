@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@entities/user/store'
+import { useCartStore } from '@entities/cart/store'
 
 interface NavItem {
   to: string
@@ -9,6 +10,7 @@ interface NavItem {
 }
 
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 const route = useRoute()
 
 // Why not RouterLink's `active-class`/`exact-active-class`: those props
@@ -37,6 +39,7 @@ const customerItems: NavItem[] = [
   { to: '/', label: 'Витрина', icon: 'pi pi-home' },
   { to: '/catalog', label: 'Каталог', icon: 'pi pi-th-large' },
   { to: '/favorites', label: 'Избранное', icon: 'pi pi-heart' },
+  { to: '/cart', label: 'Корзина', icon: 'pi pi-shopping-cart' },
 ]
 
 // Exactly tg-vitrina's tabBarSections, five items, same order: Главное,
@@ -81,11 +84,17 @@ const items = computed<NavItem[]>(() => {
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors"
+          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors"
           :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : ''"
         >
           <i :class="item.icon" class="text-sm" />
           <span class="leading-none">{{ item.label }}</span>
+          <span
+            v-if="item.to === '/cart' && cartStore.itemsCount > 0"
+            class="absolute right-3 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white"
+          >
+            {{ cartStore.itemsCount }}
+          </span>
         </RouterLink>
       </li>
     </ul>

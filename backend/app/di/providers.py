@@ -13,6 +13,7 @@ from app.repositories.category import CategoryRepository
 from app.repositories.contact import ContactRepository
 from app.repositories.favorite import FavoriteRepository
 from app.repositories.invite import InviteRepository
+from app.repositories.order import OrderRepository
 from app.repositories.product import ProductRepository
 from app.repositories.raw_post import RawPostRepository
 from app.repositories.store_profile import StoreProfileRepository
@@ -22,6 +23,7 @@ from app.repositories.view import ViewRepository
 from app.services.category import CategoryService
 from app.services.extraction import ExtractionService
 from app.services.favorite import FavoriteService
+from app.services.order import OrderService
 from app.services.product import ProductService
 from app.services.publishing import PublishingService
 from app.services.sync import SyncOrchestrationService
@@ -86,6 +88,7 @@ class RepositoryProvider(Provider):
     banner_repository = provide(BannerRepository)
     contact_repository = provide(ContactRepository)
     invite_repository = provide(InviteRepository)
+    order_repository = provide(OrderRepository)
 
 
 class ClientProvider(Provider):
@@ -105,3 +108,4 @@ class ServiceProvider(Provider):
     extraction_service = provide(ExtractionService)
     sync_service = provide(SyncOrchestrationService)
     publishing_service = provide(PublishingService)
+    order_service = provide(OrderService)

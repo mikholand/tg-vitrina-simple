@@ -6,6 +6,7 @@ import { getCatalogProduct } from '@entities/product/api'
 import { availabilityLabels, formatPrice } from '@entities/product/labels'
 import ProductGallery from '@entities/product/ui/ProductGallery.vue'
 import { useFavoriteStore } from '@entities/favorite/store'
+import { useCartStore } from '@entities/cart/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
 import { useCategoryStore } from '@entities/category/store'
 import type { PublicContact } from '@entities/contact/types'
@@ -40,6 +41,7 @@ const overlayTopPaddingClass = isMobileTelegramPlatform()
 
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
+const cartStore = useCartStore()
 const storeInfoStore = useStoreInfoStore()
 const categoryStore = useCategoryStore()
 
@@ -113,6 +115,24 @@ function goBack(): void {
 async function toggleFavorite(): Promise<void> {
   if (!product.value) return
   await favoriteStore.toggleFavorite(product.value.id)
+}
+
+// Same tracked-vs-untracked-stock convention as ProductCard.vue/the
+// backend's checkout validation: only a positive tracked quantity blocks
+// adding more.
+const outOfStock = computed(() => product.value?.quantity !== null && (product.value?.quantity ?? 0) <= 0)
+const cartQuantity = computed(() => (product.value ? cartStore.quantityOf(product.value.id) : 0))
+
+const addedToCartAt = ref<number | null>(null)
+
+function addToCart(): void {
+  if (!product.value || outOfStock.value) return
+  cartStore.addItem(product.value.id)
+  const addedAt = Date.now()
+  addedToCartAt.value = addedAt
+  window.setTimeout(() => {
+    if (addedToCartAt.value === addedAt) addedToCartAt.value = null
+  }, 1500)
 }
 
 const shareCopiedAt = ref<number | null>(null)
@@ -277,21 +297,41 @@ onMounted(load)
       <div
         class="fixed bottom-0 left-1/2 z-10 w-full max-w-2xl -translate-x-1/2 border-t border-sf-line bg-sf-bg px-4 pb-safe-bottom pt-3"
       >
+        <p v-if="addedToCartAt" class="mb-1 text-right text-sm text-sf-success">Добавлено в корзину</p>
         <div class="mb-3 flex items-center gap-3">
           <div class="min-w-0">
             <p class="text-[0.65rem] uppercase tracking-widest text-sf-muted">Цена</p>
             <p class="truncate text-lg font-semibold text-sf-ink">{{ price }}</p>
           </div>
-          <button
-            v-if="contacts.length"
-            type="button"
-            class="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-sf-accent px-6 py-3 font-medium text-white"
-            @click="contactSeller"
-          >
-            <i class="pi pi-send" />
-            Написать продавцу
-          </button>
-          <span v-else class="ml-auto text-sm text-sf-muted">Контакты не указаны</span>
+
+          <div class="ml-auto flex shrink-0 items-center gap-2">
+            <button
+              v-if="!outOfStock"
+              type="button"
+              class="relative flex items-center justify-center rounded-full border border-sf-line bg-sf-card p-3"
+              aria-label="В корзину"
+              @click="addToCart"
+            >
+              <i class="pi pi-shopping-cart" />
+              <span
+                v-if="cartQuantity > 0"
+                class="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white"
+              >
+                {{ cartQuantity }}
+              </span>
+            </button>
+
+            <button
+              v-if="contacts.length"
+              type="button"
+              class="flex items-center gap-2 rounded-full bg-sf-accent px-6 py-3 font-medium text-white"
+              @click="contactSeller"
+            >
+              <i class="pi pi-send" />
+              Написать продавцу
+            </button>
+            <span v-else-if="outOfStock" class="text-sm text-sf-muted">Контакты не указаны</span>
+          </div>
         </div>
       </div>
 

@@ -123,6 +123,19 @@ class ProductRepository:
         result = await self._session.execute(stmt)
         return result.scalars().first()
 
+    async def get_published_many(self, product_ids: list[int]) -> list[Product]:
+        """Batch form of `get_published` — used by `OrderService.checkout`
+        to validate every distinct line in a cart with one query instead of
+        one `SELECT` per product (a cart with N distinct items used to cost
+        N round trips)."""
+        if not product_ids:
+            return []
+        stmt = select(Product).where(
+            Product.id.in_(product_ids), Product.status == ProductStatus.PUBLISHED
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def increment_views(self, product_id: int) -> None:
         # synchronize_session=False: callers that hold an in-memory Product
         # instance for this id update its `views_total` themselves, since
