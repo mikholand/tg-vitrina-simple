@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import delete, func, select, update
@@ -151,3 +152,17 @@ class ProductRepository:
         stmt = select(Product).order_by(Product.views_total.desc()).limit(limit)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_published_for_sitemap(self) -> list[tuple[int, datetime]]:
+        """`(id, updated_at)` for every published product — just enough for
+        `sitemap.xml`'s `<url>`/`<lastmod>` entries, deliberately not
+        `get_published_many`'s full `Product` rows (a sitemap can run into
+        the thousands of products; no reason to pull name/photos/etc. for
+        each one just to list its URL)."""
+        stmt = (
+            select(Product.id, Product.updated_at)
+            .where(Product.status == ProductStatus.PUBLISHED)
+            .order_by(Product.id)
+        )
+        result = await self._session.execute(stmt)
+        return [(row.id, row.updated_at) for row in result.all()]

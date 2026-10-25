@@ -8,6 +8,7 @@ import { useStoreInfoStore } from '@entities/store-info/store'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useBannerStore } from '@entities/banner/store'
 import BannerCarousel from '@entities/banner/ui/BannerCarousel.vue'
+import { toAbsoluteUrl, useSeoMeta } from '@shared/seo/useSeoMeta'
 
 // Сколько товаров грузит подборка на главной — хватает и на «Товары», и на
 // первые карточки шелфа «Новинки» (см. newItems ниже).
@@ -29,6 +30,19 @@ const canAddToHome = ref(false)
 // Новая подборка уже приходит отсортированной по дате — «Новинки» просто
 // берёт первые карточки той же выдачи, второй запрос тут не нужен.
 const newItems = computed(() => items.value.slice(0, NEW_SIZE))
+
+// Главная — единственная страница, где заголовок/описание — это просто имя
+// и описание самого магазина (сравните с CatalogPage/ProductDetailPage,
+// которым нужно что-то более конкретное). Если `storeInfo` ещё не
+// загрузился, `useSeoMeta`'s watchEffect сам перезапустится, когда он
+// появится — ничего дополнительно ждать не нужно.
+useSeoMeta(() => ({
+  title: storeInfoStore.storeInfo?.name || 'Магазин',
+  description:
+    storeInfoStore.storeInfo?.description ||
+    `Каталог товаров магазина ${storeInfoStore.storeInfo?.name ?? ''}`.trim(),
+  image: storeInfoStore.storeInfo?.logo ? toAbsoluteUrl(storeInfoStore.storeInfo.logo) : null,
+}))
 
 function goToCatalog(): void {
   const query: Record<string, string> = {}

@@ -13,6 +13,7 @@ import type { PublicContact } from '@entities/contact/types'
 import { getCatalogContacts } from '@entities/contact/api'
 import ContactPicker from '@features/contact-picker/ContactPicker.vue'
 import { shareLink, isInsideTelegram, isMobileTelegramPlatform } from '@shared/telegram/sdk'
+import { toAbsoluteUrl, useJsonLd, useSeoMeta } from '@shared/seo/useSeoMeta'
 
 const props = defineProps<{ id: string }>()
 
@@ -91,6 +92,47 @@ const categoryNames = computed<string[]>(() => {
   }
   walk(categoryStore.tree)
   return product.value.category_ids.map((id) => names.get(id)).filter((name): name is string => !!name)
+})
+
+const AVAILABILITY_TO_SCHEMA: Record<string, string> = {
+  in_stock: 'https://schema.org/InStock',
+  on_order: 'https://schema.org/PreOrder',
+  out_of_stock: 'https://schema.org/OutOfStock',
+}
+
+// Загрузка ещё не завершилась → `storeInfoStore.storeInfo` или `product` —
+// null, и обе функции ниже отдают разумный фоллбек-заголовок вместо пустого;
+// `watchEffect` внутри `useSeoMeta`/`useJsonLd` сам перезапустится, когда
+// `load()` дозаполнит оба.
+useSeoMeta(() => {
+  const item = product.value
+  const storeName = storeInfoStore.storeInfo?.name ?? 'Магазин'
+  return {
+    title: item ? `${item.name} — ${storeName}` : storeName,
+    description: (item?.description || item?.name || '').slice(0, 160) || undefined,
+    image: item?.photo_paths[0] ? toAbsoluteUrl(item.photo_paths[0]) : null,
+  }
+})
+
+useJsonLd('product', () => {
+  const item = product.value
+  if (!item) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: item.name,
+    description: item.description || undefined,
+    image: item.photo_paths.map(toAbsoluteUrl),
+    sku: item.sku || undefined,
+    offers: item.price
+      ? {
+          '@type': 'Offer',
+          priceCurrency: item.currency,
+          price: item.price,
+          availability: AVAILABILITY_TO_SCHEMA[item.availability],
+        }
+      : undefined,
+  }
 })
 
 // Шторка выбора нужна только когда менеджеров несколько — с единственным её

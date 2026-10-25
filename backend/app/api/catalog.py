@@ -1,8 +1,10 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import PlainTextResponse, Response
 
 from app.api.deps import CurrentUser, OptionalUser, VisitorKey
 from app.clients.bot import BotClient
+from app.core.config import Settings
 from app.dto.banner import BannerSchema
 from app.dto.category import CategorySchema
 from app.dto.contact import PublicContactSchema, contact_url
@@ -165,3 +167,61 @@ async def checkout(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     items = await order_repository.list_items(order.id)
     return _order_to_schema(order, items)
+
+
+@router.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt(settings: FromDishka[Settings]) -> str:
+    """Served at the site root (see `frontend/nginx.conf`'s `/robots.txt`
+    proxy_pass) rather than as a static frontend file, so the `Sitemap:`
+    line always points at whatever domain this deployment is actually
+    configured for (`WEBAPP_URL`) instead of a hardcoded value baked into
+    the repo. `/seller`, `/cart`, `/favorites` are purely personal/staff
+    screens — nothing there is worth a search engine's crawl budget, and
+    `/seller/*` isn't reachable without auth anyway."""
+    base_url = settings.app.WEBAPP_URL.rstrip("/")
+    lines = [
+        "User-agent: *",
+        "Disallow: /seller",
+        "Disallow: /cart",
+        "Disallow: /favorites",
+    ]
+    if base_url:
+        lines += ["", f"Sitemap: {base_url}/sitemap.xml"]
+    return "\n".join(lines) + "\n"
+
+
+@router.get("/sitemap.xml")
+async def sitemap_xml(
+    settings: FromDishka[Settings],
+    product_repository: FromDishka[ProductRepository],
+) -> Response:
+    """Lists the storefront's publicly indexable pages: home, the catalog,
+    and every published product. Deliberately excludes `/seller`, `/cart`,
+    `/favorites` (see `robots_txt` above) and draft/hidden products (not in
+    `list_published_for_sitemap`'s query) — a search engine has no business
+    indexing either."""
+    base_url = settings.app.WEBAPP_URL.rstrip("/")
+    urls = [(f"{base_url}/", "daily", "1.0", None), (f"{base_url}/catalog", "daily", "0.8", None)]
+    for product_id, updated_at in await product_repository.list_published_for_sitemap():
+        urls.append(
+            (f"{base_url}/product/{product_id}", "weekly", "0.6", updated_at.date().isoformat())
+        )
+
+    entries = []
+    for loc, changefreq, priority, lastmod in urls:
+        parts = [
+            f"<loc>{loc}</loc>",
+            f"<changefreq>{changefreq}</changefreq>",
+            f"<priority>{priority}</priority>",
+        ]
+        if lastmod:
+            parts.append(f"<lastmod>{lastmod}</lastmod>")
+        entries.append(f"<url>{''.join(parts)}</url>")
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + "".join(entries)
+        + "</urlset>"
+    )
+    return Response(content=xml, media_type="application/xml")

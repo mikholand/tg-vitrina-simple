@@ -6,6 +6,8 @@ import { getCatalogProducts } from '@entities/product/api'
 import ProductCard from '@entities/product/ui/ProductCard.vue'
 import { useCategoryStore } from '@entities/category/store'
 import { useFavoriteStore } from '@entities/favorite/store'
+import { useStoreInfoStore } from '@entities/store-info/store'
+import { useSeoMeta } from '@shared/seo/useSeoMeta'
 
 const PAGE_SIZE = 20
 
@@ -16,6 +18,7 @@ const TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', '
 const route = useRoute()
 const categoryStore = useCategoryStore()
 const favoriteStore = useFavoriteStore()
+const storeInfoStore = useStoreInfoStore()
 
 const products = ref<Product[]>([])
 const total = ref(0)
@@ -49,6 +52,20 @@ function pathTo(id: number | null): Category[] {
 
 const selectedPath = computed(() => pathTo(selectedCategoryId.value))
 const selectedRoot = computed<Category | undefined>(() => selectedPath.value[0])
+
+const storeName = computed(() => storeInfoStore.storeInfo?.name ?? 'Магазин')
+
+useSeoMeta(() => {
+  const categoryName = selectedPath.value.at(-1)?.name
+  return {
+    title: categoryName
+      ? `${categoryName} — Каталог — ${storeName.value}`
+      : `Каталог — ${storeName.value}`,
+    description: categoryName
+      ? `${categoryName}: товары магазина ${storeName.value}`
+      : `Весь каталог товаров магазина ${storeName.value}`,
+  }
+})
 
 const tiles = computed(() => [
   { id: null as number | null, name: 'Все', letter: 'В', tint: TINTS[0] },
