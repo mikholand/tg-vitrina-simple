@@ -427,12 +427,23 @@ onMounted(() => {
           />
         </label>
         <!-- "На заказ" — всегда на выбор покупателя, количество здесь не
-             трактуется как остаток, поэтому поля для него просто нет
-             (сервер тоже обнуляет quantity при этом статусе — см.
-             ProductService._normalize_stock). -->
-        <label v-if="availability !== 'on_order'" class="flex flex-1 flex-col gap-1.5 text-sm">
+             трактуется как остаток, поэтому для него поле просто
+             отключено (сервер тоже обнуляет quantity при этом статусе —
+             см. ProductService._normalize_stock). Поле остаётся в
+             разметке во всех статусах (не v-if), а не только скрывает
+             значение — иначе "Наличие" растягивается на всю строку и
+             макет визуально "прыгает" между статусами. -->
+        <label class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Количество</span>
-          <InputNumber v-model="quantity" :min="0" show-buttons button-layout="horizontal" fluid />
+          <InputNumber
+            v-model="quantity"
+            :min="0"
+            show-buttons
+            button-layout="horizontal"
+            fluid
+            :disabled="availability === 'on_order'"
+            placeholder="Решает покупатель"
+          />
         </label>
       </div>
 
