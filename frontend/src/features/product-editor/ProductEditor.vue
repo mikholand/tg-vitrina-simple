@@ -416,7 +416,11 @@ onMounted(() => {
       </label>
 
       <div class="flex gap-3">
-        <label class="flex flex-1 flex-col gap-1.5 text-sm">
+        <!-- flex-[3] vs flex-[2] (не 1/1): "Нет в наличии" — самый длинный
+             вариант — впритык умещался бы в равной половине, а степпер
+             количества своей половине не нужен — цифра плюс две узкие
+             кнопки, там всегда остаётся пустое место. -->
+        <label class="flex flex-[3] flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Наличие</span>
           <Select
             v-model="availability"
@@ -433,7 +437,7 @@ onMounted(() => {
              разметке во всех статусах (не v-if), а не только скрывает
              значение — иначе "Наличие" растягивается на всю строку и
              макет визуально "прыгает" между статусами. -->
-        <label class="flex flex-1 flex-col gap-1.5 text-sm">
+        <label class="flex flex-[2] flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Количество</span>
           <InputNumber
             v-model="quantity"
@@ -442,7 +446,6 @@ onMounted(() => {
             button-layout="horizontal"
             fluid
             :disabled="availability === 'on_order'"
-            placeholder="Решает покупатель"
           />
         </label>
       </div>
