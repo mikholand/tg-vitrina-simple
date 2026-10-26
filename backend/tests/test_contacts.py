@@ -20,7 +20,14 @@ async def test_create_and_list_contact(client, seller):
     assert contacts[0]["url"] == "https://t.me/nova_market"
 
 
-async def test_moderator_can_manage_contacts_but_not_settings(client, moderator):
+async def test_moderator_cannot_manage_contacts_or_settings(client, moderator):
+    """Contacts are owner-only (CurrentSeller), same tier as shop settings and
+    team management — a moderator reaches none of them, matching the
+    frontend's own `requiresOwner: true` on `/seller/contacts`
+    (router/index.ts). This replaced an earlier version of this test that
+    asserted the opposite for contacts (a moderator could manage them over
+    the API even though the Mini App's router guard never let them reach the
+    page) — see `app/api/seller/contacts.py`."""
     _, headers = moderator
 
     create_response = await client.post(
@@ -28,7 +35,7 @@ async def test_moderator_can_manage_contacts_but_not_settings(client, moderator)
         headers=headers,
         json={"label": "Сервис", "type": "phone", "value": "+7 999 000-00-00"},
     )
-    assert create_response.status_code == 200
+    assert create_response.status_code == 403
 
     settings_response = await client.get("/api/v1/seller/settings", headers=headers)
     assert settings_response.status_code == 403
