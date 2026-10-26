@@ -17,30 +17,26 @@ class ProductService:
     def _normalize_stock(
         availability: Availability, quantity: int | None
     ) -> tuple[Availability, int | None]:
-        """Two narrow, one-directional rules for a seller-authored save —
-        deliberately NOT the old `resolve_availability` (which re-derived
+        """Deliberately NOT the old `resolve_availability` (which re-derived
         availability from quantity on *every* save and made it impossible
         to keep "на заказ"/"нет в наличии" together with a tracked number
         at all):
 
-        - "на заказ" is always the buyer's choice, never a seller-tracked
-          count — any quantity sent alongside it is dropped, so ordering it
-          is never capped (see `entities/product/stock.ts` on the
-          frontend, which already treats `quantity is None` as unlimited).
         - a quantity of exactly 0 always reads as "нет в наличии",
           regardless of whatever availability was requested alongside it —
           0 in stock is never "в наличии" — and the same rule is applied
           when checkout decrements stock to 0 (see
           `OrderRepository.try_decrement_stock`).
-
-        Neither rule touches a positive, non-"на заказ" quantity — a
-        seller can still freely pair "нет в наличии" with a nonzero count
-        (e.g. to track incoming stock not yet for sale).
+        - "на заказ" and "нет в наличии" never carry a tracked quantity at
+          all: "на заказ" is always the buyer's choice (so ordering it is
+          never capped — see `entities/product/stock.ts` on the frontend,
+          which treats `quantity is None` as unlimited), and "нет в
+          наличии" has nothing to count until it's back in stock.
         """
-        if availability == Availability.ON_ORDER:
-            return availability, None
         if quantity == 0:
-            return Availability.OUT_OF_STOCK, quantity
+            availability = Availability.OUT_OF_STOCK
+        if availability in (Availability.ON_ORDER, Availability.OUT_OF_STOCK):
+            quantity = None
         return availability, quantity
 
     async def create_by_seller(self, payload: ProductCreateSchema) -> Product:

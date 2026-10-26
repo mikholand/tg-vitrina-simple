@@ -62,7 +62,9 @@ async def test_checkout_depleting_stock_to_zero_flips_availability_to_out_of_sto
     client, customer, make_product
 ):
     """A tracked "в наличии" product that a checkout sells down to exactly
-    zero reads as "нет в наличии" from then on — see
+    zero reads as "нет в наличии" from then on, with quantity cleared back
+    to untracked (нет в наличии never carries a count — see
+    `ProductService._normalize_stock`) — see
     `OrderRepository.try_decrement_stock`."""
     _, headers = customer
     product = await make_product(
@@ -80,7 +82,7 @@ async def test_checkout_depleting_stock_to_zero_flips_availability_to_out_of_sto
     by_id = {item["id"]: item for item in products.json()["items"]}
     # `/catalog/products` only ever lists published items — sold out to
     # zero doesn't unpublish it, so it should still be there, just flagged.
-    assert by_id[product.id]["quantity"] == 0
+    assert by_id[product.id]["quantity"] is None
     assert by_id[product.id]["availability"] == "out_of_stock"
 
 

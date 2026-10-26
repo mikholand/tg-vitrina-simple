@@ -49,13 +49,17 @@ const sku = ref('')
 const availability = ref<ProductAvailability>('unknown')
 const quantity = ref<number | null>(null)
 
-// "На заказ" is always the buyer's choice, never a tracked count — clears
-// the field the instant it's picked rather than just hiding a stale
-// leftover number (the backend drops it on save either way, see
-// ProductService._normalize_stock, but the form shouldn't show a number
-// that's about to be discarded).
-watch(availability, (value) => {
-  if (value === 'on_order') quantity.value = null
+// "На заказ" is always the buyer's choice, never a tracked count, and "нет
+// в наличии" has nothing to track until it's back — so quantity is
+// disabled for both. Backend mirrors this (ProductService._normalize_stock
+// drops it on save either way), but the form shouldn't show/accept a
+// number that's about to be discarded.
+const quantityDisabled = computed(
+  () => availability.value === 'on_order' || availability.value === 'out_of_stock',
+)
+
+watch(availability, () => {
+  if (quantityDisabled.value) quantity.value = null
 })
 
 const categoryIds = ref<number[]>([])
@@ -129,7 +133,7 @@ function resetForm(product: Product | null): void {
   description.value = product?.description ?? ''
   sku.value = product?.sku ?? ''
   availability.value = product?.availability ?? 'unknown'
-  quantity.value = product?.quantity ?? null
+  quantity.value = quantityDisabled.value ? null : (product?.quantity ?? null)
   categoryIds.value = product ? [...product.category_ids] : []
   publishToChannel.value = product?.publish_to_channel ?? false
   photoPaths.value = product ? [...product.photo_paths] : []
@@ -430,9 +434,10 @@ onMounted(() => {
             fluid
           />
         </label>
-        <!-- "На заказ" — всегда на выбор покупателя, количество здесь не
-             трактуется как остаток, поэтому для него поле просто
-             отключено (сервер тоже обнуляет quantity при этом статусе —
+        <!-- "На заказ"/"нет в наличии" — ни то ни другое не трактуется как
+             остаток (на заказ — выбор покупателя, нет в наличии — нечего
+             считать, пока не привезли), поэтому поле для них просто
+             отключено (сервер тоже обнуляет quantity при этих статусах —
              см. ProductService._normalize_stock). Поле остаётся в
              разметке во всех статусах (не v-if), а не только скрывает
              значение — иначе "Наличие" растягивается на всю строку и
@@ -445,7 +450,7 @@ onMounted(() => {
             show-buttons
             button-layout="horizontal"
             fluid
-            :disabled="availability === 'on_order'"
+            :disabled="quantityDisabled"
           />
         </label>
       </div>

@@ -38,15 +38,16 @@ class OrderRepository:
             return False
 
         # Sold out to exactly zero by this checkout — reads as "Нет в
-        # наличии" from here on, same rule `ProductService._normalize_stock`
-        # applies on a seller save. A follow-up conditional UPDATE (rather
-        # than computing the post-decrement value above) means this only
-        # ever fires when the row is *actually* at zero right now, safe
-        # under concurrent decrements.
+        # наличии" from here on, quantity cleared back to untracked, same
+        # rule `ProductService._normalize_stock` applies on a seller save
+        # (there's nothing left to count until it's restocked). A follow-up
+        # conditional UPDATE (rather than computing the post-decrement value
+        # above) means this only ever fires when the row is *actually* at
+        # zero right now, safe under concurrent decrements.
         await self._session.execute(
             update(Product)
             .where(Product.id == product_id, Product.quantity == 0)
-            .values(availability=Availability.OUT_OF_STOCK)
+            .values(availability=Availability.OUT_OF_STOCK, quantity=None)
             .execution_options(synchronize_session=False)
         )
         return True
