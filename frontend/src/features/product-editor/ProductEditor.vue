@@ -34,11 +34,14 @@ const emit = defineEmits<{
 
 const categoryStore = useCategoryStore()
 
+// "Неизвестно" (Availability.UNKNOWN) isn't offered here — it only ever
+// comes from the extractor's own LLM guess on a freshly-imported product
+// it couldn't read a status from (see resolve_availability), never
+// something a seller should deliberately pick by hand.
 const availabilityOptions: { label: string; value: ProductAvailability }[] = [
   { label: 'В наличии', value: 'in_stock' },
   { label: 'На заказ', value: 'on_order' },
   { label: 'Нет в наличии', value: 'out_of_stock' },
-  { label: 'Неизвестно', value: 'unknown' },
 ]
 
 const name = ref('')
@@ -46,7 +49,7 @@ const price = ref('')
 const currency = ref('')
 const description = ref('')
 const sku = ref('')
-const availability = ref<ProductAvailability>('unknown')
+const availability = ref<ProductAvailability>('in_stock')
 const quantity = ref<number | null>(null)
 
 // "На заказ" is always the buyer's choice, never a tracked count, and "нет
@@ -132,7 +135,7 @@ function resetForm(product: Product | null): void {
   currency.value = product?.currency ?? 'RUB'
   description.value = product?.description ?? ''
   sku.value = product?.sku ?? ''
-  availability.value = product?.availability ?? 'unknown'
+  availability.value = product?.availability ?? 'in_stock'
   quantity.value = quantityDisabled.value ? null : (product?.quantity ?? null)
   categoryIds.value = product ? [...product.category_ids] : []
   publishToChannel.value = product?.publish_to_channel ?? false
