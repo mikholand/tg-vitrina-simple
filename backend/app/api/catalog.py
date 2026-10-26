@@ -2,7 +2,7 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse, Response
 
-from app.api.deps import CurrentUser, OptionalUser, VisitorKey
+from app.api.deps import OptionalUser, VisitorKey
 from app.clients.bot import BotClient
 from app.core.config import Settings
 from app.dto.banner import BannerSchema
@@ -153,7 +153,7 @@ async def get_product(
 @router.post("/orders", status_code=status.HTTP_201_CREATED)
 async def checkout(
     payload: CheckoutRequestSchema,
-    user: CurrentUser,
+    user: OptionalUser,
     order_service: FromDishka[OrderService],
     order_repository: FromDishka[OrderRepository],
 ) -> OrderSchema:
@@ -162,6 +162,8 @@ async def checkout(
             user,
             [(item.product_id, item.quantity) for item in payload.items],
             payload.comment,
+            payload.contact_name,
+            payload.contact_phone,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

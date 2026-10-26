@@ -12,10 +12,21 @@ const authStore = useAuthStore()
 const loading = ref(true)
 const submitting = ref(false)
 const comment = ref('')
+const contactName = ref('')
+const contactPhone = ref('')
 const error = ref<string | null>(null)
 const placedOrder = ref<Order | null>(null)
 
 const isEmpty = computed(() => cartStore.lines.size === 0)
+
+// No Telegram session (the storefront opened as a plain website) means
+// there's no identity to attach to the order — the backend requires a name
+// + phone instead (see OrderService.checkout's `contact_required`).
+const needsContact = computed(() => !authStore.token)
+const contactValid = computed(
+  () => !needsContact.value || (contactName.value.trim() !== '' && contactPhone.value.trim() !== ''),
+)
+const canSubmit = computed(() => !isEmpty.value && contactValid.value)
 
 const totalLabel = computed(() => {
   const currency = cartStore.products[0]?.currency ?? 'RUB'
@@ -61,6 +72,9 @@ function describeError(detail: string): string {
   if (detail === 'empty_cart') {
     return 'Корзина пуста.'
   }
+  if (detail === 'contact_required') {
+    return 'Укажите имя и телефон, чтобы продавец мог с вами связаться.'
+  }
   return 'Не удалось оформить заказ. Попробуйте ещё раз.'
 }
 
@@ -74,12 +88,22 @@ async function load(): Promise<void> {
 }
 
 async function submit(): Promise<void> {
-  if (isEmpty.value || submitting.value) return
+  if (!canSubmit.value || submitting.value) return
+  if (needsContact.value && !contactValid.value) {
+    error.value = 'Укажите имя и телефон, чтобы продавец мог с вами связаться.'
+    return
+  }
   submitting.value = true
   error.value = null
   try {
-    placedOrder.value = await cartStore.submitOrder(comment.value.trim() || null)
+    placedOrder.value = await cartStore.submitOrder(
+      comment.value.trim() || null,
+      needsContact.value ? contactName.value.trim() : null,
+      needsContact.value ? contactPhone.value.trim() : null,
+    )
     comment.value = ''
+    contactName.value = ''
+    contactPhone.value = ''
   } catch (err) {
     const detail =
       (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? ''
@@ -190,15 +214,26 @@ onMounted(load)
           </div>
         </div>
 
+        <template v-if="needsContact">
+          <p class="text-xs text-sf-muted">
+            Вы оформляете заказ не из Telegram — укажите имя и телефон, чтобы продавец мог с вами связаться.
+          </p>
+          <label class="flex flex-col gap-1 text-sm">
+            <span class="text-sf-muted">Имя *</span>
+            <InputText v-model="contactName" placeholder="Как к вам обращаться" fluid />
+          </label>
+          <label class="flex flex-col gap-1 text-sm">
+            <span class="text-sf-muted">Телефон *</span>
+            <InputText v-model="contactPhone" type="tel" placeholder="+7 ..." fluid />
+          </label>
+        </template>
+
         <label class="flex flex-col gap-1 text-sm">
           <span class="text-sf-muted">Комментарий к заказу (необязательно)</span>
           <Textarea v-model="comment" auto-resize rows="2" fluid placeholder="Например, время доставки" />
         </label>
 
         <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-        <Message v-else-if="!authStore.token" severity="warn" :closable="false">
-          Чтобы оформить заказ, откройте витрину через Telegram.
-        </Message>
 
         <div class="flex items-center justify-between rounded-2xl bg-sf-card p-4 shadow-sm">
           <span class="text-sf-muted">Итого</span>
@@ -208,7 +243,7 @@ onMounted(load)
         <Button
           label="Отправить заказ"
           :loading="submitting"
-          :disabled="!authStore.token"
+          :disabled="!canSubmit"
           fluid
           @click="submit"
         />

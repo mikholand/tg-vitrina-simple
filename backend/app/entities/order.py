@@ -30,13 +30,20 @@ class Order(Base, TimestampMixin):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    # Checkout requires a logged-in Mini App session (`CurrentUser`), so this
-    # is always set on creation. Nullable + SET NULL purely for safety if a
-    # user row is ever removed in the future — the order itself, and its
-    # already-sent notification, must survive that.
+    # Set when checkout happens inside the Telegram Mini App (`OptionalUser`
+    # resolves a real `User`). Null for a guest checkout from the plain
+    # website, where `contact_name`/`contact_phone` carry the customer's
+    # identity instead — see `OrderService.checkout`. Also nullable + SET
+    # NULL for safety if a user row is ever removed in the future — the
+    # order itself, and its already-sent notification, must survive that.
     customer_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
+    # Required by `OrderService.checkout` whenever `customer_id` is None (no
+    # Telegram identity to fall back on); always optional on the column
+    # itself since a Telegram-authenticated checkout never needs them.
+    contact_name: Mapped[str | None] = mapped_column(String(200))
+    contact_phone: Mapped[str | None] = mapped_column(String(50))
     total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="RUB", nullable=False)
     comment: Mapped[str | None] = mapped_column(Text)
@@ -72,6 +79,7 @@ class OrderItem(Base):
         BigInteger, ForeignKey("products.id", ondelete="SET NULL")
     )
     product_name: Mapped[str] = mapped_column(String(500), nullable=False)
+    sku: Mapped[str | None] = mapped_column(String(100))
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)

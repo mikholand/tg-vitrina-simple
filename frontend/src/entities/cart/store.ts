@@ -116,13 +116,23 @@ export const useCartStore = defineStore('cart', () => {
 
   /** Posts the cart as an order, then clears it on success. Throws (and
    * leaves the cart untouched) on any failure — insufficient stock,
-   * unavailable product, or not being logged in. */
-  async function submitOrder(comment: string | null): Promise<Order> {
+   * unavailable product, or (checkout outside Telegram, with no
+   * contactName/contactPhone) a missing contact. */
+  async function submitOrder(
+    comment: string | null,
+    contactName?: string | null,
+    contactPhone?: string | null,
+  ): Promise<Order> {
     const items = Array.from(lines.value.entries()).map(([product_id, quantity]) => ({
       product_id,
       quantity,
     }))
-    const order = await checkoutRequest({ items, comment })
+    const order = await checkoutRequest({
+      items,
+      comment,
+      contact_name: contactName,
+      contact_phone: contactPhone,
+    })
     clear()
     return order
   }

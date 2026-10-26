@@ -26,18 +26,32 @@ class OrderService:
 
     async def checkout(
         self,
-        customer: User,
+        customer: User | None,
         items: list[tuple[int, int]],
         comment: str | None,
+        contact_name: str | None = None,
+        contact_phone: str | None = None,
     ) -> Order:
         """Validates every line against the live catalog (never trusts a
         client-supplied price/name/status), reserves stock, snapshots the
         cart into an `Order` + `OrderItem`s, and forwards it to the seller's
         Telegram chat. Raises `ValueError` with a short machine-readable
         code on any validation failure — the API layer maps that straight
-        to a 400 (see `app/api/catalog.py`)."""
+        to a 400 (see `app/api/catalog.py`).
+
+        `customer` is `None` for a checkout from the plain website (outside
+        the Telegram Mini App, so `OptionalUser` resolved no session) — in
+        that case `contact_name`/`contact_phone` are the only way to know
+        who the order is from, so they're required here rather than left to
+        the DB's nullable columns to silently allow."""
         if not items:
             raise ValueError("empty_cart")
+
+        if customer is None:
+            contact_name = (contact_name or "").strip() or None
+            contact_phone = (contact_phone or "").strip() or None
+            if not contact_name or not contact_phone:
+                raise ValueError("contact_required")
 
         # A client sending the same product twice (e.g. two rapid taps
         # before the cart store settles) shouldn't become two separate
@@ -79,6 +93,7 @@ class OrderService:
                 OrderItem(
                     product_id=product.id,
                     product_name=product.name,
+                    sku=product.sku,
                     price=price,
                     currency=product.currency,
                     quantity=quantity,
@@ -93,17 +108,19 @@ class OrderService:
                 raise ValueError(f"insufficient_stock:{product_id}")
 
         order = await self._order_repository.create(
-            customer_id=customer.id,
+            customer_id=customer.id if customer is not None else None,
             total=total,
             currency=currency,
             comment=comment,
             items=order_items,
+            contact_name=contact_name,
+            contact_phone=contact_phone,
         )
 
         await self._notify(order, order_items, customer)
         return order
 
-    async def _notify(self, order: Order, items: list[OrderItem], customer: User) -> None:
+    async def _notify(self, order: Order, items: list[OrderItem], customer: User | None) -> None:
         profile = await self._store_profile_repository.get()
         chat_id = profile.order_notification_chat_id
         if chat_id is None:
@@ -126,18 +143,26 @@ class OrderService:
         await self._order_repository.mark_notified(order.id)
 
     @staticmethod
-    def _format_notification(order: Order, items: list[OrderItem], customer: User) -> str:
-        if customer.tg_username:
-            who = f"@{customer.tg_username}"
+    def _format_notification(order: Order, items: list[OrderItem], customer: User | None) -> str:
+        if customer is not None:
+            if customer.tg_username:
+                who = f"@{customer.tg_username}"
+            else:
+                who = " ".join(
+                    filter(None, [customer.tg_first_name, customer.tg_last_name])
+                ) or str(customer.id)
         else:
-            who = " ".join(filter(None, [customer.tg_first_name, customer.tg_last_name])) or str(
-                customer.id
-            )
+            # Guest checkout from the plain website — `checkout()` already
+            # guarantees `contact_name` is set whenever `customer` is None.
+            who = order.contact_name or "гость с сайта"
 
         lines = [f"🛒 Новый заказ №{order.id} от {who}"]
+        if order.contact_phone:
+            lines.append(f"Телефон: {order.contact_phone}")
         for item in items:
+            sku = f" ({item.sku})" if item.sku else ""
             lines.append(
-                f"• {item.product_name} × {item.quantity} = {item.price * item.quantity} {item.currency}"
+                f"• {item.product_name}{sku} × {item.quantity} = {item.price * item.quantity} {item.currency}"
             )
         lines.append(f"Итого: {order.total} {order.currency}")
         if order.comment:

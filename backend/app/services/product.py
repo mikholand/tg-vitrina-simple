@@ -18,15 +18,21 @@ class ProductService:
         extractor-authored draft, except it's flagged `edited_by_seller` up
         front — there's no source post for the extractor to ever match it
         against, but this keeps the invariant explicit and consistent with
-        every other seller-touched product."""
-        availability = resolve_availability(payload.quantity, payload.availability)
+        every other seller-touched product.
+
+        Unlike the extractor path, `availability` here is the seller's own
+        explicit choice and is stored as-is — never re-derived from
+        `quantity` via `resolve_availability` (that's for the extractor's
+        unreliable LLM guesses). A seller must be able to pick "на заказ"
+        while still entering a quantity, without that number silently
+        forcing the status back to "в наличии"."""
         product = await self._product_repository.create_draft(
             name=payload.name,
             price=payload.price,
             currency=payload.currency,
             description=payload.description,
             sku=payload.sku,
-            availability=availability,
+            availability=payload.availability,
             quantity=payload.quantity,
             photo_paths=[],
             source_post_id=None,
@@ -99,7 +105,6 @@ class ProductService:
         if payload.publish_to_channel is not None:
             product.publish_to_channel = payload.publish_to_channel
 
-        product.availability = resolve_availability(product.quantity, product.availability)
         product.edited_by_seller = True
 
         if payload.category_ids is not None:

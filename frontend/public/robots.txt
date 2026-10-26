@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Allow: /catalog
-Allow: /product/
-Disallow: /seller/
-Disallow: /cart
-Disallow: /favorites

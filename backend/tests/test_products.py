@@ -193,6 +193,35 @@ async def test_create_product_then_attach_photo_and_video(client, seller):
     assert second_video_response.json()["video_path"] != video_path
 
 
+async def test_seller_can_set_on_order_or_out_of_stock_with_a_tracked_quantity(client, seller):
+    """Regression test: `availability` used to be silently re-derived from
+    `quantity` on every seller save (`resolve_availability`), so typing any
+    positive quantity forced the status back to "в наличии" and a seller
+    could never save "на заказ"/"нет в наличии" together with a number —
+    see `ProductService.create_by_seller`/`update_by_seller`."""
+    _, headers = seller
+
+    create_response = await client.post(
+        "/api/v1/seller/products",
+        json={"name": "На заказ", "availability": "on_order", "quantity": 5},
+        headers=headers,
+    )
+    assert create_response.status_code == 201
+    body = create_response.json()
+    assert body["availability"] == "on_order"
+    assert body["quantity"] == 5
+
+    patch_response = await client.patch(
+        f"/api/v1/seller/products/{body['id']}",
+        json={"availability": "out_of_stock", "quantity": 3},
+        headers=headers,
+    )
+    assert patch_response.status_code == 200
+    patched = patch_response.json()
+    assert patched["availability"] == "out_of_stock"
+    assert patched["quantity"] == 3
+
+
 async def test_product_photo_upload_is_reencoded_to_webp(client, seller, make_product):
     """The file actually written to disk is WebP-encoded, independent of
     what format/extension the seller uploaded — not just the `.webp` name

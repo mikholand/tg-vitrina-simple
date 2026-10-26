@@ -43,8 +43,17 @@ class OrderRepository:
         currency: str,
         comment: str | None,
         items: list[OrderItem],
+        contact_name: str | None = None,
+        contact_phone: str | None = None,
     ) -> Order:
-        order = Order(customer_id=customer_id, total=total, currency=currency, comment=comment)
+        order = Order(
+            customer_id=customer_id,
+            total=total,
+            currency=currency,
+            comment=comment,
+            contact_name=contact_name,
+            contact_phone=contact_phone,
+        )
         self._session.add(order)
         await self._session.flush()
         for item in items:

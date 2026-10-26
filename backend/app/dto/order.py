@@ -14,6 +14,10 @@ class CartItemInputSchema(BaseModel):
 class CheckoutRequestSchema(BaseModel):
     items: list[CartItemInputSchema]
     comment: str | None = None
+    # Required by `OrderService.checkout` for a guest checkout (no Telegram
+    # session) — see `app/api/deps.OptionalUser` on the `/orders` route.
+    contact_name: str | None = Field(default=None, max_length=200)
+    contact_phone: str | None = Field(default=None, max_length=50)
 
 
 class OrderItemSchema(BaseModel):
@@ -22,6 +26,7 @@ class OrderItemSchema(BaseModel):
     id: int
     product_id: int | None
     product_name: str
+    sku: str | None
     price: Decimal
     currency: str
     quantity: int
@@ -32,6 +37,8 @@ class OrderSchema(BaseModel):
 
     id: int
     customer_id: int | None
+    contact_name: str | None
+    contact_phone: str | None
     total: Decimal
     currency: str
     comment: str | None

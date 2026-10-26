@@ -14,7 +14,12 @@ async def test_checkout_creates_order_decrements_stock_and_notifies(
 ):
     _, headers = customer
     p1 = await make_product(
-        name="p1", price="100.00", currency="RUB", status=ProductStatus.PUBLISHED, quantity=5
+        name="p1",
+        sku="SKU-1",
+        price="100.00",
+        currency="RUB",
+        status=ProductStatus.PUBLISHED,
+        quantity=5,
     )
     p2 = await make_product(
         name="p2", price="50.00", currency="RUB", status=ProductStatus.PUBLISHED, quantity=None
@@ -42,6 +47,9 @@ async def test_checkout_creates_order_decrements_stock_and_notifies(
     _, kwargs = mock_bot_send_message.call_args
     assert kwargs["chat_id"] == -100123456789
     assert "350.00" in kwargs["text"]
+    # p1's SKU shown in parens next to its name; p2 has none, so no parens.
+    assert "p1 (SKU-1)" in kwargs["text"]
+    assert "p2 (" not in kwargs["text"]
 
     # Tracked-stock product decremented; untracked (quantity=None) left alone.
     products = await client.get("/api/v1/catalog/products")
@@ -106,12 +114,46 @@ async def test_checkout_rejects_empty_cart(client, customer):
     assert response.status_code == 400
 
 
-async def test_checkout_requires_auth(client, make_product):
+async def test_checkout_without_auth_requires_contact(client, make_product):
+    """No Telegram session (`OptionalUser` resolves to None) — unlike the
+    old hard `CurrentUser` requirement, this no longer 401s outright, but
+    `contact_name`/`contact_phone` take over as the required identity."""
     product = await make_product(price="10.00", status=ProductStatus.PUBLISHED, quantity=5)
     response = await client.post(
         "/api/v1/catalog/orders", json={"items": [{"product_id": product.id, "quantity": 1}]}
     )
-    assert response.status_code == 401
+    assert response.status_code == 400
+    assert response.json()["detail"] == "contact_required"
+
+
+async def test_checkout_without_auth_succeeds_with_contact(
+    client, container, make_product, mock_bot_send_message
+):
+    """A guest checkout from the plain website: no Authorization header, but
+    a name + phone supplied — succeeds, is attributed to no customer, and
+    the Telegram notification uses the contact info in place of a Telegram
+    identity."""
+    product = await make_product(price="10.00", status=ProductStatus.PUBLISHED, quantity=5)
+    await _set_order_chat(container, -100123456789)
+
+    response = await client.post(
+        "/api/v1/catalog/orders",
+        json={
+            "items": [{"product_id": product.id, "quantity": 1}],
+            "contact_name": "Иван",
+            "contact_phone": "+79990001122",
+        },
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["customer_id"] is None
+    assert body["contact_name"] == "Иван"
+    assert body["contact_phone"] == "+79990001122"
+
+    mock_bot_send_message.assert_called_once()
+    _, kwargs = mock_bot_send_message.call_args
+    assert "от Иван" in kwargs["text"]
+    assert "+79990001122" in kwargs["text"]
 
 
 async def test_seller_order_history_lists_checked_out_orders(

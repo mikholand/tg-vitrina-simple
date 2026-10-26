@@ -83,11 +83,14 @@ function onAddToCart(event: Event): void {
       <button
         v-if="!outOfStock"
         type="button"
-        class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-sf-accent text-white shadow-sm"
+        class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-white/85 backdrop-blur"
         aria-label="В корзину"
         @click="onAddToCart"
       >
-        <i class="pi pi-shopping-cart text-sm" />
+        <i
+          class="pi pi-shopping-cart text-sm"
+          :class="cartQuantity > 0 ? 'text-sf-accent' : 'text-sf-muted'"
+        />
         <span
           v-if="cartQuantity > 0"
           class="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white"
