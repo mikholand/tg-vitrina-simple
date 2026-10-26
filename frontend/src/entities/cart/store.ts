@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Product } from '@entities/product/types'
 import { getCatalogProduct } from '@entities/product/api'
+import { maxCartQuantity } from '@entities/product/stock'
 import { checkout as checkoutRequest } from './api'
 import type { Order } from './types'
 
@@ -84,24 +85,41 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   /**
-   * Resolves product details for every line in the cart. Any id that no
-   * longer resolves (product deleted/unpublished since it was added) is
-   * silently dropped from the cart too — there's nothing to show or price
-   * for it, and checkout would just reject it as `product_unavailable`
-   * anyway.
+   * Resolves product details for every line in the cart, then reconciles
+   * against live stock/availability: a line whose product no longer
+   * resolves (deleted/unpublished since it was added) is dropped — nothing
+   * to show or price for it — and a line that now exceeds what can
+   * actually be ordered (sold out, or the seller flipped it to "нет в
+   * наличии" since it was added) is clamped down to `maxCartQuantity`
+   * rather than left to just error at checkout. Mirrors the same cap
+   * ProductCard.vue/ProductDetailPage.vue enforce when adding.
    */
   async function fetchCartProducts(): Promise<void> {
     const ids = Array.from(lines.value.keys())
     const resolved = await Promise.all(ids.map((id) => getCatalogProduct(id).catch(() => null)))
-    products.value = resolved.filter((product): product is Product => product !== null)
+    const byId = new Map(
+      resolved.filter((product): product is Product => product !== null).map((p) => [p.id, p]),
+    )
 
-    const resolvedIds = new Set(products.value.map((product) => product.id))
-    if (resolvedIds.size !== lines.value.size) {
-      const pruned = new Map(
-        Array.from(lines.value.entries()).filter(([productId]) => resolvedIds.has(productId)),
-      )
-      lines.value = pruned
-      writeLines(pruned)
+    let changed = byId.size !== lines.value.size
+    const next = new Map<number, number>()
+    for (const [productId, quantity] of lines.value) {
+      const product = byId.get(productId)
+      if (!product) continue
+      const max = maxCartQuantity(product)
+      const clamped = max === null ? quantity : Math.min(quantity, max)
+      if (clamped <= 0) {
+        changed = true
+        continue
+      }
+      if (clamped !== quantity) changed = true
+      next.set(productId, clamped)
+    }
+
+    products.value = Array.from(byId.values()).filter((product) => next.has(product.id))
+    if (changed) {
+      lines.value = next
+      writeLines(next)
     }
   }
 

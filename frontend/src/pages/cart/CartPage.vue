@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product } from '@entities/product/types'
 import { formatPrice } from '@entities/product/labels'
+import { maxCartQuantity } from '@entities/product/stock'
 import { useCartStore } from '@entities/cart/store'
 import { useAuthStore } from '@entities/user/store'
 import type { Order } from '@entities/cart/types'
@@ -37,11 +38,12 @@ function thumbnail(product: Product): string | null {
   return product.photo_paths[0] ?? null
 }
 
-// Tracked stock only — mirrors ProductCard.vue/ProductDetailPage.vue's
-// outOfStock computation, used here to cap the stepper's "+" so a customer
-// can't build a cart line the backend will reject at checkout anyway.
+// Same cap ProductCard.vue/ProductDetailPage.vue use for "add to cart" —
+// ties the "+" stepper to both tracked quantity AND an explicit "нет в
+// наличии", so a customer can't build a cart line the backend will reject
+// at checkout anyway.
 function maxQuantity(product: Product): number | null {
-  return product.quantity
+  return maxCartQuantity(product)
 }
 
 function increment(product: Product): void {

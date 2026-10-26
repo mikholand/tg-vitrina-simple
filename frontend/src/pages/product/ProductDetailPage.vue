@@ -4,6 +4,7 @@ import type { CategoryTreeNode } from '@entities/category/types'
 import AppSpinner from '@shared/ui/AppSpinner.vue'
 import { getCatalogProduct } from '@entities/product/api'
 import { availabilityLabels, formatPrice } from '@entities/product/labels'
+import { isOutOfStock, maxCartQuantity, shouldShowQuantity } from '@entities/product/stock'
 import ProductGallery from '@entities/product/ui/ProductGallery.vue'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useCartStore } from '@entities/cart/store'
@@ -64,8 +65,9 @@ const specs = computed<{ label: string; value: string }[]>(() => {
   if (item.availability !== 'unknown') {
     rows.push({ label: 'Наличие', value: availabilityLabels[item.availability] })
   }
-  // Только положительный остаток стоит показывать: 0 уже читается строкой выше.
-  if (item.quantity) rows.push({ label: 'Осталось', value: `${item.quantity} шт.` })
+  // Остаток показываем только для "в наличии" — рядом с "на заказ"/"нет в
+  // наличии" число читается как противоречие самой метке.
+  if (shouldShowQuantity(item)) rows.push({ label: 'Осталось', value: `${item.quantity} шт.` })
   if (item.sku) rows.push({ label: 'Артикул', value: item.sku })
   return rows
 })
@@ -159,16 +161,15 @@ async function toggleFavorite(): Promise<void> {
   await favoriteStore.toggleFavorite(product.value.id)
 }
 
-// Same tracked-vs-untracked-stock convention as ProductCard.vue/the
-// backend's checkout validation: only a positive tracked quantity blocks
-// adding more.
-const outOfStock = computed(() => product.value?.quantity !== null && (product.value?.quantity ?? 0) <= 0)
+const outOfStock = computed(() => (product.value ? isOutOfStock(product.value) : false))
 const cartQuantity = computed(() => (product.value ? cartStore.quantityOf(product.value.id) : 0))
 
 const addedToCartAt = ref<number | null>(null)
 
 function addToCart(): void {
-  if (!product.value || outOfStock.value) return
+  if (!product.value) return
+  const max = maxCartQuantity(product.value)
+  if (max !== null && cartQuantity.value >= max) return
   cartStore.addItem(product.value.id)
   const addedAt = Date.now()
   addedToCartAt.value = addedAt

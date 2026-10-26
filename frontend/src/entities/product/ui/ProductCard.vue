@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product } from '@entities/product/types'
 import { availabilityChipClasses, availabilityLabels, formatPrice } from '@entities/product/labels'
+import { isOutOfStock, maxCartQuantity, shouldShowQuantity } from '@entities/product/stock'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useCartStore } from '@entities/cart/store'
 
@@ -23,15 +24,10 @@ const showAvailability = computed(() => props.product.availability !== 'unknown'
 
 const availabilityLabel = computed(() => {
   const label = availabilityLabels[props.product.availability]
-  return props.product.quantity ? `${label} · ${props.product.quantity} шт.` : label
+  return shouldShowQuantity(props.product) ? `${label} · ${props.product.quantity} шт.` : label
 })
 
-// Tracked stock (quantity !== null) that's run out blocks adding more —
-// untracked (null) is always "available" per the same convention the
-// backend's checkout validation uses (see OrderService.checkout).
-const outOfStock = computed(
-  () => props.product.quantity !== null && props.product.quantity <= 0,
-)
+const outOfStock = computed(() => isOutOfStock(props.product))
 const cartQuantity = computed(() => cartStore.quantityOf(props.product.id))
 
 async function onToggleFavorite(event: Event): Promise<void> {
@@ -43,7 +39,8 @@ async function onToggleFavorite(event: Event): Promise<void> {
 function onAddToCart(event: Event): void {
   event.preventDefault()
   event.stopPropagation()
-  if (outOfStock.value) return
+  const max = maxCartQuantity(props.product)
+  if (max !== null && cartQuantity.value >= max) return
   cartStore.addItem(props.product.id)
 }
 </script>
