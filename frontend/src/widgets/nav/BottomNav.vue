@@ -87,8 +87,12 @@ const items = computed<NavItem[]>(() => {
           class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors"
           :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : ''"
         >
-          <i :class="item.icon" class="text-sm" />
-          <span class="leading-none">{{ item.label }}</span>
+          <i :class="item.icon" class="text-base sm:text-sm" />
+          <!-- Мобильный экран: только иконки, подписи скрыты — четыре
+               полноразмерных лейбла в пилюле на узком экране смотрелись
+               тесно. От sm и шире (десктоп/широкий Telegram Desktop) подпись
+               возвращается. -->
+          <span class="hidden leading-none sm:inline">{{ item.label }}</span>
           <span
             v-if="item.to === '/cart' && cartStore.itemsCount > 0"
             class="absolute right-3 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white"

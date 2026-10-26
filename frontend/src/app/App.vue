@@ -118,13 +118,43 @@ onUnmounted(() => {
   document.removeEventListener('pointerdown', dismissKeyboardOnOutsideTap, { capture: true })
 })
 
-// Заголовок вкладки/PWA по умолчанию — "Store" (см. index.html, он нужен
-// как статичный фолбэк до того, как JS успеет загрузить данные магазина).
-// Как только название магазина подгрузилось — подставляем его.
+// Создаёт/находит <meta name="..."> или <meta property="..."> и задаёт её
+// content — upsert, а не просто querySelector, потому что og:image в
+// index.html изначально отсутствует (нет статичного лого на этапе сборки,
+// оно приходит только из API конкретного магазина).
+function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
+  let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`)
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute(attr, key)
+    document.head.appendChild(el)
+  }
+  el.setAttribute('content', content)
+}
+
+// Заголовок вкладки/PWA и SEO-теги по умолчанию — статичный фолбэк в
+// index.html, нужен до того, как JS успеет загрузить данные магазина. Как
+// только они подгрузились — подставляем реальные название/описание/лого
+// (title, meta description, Open Graph, favicon).
 watch(
-  () => storeInfoStore.storeInfo?.name,
-  (name) => {
-    if (name) document.title = name
+  () => storeInfoStore.storeInfo,
+  (info) => {
+    if (!info) return
+    document.title = info.name
+    const description = info.description || `${info.name} — каталог товаров в Telegram.`
+    upsertMeta('name', 'description', description)
+    upsertMeta('property', 'og:title', info.name)
+    upsertMeta('property', 'og:description', description)
+    if (info.logo) {
+      upsertMeta('property', 'og:image', info.logo)
+      let icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+      if (!icon) {
+        icon = document.createElement('link')
+        icon.rel = 'icon'
+        document.head.appendChild(icon)
+      }
+      icon.href = info.logo
+    }
   },
   { immediate: true },
 )

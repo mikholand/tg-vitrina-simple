@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -13,8 +13,17 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <!-- Static fallback shown before JS loads store info — App.vue overwrites
-         this with the real shop name (document.title) once it's fetched. -->
+         this (and the tags below) with the real shop name/description/logo
+         once `fetchStoreInfo()` resolves. Crawlers that execute JS (Google)
+         pick up the updated values; plain link-unfurlers (most messengers)
+         only ever see this static version, which is why it still needs to
+         read as a reasonable, non-empty default rather than a placeholder. -->
     <title>Магазин</title>
+    <meta name="description" content="Каталог товаров и быстрый заказ прямо в Telegram." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Магазин" />
+    <meta property="og:description" content="Каталог товаров и быстрый заказ прямо в Telegram." />
+    <meta name="twitter:card" content="summary" />
     <!-- Pure CSS, no JS/framework dependency — paints on first frame, before
          the bundled JS has even been fetched/parsed, let alone before
          router.isReady() resolves (main.ts delays app.mount() until then so
