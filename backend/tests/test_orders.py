@@ -1,4 +1,4 @@
-from app.entities.product import ProductStatus
+from app.entities.product import Availability, ProductStatus
 from app.repositories.store_profile import StoreProfileRepository
 from app.telegram.commands import try_configure_order_chat
 
@@ -56,6 +56,32 @@ async def test_checkout_creates_order_decrements_stock_and_notifies(
     by_id = {item["id"]: item for item in products.json()["items"]}
     assert by_id[p1.id]["quantity"] == 3
     assert by_id[p2.id]["quantity"] is None
+
+
+async def test_checkout_depleting_stock_to_zero_flips_availability_to_out_of_stock(
+    client, customer, make_product
+):
+    """A tracked "в наличии" product that a checkout sells down to exactly
+    zero reads as "нет в наличии" from then on — see
+    `OrderRepository.try_decrement_stock`."""
+    _, headers = customer
+    product = await make_product(
+        price="10.00", status=ProductStatus.PUBLISHED, availability=Availability.IN_STOCK, quantity=2
+    )
+
+    response = await client.post(
+        "/api/v1/catalog/orders",
+        json={"items": [{"product_id": product.id, "quantity": 2}]},
+        headers=headers,
+    )
+    assert response.status_code == 201
+
+    products = await client.get("/api/v1/catalog/products")
+    by_id = {item["id"]: item for item in products.json()["items"]}
+    # `/catalog/products` only ever lists published items — sold out to
+    # zero doesn't unpublish it, so it should still be there, just flagged.
+    assert by_id[product.id]["quantity"] == 0
+    assert by_id[product.id]["availability"] == "out_of_stock"
 
 
 async def test_checkout_without_configured_chat_still_succeeds(

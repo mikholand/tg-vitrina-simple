@@ -13,27 +13,51 @@ class ProductService:
         self._product_repository = product_repository
         self._settings = settings
 
+    @staticmethod
+    def _normalize_stock(
+        availability: Availability, quantity: int | None
+    ) -> tuple[Availability, int | None]:
+        """Two narrow, one-directional rules for a seller-authored save —
+        deliberately NOT the old `resolve_availability` (which re-derived
+        availability from quantity on *every* save and made it impossible
+        to keep "на заказ"/"нет в наличии" together with a tracked number
+        at all):
+
+        - "на заказ" is always the buyer's choice, never a seller-tracked
+          count — any quantity sent alongside it is dropped, so ordering it
+          is never capped (see `entities/product/stock.ts` on the
+          frontend, which already treats `quantity is None` as unlimited).
+        - a quantity of exactly 0 always reads as "нет в наличии",
+          regardless of whatever availability was requested alongside it —
+          0 in stock is never "в наличии" — and the same rule is applied
+          when checkout decrements stock to 0 (see
+          `OrderRepository.try_decrement_stock`).
+
+        Neither rule touches a positive, non-"на заказ" quantity — a
+        seller can still freely pair "нет в наличии" with a nonzero count
+        (e.g. to track incoming stock not yet for sale).
+        """
+        if availability == Availability.ON_ORDER:
+            return availability, None
+        if quantity == 0:
+            return Availability.OUT_OF_STOCK, quantity
+        return availability, quantity
+
     async def create_by_seller(self, payload: ProductCreateSchema) -> Product:
         """A seller-authored product starts out exactly like an
         extractor-authored draft, except it's flagged `edited_by_seller` up
         front — there's no source post for the extractor to ever match it
         against, but this keeps the invariant explicit and consistent with
-        every other seller-touched product.
-
-        Unlike the extractor path, `availability` here is the seller's own
-        explicit choice and is stored as-is — never re-derived from
-        `quantity` via `resolve_availability` (that's for the extractor's
-        unreliable LLM guesses). A seller must be able to pick "на заказ"
-        while still entering a quantity, without that number silently
-        forcing the status back to "в наличии"."""
+        every other seller-touched product."""
+        availability, quantity = self._normalize_stock(payload.availability, payload.quantity)
         product = await self._product_repository.create_draft(
             name=payload.name,
             price=payload.price,
             currency=payload.currency,
             description=payload.description,
             sku=payload.sku,
-            availability=payload.availability,
-            quantity=payload.quantity,
+            availability=availability,
+            quantity=quantity,
             photo_paths=[],
             source_post_id=None,
         )
@@ -105,6 +129,9 @@ class ProductService:
         if payload.publish_to_channel is not None:
             product.publish_to_channel = payload.publish_to_channel
 
+        product.availability, product.quantity = self._normalize_stock(
+            product.availability, product.quantity
+        )
         product.edited_by_seller = True
 
         if payload.category_ids is not None:

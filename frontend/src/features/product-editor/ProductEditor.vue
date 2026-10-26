@@ -48,6 +48,16 @@ const description = ref('')
 const sku = ref('')
 const availability = ref<ProductAvailability>('unknown')
 const quantity = ref<number | null>(null)
+
+// "На заказ" is always the buyer's choice, never a tracked count — clears
+// the field the instant it's picked rather than just hiding a stale
+// leftover number (the backend drops it on save either way, see
+// ProductService._normalize_stock, but the form shouldn't show a number
+// that's about to be discarded).
+watch(availability, (value) => {
+  if (value === 'on_order') quantity.value = null
+})
+
 const categoryIds = ref<number[]>([])
 const publishToChannel = ref(false)
 const photoPaths = ref<string[]>([])
@@ -416,7 +426,11 @@ onMounted(() => {
             fluid
           />
         </label>
-        <label class="flex flex-1 flex-col gap-1.5 text-sm">
+        <!-- "На заказ" — всегда на выбор покупателя, количество здесь не
+             трактуется как остаток, поэтому поля для него просто нет
+             (сервер тоже обнуляет quantity при этом статусе — см.
+             ProductService._normalize_stock). -->
+        <label v-if="availability !== 'on_order'" class="flex flex-1 flex-col gap-1.5 text-sm">
           <span class="text-sf-muted">Количество</span>
           <InputNumber v-model="quantity" :min="0" show-buttons button-layout="horizontal" fluid />
         </label>

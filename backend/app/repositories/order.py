@@ -4,7 +4,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.entities.order import Order, OrderItem
-from app.entities.product import Product
+from app.entities.product import Availability, Product
 
 
 class OrderRepository:
@@ -34,7 +34,22 @@ class OrderRepository:
             .execution_options(synchronize_session=False)
         )
         result = await self._session.execute(stmt)
-        return result.rowcount > 0
+        if result.rowcount == 0:
+            return False
+
+        # Sold out to exactly zero by this checkout — reads as "Нет в
+        # наличии" from here on, same rule `ProductService._normalize_stock`
+        # applies on a seller save. A follow-up conditional UPDATE (rather
+        # than computing the post-decrement value above) means this only
+        # ever fires when the row is *actually* at zero right now, safe
+        # under concurrent decrements.
+        await self._session.execute(
+            update(Product)
+            .where(Product.id == product_id, Product.quantity == 0)
+            .values(availability=Availability.OUT_OF_STOCK)
+            .execution_options(synchronize_session=False)
+        )
+        return True
 
     async def create(
         self,

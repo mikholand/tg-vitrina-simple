@@ -193,22 +193,24 @@ async def test_create_product_then_attach_photo_and_video(client, seller):
     assert second_video_response.json()["video_path"] != video_path
 
 
-async def test_seller_can_set_on_order_or_out_of_stock_with_a_tracked_quantity(client, seller):
+async def test_seller_can_set_out_of_stock_with_a_tracked_quantity(client, seller):
     """Regression test: `availability` used to be silently re-derived from
     `quantity` on every seller save (`resolve_availability`), so typing any
     positive quantity forced the status back to "в наличии" and a seller
-    could never save "на заказ"/"нет в наличии" together with a number —
-    see `ProductService.create_by_seller`/`update_by_seller`."""
+    could never save "нет в наличии" together with a nonzero number — see
+    `ProductService._normalize_stock`. ("На заказ" + a tracked quantity is
+    covered separately below — that combination is now disallowed for a
+    different reason: на заказ is never tracked at all.)"""
     _, headers = seller
 
     create_response = await client.post(
         "/api/v1/seller/products",
-        json={"name": "На заказ", "availability": "on_order", "quantity": 5},
+        json={"name": "Scarce", "availability": "out_of_stock", "quantity": 5},
         headers=headers,
     )
     assert create_response.status_code == 201
     body = create_response.json()
-    assert body["availability"] == "on_order"
+    assert body["availability"] == "out_of_stock"
     assert body["quantity"] == 5
 
     patch_response = await client.patch(
@@ -220,6 +222,66 @@ async def test_seller_can_set_on_order_or_out_of_stock_with_a_tracked_quantity(c
     patched = patch_response.json()
     assert patched["availability"] == "out_of_stock"
     assert patched["quantity"] == 3
+
+
+async def test_on_order_never_carries_a_tracked_quantity(client, seller):
+    """"На заказ" is always the buyer's choice — any quantity sent
+    alongside it is dropped on both create and update, so it's never capped
+    client-side (see entities/product/stock.ts's `quantity === null` ->
+    unlimited convention on the frontend)."""
+    _, headers = seller
+
+    create_response = await client.post(
+        "/api/v1/seller/products",
+        json={"name": "Сделаем на заказ", "availability": "on_order", "quantity": 5},
+        headers=headers,
+    )
+    assert create_response.status_code == 201
+    body = create_response.json()
+    assert body["availability"] == "on_order"
+    assert body["quantity"] is None
+
+    # Flipping an in-stock, tracked product over to "на заказ" also drops
+    # whatever quantity it had.
+    tracked = await client.post(
+        "/api/v1/seller/products",
+        json={"name": "Tracked", "availability": "in_stock", "quantity": 7},
+        headers=headers,
+    )
+    patch_response = await client.patch(
+        f"/api/v1/seller/products/{tracked.json()['id']}",
+        json={"availability": "on_order"},
+        headers=headers,
+    )
+    assert patch_response.status_code == 200
+    assert patch_response.json()["quantity"] is None
+
+
+async def test_quantity_zero_forces_out_of_stock(client, seller):
+    """0 in stock is never "в наличии", regardless of what availability was
+    requested alongside it — see `ProductService._normalize_stock`."""
+    _, headers = seller
+
+    create_response = await client.post(
+        "/api/v1/seller/products",
+        json={"name": "Sold out from the start", "availability": "in_stock", "quantity": 0},
+        headers=headers,
+    )
+    assert create_response.status_code == 201
+    assert create_response.json()["availability"] == "out_of_stock"
+
+    in_stock = await client.post(
+        "/api/v1/seller/products",
+        json={"name": "Was in stock", "availability": "in_stock", "quantity": 2},
+        headers=headers,
+    )
+    patch_response = await client.patch(
+        f"/api/v1/seller/products/{in_stock.json()['id']}",
+        json={"quantity": 0},
+        headers=headers,
+    )
+    assert patch_response.status_code == 200
+    assert patch_response.json()["availability"] == "out_of_stock"
 
 
 async def test_product_photo_upload_is_reencoded_to_webp(client, seller, make_product):
