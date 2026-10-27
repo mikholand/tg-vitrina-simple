@@ -24,7 +24,12 @@ async function handleAuth(authData: TelegramWidgetAuthData): Promise<void> {
 
 // The widget is Telegram's own `<script>` embed (see `widget.ts`) — it has
 // to be (re-)mounted into the container every time the modal opens, since
-// `AppModal`'s `v-if` tears the container down on close.
+// `AppModal`'s `v-if` tears the container down on close. `flush: 'post'`
+// is load-bearing here: the default `'pre'` timing runs this callback
+// *before* Vue has patched the DOM for the `visible` change that triggered
+// it, so `container.value` would still be null (AppModal's own `v-if`
+// hasn't rendered the `<div ref="container">` yet) — the widget silently
+// never mounted, leaving just the modal's static text.
 watch(
   () => [visible.value, storeInfoStore.storeInfo?.bot_username] as const,
   ([isVisible, botUsername]) => {
@@ -32,6 +37,7 @@ watch(
       mountTelegramLoginWidget(container.value, botUsername, handleAuth)
     }
   },
+  { flush: 'post' },
 )
 </script>
 
