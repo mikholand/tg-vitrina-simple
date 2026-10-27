@@ -43,7 +43,14 @@ export function mountTelegramLoginWidget(
   script.async = true
   script.src = 'https://oauth.telegram.org/js/telegram-login.js?6'
   script.setAttribute('data-client-id', String(botClientId))
-  script.setAttribute('data-onauth', `${callbackName}(user)`)
+  // The script runs this via `new Function('data', onauth)` (see its own
+  // generator's default sample, `data-onauth="console.log(data)"`) — the
+  // callback's argument is bound to the name `data`, not `user`. Passing
+  // `(user)` here throws a ReferenceError inside that generated function
+  // (silently caught and console.error'd by the script itself), so the
+  // callback below never actually runs — Telegram's own popup completes
+  // the login fine, but the page never hears about it.
+  script.setAttribute('data-onauth', `${callbackName}(data)`)
 
   const button = document.createElement('button')
   button.className = 'tg-auth-button'
