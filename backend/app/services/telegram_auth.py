@@ -5,10 +5,13 @@ from aiogram.utils.web_app import WebAppInitData, safe_parse_webapp_init_data
 from jwt import PyJWKClient
 
 from app.core.config import Settings
+from app.core.logging import get_logger
 from app.dto.auth import TelegramWidgetLoginSchema
 from app.entities.user import User, UserRole
 from app.repositories.user import UserRepository
 from app.shared.security import TokenPayload, create_jwt_token
+
+logger = get_logger("services.telegram_auth")
 
 INIT_DATA_MAX_AGE = timedelta(hours=24)
 
@@ -100,6 +103,11 @@ class TelegramAuthService:
                 audience=str(self._settings.telegram.bot_id),
             )
         except jwt.PyJWTError as exc:
+            # The client only ever sees the generic "invalid_signature" 401
+            # below — logged here with the real exception so a rejected
+            # login (wrong aud, expired, bad signature, JWKS fetch failure,
+            # ...) is diagnosable from the logs instead of a dead end.
+            logger.warning("widget_id_token_rejected", error=str(exc), error_type=type(exc).__name__)
             raise InvalidInitDataError("invalid_signature") from exc
         return claims
 
@@ -117,6 +125,7 @@ class TelegramAuthService:
         claims = self._verify_widget_id_token(payload.id_token)
         tg_user_id = claims.get("id")
         if not isinstance(tg_user_id, int):
+            logger.warning("widget_id_token_missing_id_claim", claim_keys=list(claims.keys()))
             raise InvalidInitDataError("missing_user")
 
         return await self._finish_login(
