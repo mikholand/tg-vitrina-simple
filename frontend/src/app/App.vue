@@ -230,13 +230,11 @@ watch(
           </h1>
         </div>
         <div class="flex shrink-0 items-center gap-3">
-          <!-- Shown for staff regardless of where they're logged in from
-               (Mini App or website) — independent of the website-only
-               block below, not an alternative to it: a seller/admin/
-               moderator who logged in via the website widget still needs
-               to see their name and have a way to log out. -->
+          <!-- Inside Telegram there's never a website login block to share
+               this row with (see `outsideTelegram` below) — staff just
+               gets the briefcase link on its own, as before. -->
           <RouterLink
-            v-if="isSeller"
+            v-if="isSeller && !outsideTelegram"
             :to="{ name: 'seller-dashboard' }"
             class="text-sf-muted"
             aria-label="Админка"
@@ -261,6 +259,18 @@ watch(
                 {{ customerInitial }}
               </div>
               <span class="max-w-40 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
+              <!-- A staff member logged in via the website widget still
+                   needs a way into the cabinet — placed right before
+                   logout, not at the start of the row (see the standalone
+                   one above for the Mini App case). -->
+              <RouterLink
+                v-if="isSeller"
+                :to="{ name: 'seller-dashboard' }"
+                class="shrink-0 text-sf-muted"
+                aria-label="Админка"
+              >
+                <i class="pi pi-briefcase text-xl" />
+              </RouterLink>
               <button
                 type="button"
                 class="shrink-0 text-sf-muted"
