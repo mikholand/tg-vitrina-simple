@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 import { clearAccessToken, getAccessToken, setAccessToken } from '@shared/api/http'
 import { getInitDataRaw } from '@shared/telegram/sdk'
 import { useFavoriteStore } from '@entities/favorite/store'
-import { fetchMe as fetchMeRequest, loginTelegram } from './api'
-import type { User } from './types'
+import { fetchMe as fetchMeRequest, loginTelegram, loginTelegramWidget } from './api'
+import type { TelegramWidgetAuthData, User } from './types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(getAccessToken())
@@ -35,11 +35,35 @@ export const useAuthStore = defineStore('auth', () => {
     await favoriteStore.mergeOnLogin()
   }
 
+  /**
+   * The plain-website counterpart to `loginWithTelegram()` above — used
+   * when the Telegram Login Widget (not the Mini App) is the one handing
+   * us a signed user payload. Same merge-favorites-on-login step.
+   */
+  async function loginWithTelegramWidget(authData: TelegramWidgetAuthData): Promise<void> {
+    const response = await loginTelegramWidget(authData)
+    token.value = response.token
+    setAccessToken(response.token)
+
+    await fetchMe()
+
+    const favoriteStore = useFavoriteStore()
+    await favoriteStore.mergeOnLogin()
+  }
+
   function logout(): void {
     token.value = null
     currentUser.value = null
     clearAccessToken()
   }
 
-  return { token, currentUser, role, fetchMe, loginWithTelegram, logout }
+  return {
+    token,
+    currentUser,
+    role,
+    fetchMe,
+    loginWithTelegram,
+    loginWithTelegramWidget,
+    logout,
+  }
 })

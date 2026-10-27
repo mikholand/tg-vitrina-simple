@@ -40,13 +40,20 @@ def _order_to_schema(order: Order, items: list[OrderItem]) -> OrderSchema:
 
 
 @router.get("/store")
-async def store_info(store_profile_repository: FromDishka[StoreProfileRepository]) -> dict:
+async def store_info(
+    store_profile_repository: FromDishka[StoreProfileRepository],
+    bot_client: FromDishka[BotClient],
+) -> dict:
     profile = await store_profile_repository.get()
     return {
         "name": profile.name,
         "description": profile.description,
         "logo": media_url(profile.logo) if profile.logo else None,
         "contact_tg": profile.contact_tg,
+        # Lets the plain website render the Telegram Login Widget
+        # (data-telegram-login) without a build-time env var — see
+        # `shared/telegram/widget.ts` on the frontend.
+        "bot_username": await bot_client.username(),
     }
 
 

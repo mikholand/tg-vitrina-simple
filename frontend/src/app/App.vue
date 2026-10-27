@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import BottomNav from '@widgets/nav/BottomNav.vue'
+import TelegramLoginButton from '@features/telegram-login/TelegramLoginButton.vue'
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
-import { showBackButton, hideBackButton, onBackButtonClick } from '@shared/telegram/sdk'
+import { showBackButton, hideBackButton, onBackButtonClick, isInsideTelegram } from '@shared/telegram/sdk'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +14,13 @@ const isSeller = computed(
   () => authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator',
 )
 const isOwner = computed(() => authStore.role === 'seller' || authStore.role === 'admin')
+
+// The Telegram Login Widget only makes sense outside the Mini App — inside
+// it, `ensureAuthInitialized()` (router/index.ts) already logs every
+// visitor in silently via init_data before the first page even renders.
+// This doesn't need to be reactive: whether we're inside Telegram is
+// decided once, at launch, by the environment the page loaded into.
+const outsideTelegram = !isInsideTelegram()
 
 // Карточка товара рисует фото во всю ширину и свою нижнюю панель с ценой —
 // общие вкладки и верхний отступ под чёлку на ней только мешали бы, как и
@@ -213,6 +221,21 @@ watch(
         >
           <i class="pi pi-briefcase text-xl" />
         </RouterLink>
+        <!-- Website visitors only (see `outsideTelegram` above) — inside
+             Telegram there's always already a signed-in Mini App user by
+             the time this renders, staff included. -->
+        <template v-else-if="outsideTelegram">
+          <button
+            v-if="authStore.currentUser"
+            type="button"
+            class="flex shrink-0 items-center gap-1.5 text-sm text-sf-muted"
+            @click="authStore.logout()"
+          >
+            <span class="max-w-20 truncate">{{ authStore.currentUser.tg_first_name || 'Профиль' }}</span>
+            <i class="pi pi-sign-out text-base" />
+          </button>
+          <TelegramLoginButton v-else />
+        </template>
       </header>
 
       <!-- Seller cabinet: tg-vitrina's SellerLayout header — flat row with

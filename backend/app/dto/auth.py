@@ -9,6 +9,22 @@ class LoginResponseSchema(BaseModel):
     role: UserRole
 
 
+class TelegramWidgetLoginSchema(BaseModel):
+    """The payload Telegram's Login Widget callback hands the frontend
+    verbatim — field names/types match
+    https://core.telegram.org/widgets/login exactly, since
+    `TelegramAuthService._verify_widget_hash` reconstructs Telegram's own
+    data-check-string from these fields byte for byte."""
+
+    id: int
+    first_name: str
+    last_name: str | None = None
+    username: str | None = None
+    photo_url: str | None = None
+    auth_date: int
+    hash: str
+
+
 class CurrentUserSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
