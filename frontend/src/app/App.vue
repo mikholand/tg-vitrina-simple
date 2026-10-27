@@ -29,6 +29,22 @@ const bare = computed(() => route.name === 'product-detail')
 
 const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
 
+// A logged-in website visitor's display name in the header — first+last
+// name when Telegram gave us both, falling back to just the username (no
+// name claim at all isn't actually possible for a real Telegram account,
+// but the OIDC token's given_name could still come back empty for one) and
+// finally a generic label so the header never renders blank where the name
+// should be.
+const customerDisplayName = computed(() => {
+  const user = authStore.currentUser
+  if (!user) return ''
+  const fullName = [user.tg_first_name, user.tg_last_name].filter(Boolean).join(' ')
+  return fullName || (user.tg_username ? `@${user.tg_username}` : 'Профиль')
+})
+const customerInitial = computed(
+  () => (authStore.currentUser?.tg_first_name || authStore.currentUser?.tg_username || '?')[0]?.toUpperCase() ?? '?',
+)
+
 // Store↔admin switcher next to the settings gear in the seller/moderator
 // header. Every /seller/* route name is prefixed "seller-" (dashboard
 // included), so that's enough to tell which side we're on without a
@@ -225,15 +241,29 @@ watch(
              Telegram there's always already a signed-in Mini App user by
              the time this renders, staff included. -->
         <template v-else-if="outsideTelegram">
-          <button
-            v-if="authStore.currentUser"
-            type="button"
-            class="flex shrink-0 items-center gap-1.5 text-sm text-sf-muted"
-            @click="authStore.logout()"
-          >
-            <span class="max-w-20 truncate">{{ authStore.currentUser.tg_first_name || 'Профиль' }}</span>
-            <i class="pi pi-sign-out text-base" />
-          </button>
+          <div v-if="authStore.currentUser" class="flex shrink-0 items-center gap-2">
+            <img
+              v-if="authStore.currentUser.tg_photo_url"
+              :src="authStore.currentUser.tg_photo_url"
+              alt=""
+              class="size-7 shrink-0 rounded-full object-cover"
+            />
+            <div
+              v-else
+              class="flex size-7 shrink-0 items-center justify-center rounded-full bg-sf-accent text-xs font-semibold text-white"
+            >
+              {{ customerInitial }}
+            </div>
+            <span class="max-w-24 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
+            <button
+              type="button"
+              class="shrink-0 text-sf-muted"
+              aria-label="Выйти"
+              @click="authStore.logout()"
+            >
+              <i class="pi pi-sign-out text-base" />
+            </button>
+          </div>
           <TelegramLoginButton v-else />
         </template>
       </header>
