@@ -58,7 +58,11 @@ def _valid_claims(**overrides) -> dict:
         "sub": "1234123412341234123",
         "iat": now,
         "exp": now + 3600,
-        "id": 777001,
+        # A real token sends this as a numeric *string*, not the unquoted
+        # number the docs' example JSON shows — login_via_widget accepts
+        # either (see test_widget_login_uses_id_claim_not_sub_for_the_user_id
+        # below, which overrides this with a plain int).
+        "id": "777001",
         "name": "Анна Иванова",
         "given_name": "Анна",
         "family_name": "Иванова",
@@ -165,6 +169,14 @@ async def test_widget_login_uses_id_claim_not_sub_for_the_user_id(client):
     response = await client.post("/api/v1/auth/telegram/widget", json={"id_token": id_token})
     assert response.status_code == 200
     assert response.json()["user_id"] == 777002
+
+
+async def test_widget_login_rejects_non_numeric_id_claim(client):
+    id_token = _sign_id_token(_valid_claims(id="not-a-number"))
+
+    response = await client.post("/api/v1/auth/telegram/widget", json={"id_token": id_token})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "missing_user"
 
 
 async def test_widget_login_rejects_tampered_token(client):

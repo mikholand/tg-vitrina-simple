@@ -123,8 +123,16 @@ class TelegramAuthService:
         the Mini App's init_data carries. Using `sub` here would silently
         create a second, disconnected user record for the same person."""
         claims = self._verify_widget_id_token(payload.id_token)
-        tg_user_id = claims.get("id")
-        if not isinstance(tg_user_id, int):
+        raw_id = claims.get("id")
+        # Despite the unquoted `"id": 987654321` in Telegram's own example
+        # token in the docs, a real token sends it as a numeric *string*
+        # (confirmed live against alenazhao.ru) — same `str`-claim
+        # convention OIDC already uses for `sub`/`aud`. Accept either.
+        try:
+            tg_user_id = int(raw_id) if raw_id is not None else None
+        except (TypeError, ValueError):
+            tg_user_id = None
+        if tg_user_id is None:
             logger.warning("widget_id_token_missing_id_claim", claim_keys=list(claims.keys()))
             raise InvalidInitDataError("missing_user")
 
