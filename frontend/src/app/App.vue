@@ -229,43 +229,50 @@ watch(
             {{ storeInfoStore.storeInfo.name }}
           </h1>
         </div>
-        <RouterLink
-          v-if="isSeller"
-          :to="{ name: 'seller-dashboard' }"
-          class="shrink-0 text-sf-muted"
-          aria-label="Админка"
-        >
-          <i class="pi pi-briefcase text-xl" />
-        </RouterLink>
-        <!-- Website visitors only (see `outsideTelegram` above) — inside
-             Telegram there's always already a signed-in Mini App user by
-             the time this renders, staff included. -->
-        <template v-else-if="outsideTelegram">
-          <div v-if="authStore.currentUser" class="flex shrink-0 items-center gap-2">
-            <img
-              v-if="authStore.currentUser.tg_photo_url"
-              :src="authStore.currentUser.tg_photo_url"
-              alt=""
-              class="size-7 shrink-0 rounded-full object-cover"
-            />
-            <div
-              v-else
-              class="flex size-7 shrink-0 items-center justify-center rounded-full bg-sf-accent text-xs font-semibold text-white"
-            >
-              {{ customerInitial }}
+        <div class="flex shrink-0 items-center gap-3">
+          <!-- Shown for staff regardless of where they're logged in from
+               (Mini App or website) — independent of the website-only
+               block below, not an alternative to it: a seller/admin/
+               moderator who logged in via the website widget still needs
+               to see their name and have a way to log out. -->
+          <RouterLink
+            v-if="isSeller"
+            :to="{ name: 'seller-dashboard' }"
+            class="text-sf-muted"
+            aria-label="Админка"
+          >
+            <i class="pi pi-briefcase text-xl" />
+          </RouterLink>
+          <!-- Website visitors only (see `outsideTelegram` above) — inside
+               Telegram there's always already a signed-in Mini App user by
+               the time this renders, staff included. -->
+          <template v-if="outsideTelegram">
+            <div v-if="authStore.currentUser" class="flex items-center gap-2">
+              <img
+                v-if="authStore.currentUser.tg_photo_url"
+                :src="authStore.currentUser.tg_photo_url"
+                alt=""
+                class="size-7 shrink-0 rounded-full object-cover"
+              />
+              <div
+                v-else
+                class="flex size-7 shrink-0 items-center justify-center rounded-full bg-sf-accent text-xs font-semibold text-white"
+              >
+                {{ customerInitial }}
+              </div>
+              <span class="max-w-40 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
+              <button
+                type="button"
+                class="shrink-0 text-sf-muted"
+                aria-label="Выйти"
+                @click="authStore.logout()"
+              >
+                <i class="pi pi-sign-out text-base" />
+              </button>
             </div>
-            <span class="max-w-40 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
-            <button
-              type="button"
-              class="shrink-0 text-sf-muted"
-              aria-label="Выйти"
-              @click="authStore.logout()"
-            >
-              <i class="pi pi-sign-out text-base" />
-            </button>
-          </div>
-          <TelegramLoginButton v-else />
-        </template>
+            <TelegramLoginButton v-else />
+          </template>
+        </div>
       </header>
 
       <!-- Seller cabinet: tg-vitrina's SellerLayout header — flat row with
