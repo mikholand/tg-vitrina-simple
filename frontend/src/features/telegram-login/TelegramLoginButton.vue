@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
-import { mountTelegramLoginWidget } from '@shared/telegram/widget'
+import { mountTelegramLoginWidget, type TelegramWidgetAuthResult } from '@shared/telegram/widget'
 import AppModal from '@shared/ui/AppModal.vue'
-import type { TelegramWidgetAuthData } from '@entities/user/types'
 
 const authStore = useAuthStore()
 const storeInfoStore = useStoreInfoStore()
@@ -12,10 +11,14 @@ const visible = ref(false)
 const container = ref<HTMLElement | null>(null)
 const error = ref<string | null>(null)
 
-async function handleAuth(authData: TelegramWidgetAuthData): Promise<void> {
+async function handleAuth(result: TelegramWidgetAuthResult): Promise<void> {
   error.value = null
+  if (!result.id_token) {
+    error.value = 'Не удалось войти через Telegram. Попробуйте ещё раз.'
+    return
+  }
   try {
-    await authStore.loginWithTelegramWidget(authData)
+    await authStore.loginWithTelegramWidget(result.id_token)
     visible.value = false
   } catch {
     error.value = 'Не удалось войти через Telegram. Попробуйте ещё раз.'
@@ -31,10 +34,10 @@ async function handleAuth(authData: TelegramWidgetAuthData): Promise<void> {
 // hasn't rendered the `<div ref="container">` yet) — the widget silently
 // never mounted, leaving just the modal's static text.
 watch(
-  () => [visible.value, storeInfoStore.storeInfo?.bot_username] as const,
-  ([isVisible, botUsername]) => {
-    if (isVisible && botUsername && container.value) {
-      mountTelegramLoginWidget(container.value, botUsername, handleAuth)
+  () => [visible.value, storeInfoStore.storeInfo?.bot_client_id] as const,
+  ([isVisible, botClientId]) => {
+    if (isVisible && botClientId && container.value) {
+      mountTelegramLoginWidget(container.value, botClientId, handleAuth)
     }
   },
   { flush: 'post' },

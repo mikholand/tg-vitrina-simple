@@ -1,8 +1,8 @@
-import hashlib
-import hmac
 from datetime import UTC, datetime, timedelta
 
+import jwt
 from aiogram.utils.web_app import WebAppInitData, safe_parse_webapp_init_data
+from jwt import PyJWKClient
 
 from app.core.config import Settings
 from app.dto.auth import TelegramWidgetLoginSchema
@@ -11,6 +11,30 @@ from app.repositories.user import UserRepository
 from app.shared.security import TokenPayload, create_jwt_token
 
 INIT_DATA_MAX_AGE = timedelta(hours=24)
+
+# Telegram's current Login Widget (https://core.telegram.org/bots/
+# telegram-login) is OIDC-based: it hands the frontend a signed JWT
+# ("id_token") instead of individually HMAC-signed fields. `aud` on that
+# token is the bot's own numeric id (`Settings.telegram.bot_id`) and `iss`
+# is always this fixed value — not configurable per bot.
+TELEGRAM_OIDC_ISSUER = "https://oauth.telegram.org"
+TELEGRAM_OIDC_JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json"
+
+_jwks_client: PyJWKClient | None = None
+
+
+def _get_jwks_client() -> PyJWKClient:
+    """Module-level singleton rather than one per `TelegramAuthService`
+    instance (which is request-scoped, see `app/di/providers.py`):
+    `PyJWKClient` caches keys it has already fetched (by `kid`), so reusing
+    one across requests means a JWKS round trip to Telegram only happens
+    once per key, not once per login. A free function (not a class
+    attribute) so tests can monkeypatch it to a fake client instead of
+    making a real network call."""
+    global _jwks_client
+    if _jwks_client is None:
+        _jwks_client = PyJWKClient(TELEGRAM_OIDC_JWKS_URL)
+    return _jwks_client
 
 
 class InvalidInitDataError(Exception):
@@ -55,38 +79,52 @@ class TelegramAuthService:
             tg_photo_url=tg_user.photo_url,
         )
 
-    def _verify_widget_hash(self, payload: TelegramWidgetLoginSchema) -> None:
-        """Telegram's Login Widget signs its payload differently from the
-        Mini App's init_data (`_parse_init_data` above, verified by aiogram
-        against the raw bot token): HMAC-SHA256 over the sorted
-        "key=value" fields, keyed by SHA256(bot_token) rather than the
-        token itself — see
-        https://core.telegram.org/widgets/login#checking-authorization."""
-        fields = payload.model_dump(exclude={"hash"}, exclude_none=True)
-        data_check_string = "\n".join(f"{key}={fields[key]}" for key in sorted(fields))
-        secret_key = hashlib.sha256(
-            self._settings.telegram.BOT_TOKEN.get_secret_value().encode()
-        ).digest()
-        computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(computed_hash, payload.hash):
-            raise InvalidInitDataError("invalid_signature")
-
-        auth_date = datetime.fromtimestamp(payload.auth_date, tz=UTC)
-        if datetime.now(UTC) - auth_date > INIT_DATA_MAX_AGE:
-            raise InvalidInitDataError("expired")
+    def _verify_widget_id_token(self, id_token: str) -> dict:
+        """Verifies Telegram's OIDC `id_token` and returns its claims. Unlike
+        the Mini App's init_data (verified against our own bot token
+        directly), this is a standard signed JWT verified against
+        Telegram's own public keys — `PyJWKClient` looks up the right key by
+        the token's `kid` header, then `jwt.decode` checks the signature
+        plus `iss`/`aud`/`exp` (expiration is enforced by `jwt.decode`
+        itself, so there's no separate freshness check to do here, unlike
+        `_parse_init_data` above). Only RS256 is accepted — Telegram's
+        documented default; a bot changed to a different algorithm under
+        BotFather's Login Widget > Advanced would need this extended."""
+        try:
+            signing_key = _get_jwks_client().get_signing_key_from_jwt(id_token)
+            claims = jwt.decode(
+                id_token,
+                signing_key.key,
+                algorithms=["RS256"],
+                issuer=TELEGRAM_OIDC_ISSUER,
+                audience=str(self._settings.telegram.bot_id),
+            )
+        except jwt.PyJWTError as exc:
+            raise InvalidInitDataError("invalid_signature") from exc
+        return claims
 
     async def login_via_widget(self, payload: TelegramWidgetLoginSchema) -> tuple[str, User]:
         """The plain-website login path (Telegram Login Widget), outside
         the Mini App — see `login()` above for the init_data path used
         there. Same upsert/promote/issue-token flow via `_finish_login`;
-        only the signature check differs."""
-        self._verify_widget_hash(payload)
+        only the signature check differs.
+
+        The Telegram user id this app keys `User.id` on is the token's `id`
+        claim, not its `sub` — `sub` is an opaque OIDC subject identifier
+        (a long, unrelated number), while `id` is the same Telegram user id
+        the Mini App's init_data carries. Using `sub` here would silently
+        create a second, disconnected user record for the same person."""
+        claims = self._verify_widget_id_token(payload.id_token)
+        tg_user_id = claims.get("id")
+        if not isinstance(tg_user_id, int):
+            raise InvalidInitDataError("missing_user")
+
         return await self._finish_login(
-            user_id=payload.id,
-            tg_username=payload.username,
-            tg_first_name=payload.first_name,
-            tg_last_name=payload.last_name,
-            tg_photo_url=payload.photo_url,
+            user_id=tg_user_id,
+            tg_username=claims.get("preferred_username"),
+            tg_first_name=claims.get("given_name") or claims.get("name") or "",
+            tg_last_name=claims.get("family_name"),
+            tg_photo_url=claims.get("picture"),
         )
 
     async def _finish_login(

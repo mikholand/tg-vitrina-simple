@@ -21,6 +21,15 @@ class TelegramSettings(BaseSettings):
 
     BOT_TOKEN: SecretStr
 
+    @property
+    def bot_id(self) -> int:
+        """The bot's numeric Telegram id — the leading digits of `BOT_TOKEN`
+        before the `:`. This is also the website Login Widget's OIDC
+        `client_id`/`aud` (see `TelegramAuthService._verify_widget_id_token`)
+        — Telegram's new Login Widget flow uses the bot's own id as the
+        client id, no separate value to configure."""
+        return int(self.BOT_TOKEN.get_secret_value().split(":", 1)[0])
+
 
 class UserbotSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

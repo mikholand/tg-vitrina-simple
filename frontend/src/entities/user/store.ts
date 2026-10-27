@@ -4,7 +4,7 @@ import { clearAccessToken, getAccessToken, setAccessToken } from '@shared/api/ht
 import { getInitDataRaw } from '@shared/telegram/sdk'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { fetchMe as fetchMeRequest, loginTelegram, loginTelegramWidget } from './api'
-import type { TelegramWidgetAuthData, User } from './types'
+import type { User } from './types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(getAccessToken())
@@ -37,11 +37,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * The plain-website counterpart to `loginWithTelegram()` above — used
-   * when the Telegram Login Widget (not the Mini App) is the one handing
-   * us a signed user payload. Same merge-favorites-on-login step.
+   * when Telegram's Login Widget (not the Mini App) is the one handing us
+   * a signed `id_token`. Same merge-favorites-on-login step.
    */
-  async function loginWithTelegramWidget(authData: TelegramWidgetAuthData): Promise<void> {
-    const response = await loginTelegramWidget(authData)
+  async function loginWithTelegramWidget(idToken: string): Promise<void> {
+    const response = await loginTelegramWidget(idToken)
     token.value = response.token
     setAccessToken(response.token)
 
