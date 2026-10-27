@@ -120,10 +120,12 @@ async def list_products(
     offset: int = Query(default=0, ge=0),
 ) -> Paginated[ProductSchema]:
     products, total = await product_repository.list_catalog(category_id, search, limit, offset)
-    items = []
-    for product in products:
-        category_ids = await product_repository.get_category_ids(product.id)
-        items.append(_to_schema(product, category_ids))
+    category_ids_by_product = await product_repository.get_category_ids_many(
+        [p.id for p in products]
+    )
+    items = [
+        _to_schema(product, category_ids_by_product.get(product.id, [])) for product in products
+    ]
     return Paginated[ProductSchema](items=items, total=total, limit=limit, offset=offset)
 
 

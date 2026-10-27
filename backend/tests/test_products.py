@@ -70,6 +70,31 @@ async def test_seller_product_update_sets_edited_by_seller_and_category_ids(
     assert sorted(response.json()["category_ids"]) == sorted([cat_a.id, cat_b.id])
 
 
+async def test_seller_list_products_batches_category_ids_per_product(
+    client, seller, make_product, make_category
+):
+    """`list_products` fetches every row's categories in one query
+    (`get_category_ids_many`) instead of one per product — this checks the
+    batching didn't mix up which categories belong to which product."""
+    _, headers = seller
+    cat_a = await make_category("Cat A", "cat-a")
+    cat_b = await make_category("Cat B", "cat-b")
+    product_a = await make_product(name="A")
+    product_b = await make_product(name="B")
+    await client.patch(
+        f"/api/v1/seller/products/{product_a.id}", json={"category_ids": [cat_a.id]}, headers=headers
+    )
+    await client.patch(
+        f"/api/v1/seller/products/{product_b.id}", json={"category_ids": [cat_b.id]}, headers=headers
+    )
+
+    response = await client.get("/api/v1/seller/products", headers=headers)
+    assert response.status_code == 200
+    by_id = {item["id"]: item for item in response.json()["items"]}
+    assert by_id[product_a.id]["category_ids"] == [cat_a.id]
+    assert by_id[product_b.id]["category_ids"] == [cat_b.id]
+
+
 async def test_publish_and_hide_status_transitions(client, seller, make_product):
     _, headers = seller
     product = await make_product(status=ProductStatus.DRAFT)

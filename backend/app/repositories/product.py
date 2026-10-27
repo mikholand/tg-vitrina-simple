@@ -66,6 +66,22 @@ class ProductRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_category_ids_many(self, product_ids: list[int]) -> dict[int, list[int]]:
+        """Batched form of `get_category_ids` for a product list page — one
+        query for every row instead of one `SELECT` per product. Products
+        with no categories simply don't get a key, so callers should use
+        `.get(product_id, [])`, not `[product_id]`."""
+        if not product_ids:
+            return {}
+        stmt = select(ProductCategory.product_id, ProductCategory.category_id).where(
+            ProductCategory.product_id.in_(product_ids)
+        )
+        result = await self._session.execute(stmt)
+        by_product: dict[int, list[int]] = {}
+        for product_id, category_id in result.all():
+            by_product.setdefault(product_id, []).append(category_id)
+        return by_product
+
     async def list_seller(
         self, status: ProductStatus | None, search: str | None, limit: int, offset: int
     ) -> tuple[list[Product], int]:

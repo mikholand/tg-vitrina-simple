@@ -76,7 +76,7 @@ class OrderService:
         # identical to "ran out" if not filtered out here.
         to_decrement: list[tuple[int, int]] = []
         total = Decimal("0")
-        currency = "RUB"
+        currency: str | None = None
         for product_id, quantity in merged.items():
             product = products_by_id.get(product_id)
             if product is None:
@@ -86,9 +86,22 @@ class OrderService:
                     raise ValueError(f"insufficient_stock:{product_id}")
                 to_decrement.append((product_id, quantity))
 
-            price = product.price or Decimal("0")
+            if product.price is None:
+                # A seller can publish a product before setting a price
+                # (nothing in ProductService ties publish to having one) —
+                # silently charging 0 for it used to be possible here.
+                raise ValueError(f"product_missing_price:{product_id}")
+            if currency is None:
+                currency = product.currency
+            elif currency != product.currency:
+                # Every product defaults to RUB and nothing in this single-
+                # shop app currently lets a seller sell in more than one
+                # currency, but the DTO doesn't enforce that — a cart mixing
+                # two currencies used to just sum their prices together as
+                # if they were the same money.
+                raise ValueError("mixed_currencies")
+            price = product.price
             total += price * quantity
-            currency = product.currency
             order_items.append(
                 OrderItem(
                     product_id=product.id,
@@ -110,7 +123,7 @@ class OrderService:
         order = await self._order_repository.create(
             customer_id=customer.id if customer is not None else None,
             total=total,
-            currency=currency,
+            currency=currency or "RUB",  # merged is never empty here, so the loop above always ran
             comment=comment,
             items=order_items,
             contact_name=contact_name,

@@ -134,6 +134,49 @@ async def test_checkout_rejects_unpublished_product(client, customer, make_produ
     assert "product_unavailable" in response.json()["detail"]
 
 
+async def test_checkout_rejects_product_without_price(client, customer, make_product):
+    """A product can be published before the seller ever sets a price
+    (nothing in ProductService ties publish to having one) — checkout used
+    to silently treat a missing price as 0 instead of rejecting it."""
+    _, headers = customer
+    product = await make_product(status=ProductStatus.PUBLISHED, price=None, quantity=5)
+
+    response = await client.post(
+        "/api/v1/catalog/orders",
+        json={"items": [{"product_id": product.id, "quantity": 1}]},
+        headers=headers,
+    )
+    assert response.status_code == 400
+    assert f"product_missing_price:{product.id}" in response.json()["detail"]
+
+
+async def test_checkout_rejects_mixed_currencies(client, customer, make_product):
+    """Every product defaults to RUB and nothing currently lets a seller
+    sell in more than one currency, but the DTO doesn't enforce that — a
+    cart mixing two currencies used to just sum the prices together as if
+    they were the same money."""
+    _, headers = customer
+    rub_product = await make_product(
+        price="10.00", currency="RUB", status=ProductStatus.PUBLISHED, quantity=5
+    )
+    usd_product = await make_product(
+        price="10.00", currency="USD", status=ProductStatus.PUBLISHED, quantity=5
+    )
+
+    response = await client.post(
+        "/api/v1/catalog/orders",
+        json={
+            "items": [
+                {"product_id": rub_product.id, "quantity": 1},
+                {"product_id": usd_product.id, "quantity": 1},
+            ]
+        },
+        headers=headers,
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "mixed_currencies"
+
+
 async def test_checkout_rejects_empty_cart(client, customer):
     _, headers = customer
     response = await client.post(
