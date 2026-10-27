@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import jwt
 from aiogram.utils.web_app import WebAppInitData, safe_parse_webapp_init_data
 from jwt import PyJWKClient
@@ -23,6 +24,24 @@ INIT_DATA_MAX_AGE = timedelta(hours=24)
 TELEGRAM_OIDC_ISSUER = "https://oauth.telegram.org"
 TELEGRAM_OIDC_JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json"
 
+class _HttpxPyJWKClient(PyJWKClient):
+    """`PyJWKClient.fetch_data` fetches the JWKS over bare `urllib.request`,
+    which does no response decompression at all — confirmed live,
+    oauth.telegram.org's JWKS endpoint serves a gzip-encoded response
+    regardless of what `Accept-Encoding` the client sends (or doesn't),
+    and `json.load()` on the raw gzip bytes blows up with
+    `UnicodeDecodeError: 'utf-8' codec can't decode byte 0x8b in position 1`
+    — 0x8b is literally gzip's second magic byte. httpx decompresses
+    transparently, so only the fetch step is overridden here; the kid
+    matching and the in-memory JWKS cache (with its TTL) stay PyJWKClient's
+    own unmodified logic."""
+
+    def fetch_data(self) -> object:
+        response = httpx.get(self.uri, headers=self.headers, timeout=self.timeout)
+        response.raise_for_status()
+        return response.json()
+
+
 _jwks_client: PyJWKClient | None = None
 
 
@@ -36,7 +55,7 @@ def _get_jwks_client() -> PyJWKClient:
     making a real network call."""
     global _jwks_client
     if _jwks_client is None:
-        _jwks_client = PyJWKClient(TELEGRAM_OIDC_JWKS_URL)
+        _jwks_client = _HttpxPyJWKClient(TELEGRAM_OIDC_JWKS_URL)
     return _jwks_client
 
 
