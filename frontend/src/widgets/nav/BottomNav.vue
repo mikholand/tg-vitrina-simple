@@ -31,15 +31,18 @@ function isActive(item: NavItem): boolean {
   return route.path === item.to
 }
 
-// Labels match tg-vitrina's storefront nav verbatim ("Витрина" names the
-// landing/feed screen as a curated pick, distinct from "Каталог" which is
-// the full by-section browse — the two words read as the same thing
-// otherwise).
+// First four labels match tg-vitrina's storefront nav verbatim ("Витрина"
+// names the landing/feed screen as a curated pick, distinct from "Каталог"
+// which is the full by-section browse — the two words read as the same
+// thing otherwise). "Заказы" has no tg-vitrina equivalent — added once the
+// website login made a customer's own order history (OrdersPage.vue)
+// something to actually navigate to.
 const customerItems: NavItem[] = [
   { to: '/', label: 'Витрина', icon: 'pi pi-home' },
   { to: '/catalog', label: 'Каталог', icon: 'pi pi-th-large' },
   { to: '/favorites', label: 'Избранное', icon: 'pi pi-heart' },
   { to: '/cart', label: 'Корзина', icon: 'pi pi-shopping-cart' },
+  { to: '/orders', label: 'Заказы', icon: 'pi pi-receipt' },
 ]
 
 // Exactly tg-vitrina's tabBarSections, five items, same order: Главное,

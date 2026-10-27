@@ -23,3 +23,10 @@ export const orderSchema = z.object({
   created_at: z.string(),
   items: z.array(orderItemSchema),
 })
+
+export const paginatedOrderSchema = z.object({
+  items: z.array(orderSchema),
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number(),
+})

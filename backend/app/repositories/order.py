@@ -91,6 +91,26 @@ class OrderRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
 
+    async def list_for_customer(
+        self, customer_id: int, limit: int, offset: int
+    ) -> tuple[list[Order], int]:
+        """A logged-in customer's own order history — `customer_id` only
+        ever matches orders placed while signed in (Mini App or the
+        website widget), never a guest checkout's `contact_name`/
+        `contact_phone` pair, since there's no verified identity to link
+        those to (see `OrderService.checkout`)."""
+        stmt = (
+            select(Order)
+            .where(Order.customer_id == customer_id)
+            .order_by(Order.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        count_stmt = select(func.count()).select_from(Order).where(Order.customer_id == customer_id)
+        total = (await self._session.execute(count_stmt)).scalar_one()
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all()), total
+
     async def list_items_for_orders(self, order_ids: list[int]) -> dict[int, list[OrderItem]]:
         if not order_ids:
             return {}

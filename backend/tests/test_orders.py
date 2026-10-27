@@ -1,4 +1,5 @@
 from app.entities.product import Availability, ProductStatus
+from app.entities.user import UserRole
 from app.repositories.store_profile import StoreProfileRepository
 from app.telegram.commands import try_configure_order_chat
 
@@ -249,6 +250,61 @@ async def test_seller_order_history_lists_checked_out_orders(
     assert order["total"] == "40.00"
     assert order["items"][0]["product_name"] == product.name
     assert order["items"][0]["quantity"] == 2
+
+
+async def test_my_orders_lists_only_the_current_customers_orders(
+    client, customer, make_user, auth_header, make_product
+):
+    _, customer_headers = customer
+    other_user = await make_user(1002, UserRole.CUSTOMER)
+    other_headers = auth_header(other_user.id, other_user.role)
+    product = await make_product(price="15.00", status=ProductStatus.PUBLISHED, quantity=5)
+
+    await client.post(
+        "/api/v1/catalog/orders",
+        json={"items": [{"product_id": product.id, "quantity": 1}]},
+        headers=customer_headers,
+    )
+    await client.post(
+        "/api/v1/catalog/orders",
+        json={"items": [{"product_id": product.id, "quantity": 2}]},
+        headers=other_headers,
+    )
+
+    response = await client.get("/api/v1/catalog/orders/my", headers=customer_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    order = body["items"][0]
+    assert order["customer_id"] == 1001
+    assert order["total"] == "15.00"
+    assert order["items"][0]["product_name"] == product.name
+
+
+async def test_my_orders_excludes_guest_checkouts(client, customer, make_product):
+    """A guest checkout from the plain website (`customer_id IS NULL`) has
+    no verified identity to match against a logged-in session — see
+    `OrderRepository.list_for_customer`."""
+    _, customer_headers = customer
+    product = await make_product(price="10.00", status=ProductStatus.PUBLISHED, quantity=5)
+
+    await client.post(
+        "/api/v1/catalog/orders",
+        json={
+            "items": [{"product_id": product.id, "quantity": 1}],
+            "contact_name": "Гость",
+            "contact_phone": "+79990000000",
+        },
+    )
+
+    response = await client.get("/api/v1/catalog/orders/my", headers=customer_headers)
+    assert response.status_code == 200
+    assert response.json()["total"] == 0
+
+
+async def test_my_orders_requires_auth(client):
+    response = await client.get("/api/v1/catalog/orders/my")
+    assert response.status_code == 401
 
 
 async def test_seller_order_history_requires_staff(client, customer):

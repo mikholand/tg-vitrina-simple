@@ -2,7 +2,7 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse, Response
 
-from app.api.deps import OptionalUser, VisitorKey
+from app.api.deps import CurrentUser, OptionalUser, VisitorKey
 from app.clients.bot import BotClient
 from app.core.config import Settings
 from app.dto.banner import BannerSchema
@@ -180,6 +180,24 @@ async def checkout(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     items = await order_repository.list_items(order.id)
     return _order_to_schema(order, items)
+
+
+@router.get("/orders/my")
+async def list_my_orders(
+    user: CurrentUser,
+    order_repository: FromDishka[OrderRepository],
+    limit: int = Query(default=20, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> Paginated[OrderSchema]:
+    """A logged-in customer's own order history (Mini App or the website
+    Login Widget — `CurrentUser`, not `OptionalUser`: there's nothing to
+    list for a guest checkout, which has no verified identity to match
+    against). Guest orders (`customer_id IS NULL`) never show up here, by
+    design — see `OrderRepository.list_for_customer`."""
+    orders, total = await order_repository.list_for_customer(user.id, limit, offset)
+    items_by_order = await order_repository.list_items_for_orders([o.id for o in orders])
+    schemas = [_order_to_schema(order, items_by_order.get(order.id, [])) for order in orders]
+    return Paginated[OrderSchema](items=schemas, total=total, limit=limit, offset=offset)
 
 
 @router.get("/robots.txt", response_class=PlainTextResponse)
