@@ -254,7 +254,7 @@ watch(
             >
               {{ customerInitial }}
             </div>
-            <span class="max-w-24 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
+            <span class="max-w-40 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
             <button
               type="button"
               class="shrink-0 text-sf-muted"
