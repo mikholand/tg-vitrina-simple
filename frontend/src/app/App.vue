@@ -266,18 +266,18 @@ watch(
               <RouterLink
                 v-if="isSeller"
                 :to="{ name: 'seller-dashboard' }"
-                class="shrink-0 text-sf-muted"
+                class="flex shrink-0 items-center text-sf-muted"
                 aria-label="Админка"
               >
-                <i class="pi pi-briefcase text-xl" />
+                <i class="pi pi-briefcase text-lg" />
               </RouterLink>
               <button
                 type="button"
-                class="shrink-0 text-sf-muted"
+                class="flex shrink-0 items-center text-sf-muted"
                 aria-label="Выйти"
                 @click="authStore.logout()"
               >
-                <i class="pi pi-sign-out text-base" />
+                <i class="pi pi-sign-out text-lg" />
               </button>
             </div>
             <TelegramLoginButton v-else />
