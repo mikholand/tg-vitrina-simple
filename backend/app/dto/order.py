@@ -1,9 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.entities.order import OrderStatus
+from app.shared.media import media_url
 
 
 class CartItemInputSchema(BaseModel):
@@ -30,6 +31,14 @@ class OrderItemSchema(BaseModel):
     price: Decimal
     currency: str
     quantity: int
+    photo_path: str | None = None
+
+    # Same bare-relative-path → /media/... URL conversion as
+    # `ProductSchema._to_media_urls`, for the same reason.
+    @field_validator("photo_path", mode="after")
+    @classmethod
+    def _to_media_url(cls, value: str | None) -> str | None:
+        return media_url(value) if value is not None else None
 
 
 class OrderSchema(BaseModel):
@@ -50,3 +59,29 @@ class OrderSchema(BaseModel):
     # of its own (no `relationship()` anywhere in this codebase, see
     # `OrderRepository`), so this is never auto-filled by `from_attributes`.
     items: list[OrderItemSchema] = []
+
+
+class OrderCustomerSchema(BaseModel):
+    """Who placed a Telegram-authenticated order — the seller needs a name
+    and a way to write to them, and `customer_id` alone is neither."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tg_username: str | None
+    tg_first_name: str | None
+    tg_last_name: str | None
+
+
+class SellerOrderSchema(OrderSchema):
+    """Seller-side view of an order: the customer's own `OrderSchema` plus
+    their Telegram identity. Kept off `OrderSchema` itself so the
+    customer-facing endpoints don't grow a field that only ever describes
+    the caller back to themselves. Null for a guest checkout —
+    `contact_name`/`contact_phone` identify those."""
+
+    customer: OrderCustomerSchema | None = None
+
+
+class OrderStatusUpdateSchema(BaseModel):
+    status: OrderStatus

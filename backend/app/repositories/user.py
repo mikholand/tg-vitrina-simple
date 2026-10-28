@@ -11,6 +11,12 @@ class UserRepository:
     async def get(self, user_id: int) -> User | None:
         return await self._session.get(User, user_id)
 
+    async def get_many(self, user_ids: list[int]) -> dict[int, User]:
+        if not user_ids:
+            return {}
+        result = await self._session.execute(select(User).where(User.id.in_(user_ids)))
+        return {user.id: user for user in result.scalars().all()}
+
     async def upsert_from_telegram(
         self,
         user_id: int,

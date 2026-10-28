@@ -252,6 +252,128 @@ async def test_seller_order_history_lists_checked_out_orders(
     assert order["items"][0]["quantity"] == 2
 
 
+async def test_checkout_snapshots_first_photo_as_media_url(client, customer, make_product):
+    _, headers = customer
+    product = await make_product(
+        price="10.00",
+        status=ProductStatus.PUBLISHED,
+        quantity=5,
+        photo_paths=["products/1/a.webp", "products/1/b.webp"],
+    )
+    no_photo = await make_product(price="5.00", status=ProductStatus.PUBLISHED, quantity=5)
+
+    response = await client.post(
+        "/api/v1/catalog/orders",
+        json={
+            "items": [
+                {"product_id": product.id, "quantity": 1},
+                {"product_id": no_photo.id, "quantity": 1},
+            ]
+        },
+        headers=headers,
+    )
+    assert response.status_code == 201
+    photos = {item["product_id"]: item["photo_path"] for item in response.json()["items"]}
+    assert photos == {product.id: "/media/products/1/a.webp", no_photo.id: None}
+
+
+async def test_seller_order_list_includes_customer_and_filters_by_status(
+    client, make_user, auth_header, seller, make_product
+):
+    _, seller_headers = seller
+    buyer = await make_user(1005, UserRole.CUSTOMER, tg_username="buyer")
+    buyer_headers = auth_header(buyer.id, buyer.role)
+    product = await make_product(price="10.00", status=ProductStatus.PUBLISHED, quantity=10)
+
+    first = await client.post(
+        "/api/v1/catalog/orders",
+        json={"items": [{"product_id": product.id, "quantity": 1}]},
+        headers=buyer_headers,
+    )
+    await client.post(
+        "/api/v1/catalog/orders",
+        json={
+            "items": [{"product_id": product.id, "quantity": 1}],
+            "contact_name": "Гость",
+            "contact_phone": "+79990000000",
+        },
+    )
+    await client.patch(
+        f"/api/v1/seller/orders/{first.json()['id']}/status",
+        json={"status": "shipped"},
+        headers=seller_headers,
+    )
+
+    everything = (await client.get("/api/v1/seller/orders", headers=seller_headers)).json()
+    assert everything["total"] == 2
+    by_id = {order["id"]: order for order in everything["items"]}
+    assert by_id[first.json()["id"]]["customer"]["tg_username"] == "buyer"
+    guest = next(order for order in everything["items"] if order["id"] != first.json()["id"])
+    assert guest["customer"] is None
+
+    in_work = await client.get(
+        "/api/v1/seller/orders",
+        params=[("status", "accepted"), ("status", "shipped")],
+        headers=seller_headers,
+    )
+    assert in_work.status_code == 200
+    assert [order["id"] for order in in_work.json()["items"]] == [first.json()["id"]]
+
+
+async def test_seller_changes_order_status_and_customer_sees_it(
+    client, customer, moderator, make_product
+):
+    _, customer_headers = customer
+    _, moderator_headers = moderator
+    product = await make_product(price="10.00", status=ProductStatus.PUBLISHED, quantity=3)
+    order = (
+        await client.post(
+            "/api/v1/catalog/orders",
+            json={"items": [{"product_id": product.id, "quantity": 2}]},
+            headers=customer_headers,
+        )
+    ).json()
+    assert order["status"] == "new"
+
+    response = await client.patch(
+        f"/api/v1/seller/orders/{order['id']}/status",
+        json={"status": "cancelled"},
+        headers=moderator_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+
+    mine = (await client.get("/api/v1/catalog/orders/my", headers=customer_headers)).json()
+    assert mine["items"][0]["status"] == "cancelled"
+
+    # Cancelling never puts reserved stock back — see OrderService.change_status.
+    detail = await client.get(f"/api/v1/catalog/products/{product.id}")
+    assert detail.json()["quantity"] == 1
+
+
+async def test_change_order_status_rejects_unknown_order_status_and_customer(
+    client, customer, seller
+):
+    _, customer_headers = customer
+    _, seller_headers = seller
+
+    missing = await client.patch(
+        "/api/v1/seller/orders/999/status", json={"status": "accepted"}, headers=seller_headers
+    )
+    assert missing.status_code == 404
+    assert missing.json()["detail"] == "order_not_found"
+
+    bogus = await client.patch(
+        "/api/v1/seller/orders/999/status", json={"status": "lost"}, headers=seller_headers
+    )
+    assert bogus.status_code == 422
+
+    forbidden = await client.patch(
+        "/api/v1/seller/orders/999/status", json={"status": "accepted"}, headers=customer_headers
+    )
+    assert forbidden.status_code == 403
+
+
 async def test_my_orders_lists_only_the_current_customers_orders(
     client, customer, make_user, auth_header, make_product
 ):

@@ -77,6 +77,7 @@ const BACK_BUTTON_FALLBACK_PARENT: Partial<Record<string, string>> = {
   cart: 'home',
   profile: 'home',
   'seller-products': 'seller-dashboard',
+  'seller-orders': 'seller-dashboard',
   'seller-categories': 'seller-dashboard',
   'seller-statistics': 'seller-dashboard',
   'seller-settings': 'seller-dashboard',

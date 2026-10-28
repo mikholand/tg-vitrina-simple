@@ -8,6 +8,10 @@ const orderItemSchema = z.object({
   price: z.string(),
   currency: z.string(),
   quantity: z.number(),
+  // Snapshot of the product's first photo at checkout (a /media/... URL).
+  // May point at a file deleted together with its product since — the UI
+  // falls back to a placeholder on load error (OrderItemThumb.vue).
+  photo_path: z.string().nullable().default(null),
 })
 
 export const orderSchema = z.object({
@@ -29,4 +33,21 @@ export const paginatedOrderSchema = z.object({
   total: z.number(),
   limit: z.number(),
   offset: z.number(),
+})
+
+const orderCustomerSchema = z.object({
+  id: z.number(),
+  tg_username: z.string().nullable(),
+  tg_first_name: z.string().nullable(),
+  tg_last_name: z.string().nullable(),
+})
+
+// Seller-only view (`GET /seller/orders`): adds the buyer's Telegram
+// identity, null for a guest checkout from the website.
+export const sellerOrderSchema = orderSchema.extend({
+  customer: orderCustomerSchema.nullable().default(null),
+})
+
+export const paginatedSellerOrderSchema = paginatedOrderSchema.extend({
+  items: z.array(sellerOrderSchema),
 })

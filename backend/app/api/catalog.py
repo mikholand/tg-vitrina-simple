@@ -206,7 +206,7 @@ async def robots_txt(settings: FromDishka[Settings]) -> str:
     proxy_pass) rather than as a static frontend file, so the `Sitemap:`
     line always points at whatever domain this deployment is actually
     configured for (`WEBAPP_URL`) instead of a hardcoded value baked into
-    the repo. `/seller`, `/cart`, `/favorites` are purely personal/staff
+    the repo. `/seller`, `/cart`, `/favorites`, `/profile` are purely personal/staff
     screens — nothing there is worth a search engine's crawl budget, and
     `/seller/*` isn't reachable without auth anyway."""
     base_url = settings.app.WEBAPP_URL.rstrip("/")
@@ -215,6 +215,7 @@ async def robots_txt(settings: FromDishka[Settings]) -> str:
         "Disallow: /seller",
         "Disallow: /cart",
         "Disallow: /favorites",
+        "Disallow: /profile",
     ]
     if base_url:
         lines += ["", f"Sitemap: {base_url}/sitemap.xml"]

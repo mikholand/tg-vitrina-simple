@@ -13,6 +13,8 @@ const authStore = useAuthStore()
 const cartStore = useCartStore()
 const route = useRoute()
 
+const profilePhoto = computed(() => authStore.currentUser?.tg_photo_url ?? null)
+
 // Why not RouterLink's `active-class`/`exact-active-class`: those props
 // APPEND a class string alongside whatever static `class` is already on the
 // element — they don't replace it. That silently broke every previous
@@ -92,7 +94,18 @@ const items = computed<NavItem[]>(() => {
           class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors"
           :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : ''"
         >
-          <i :class="item.icon" class="text-base sm:text-sm" />
+          <!-- The profile tab shows the person's own Telegram photo when
+               Telegram gave us one (only for attachment-menu launches and
+               the website widget, see User.tg_photo_url) — "this is you"
+               reads faster than a generic silhouette. -->
+          <img
+            v-if="item.to === '/profile' && profilePhoto"
+            :src="profilePhoto"
+            alt=""
+            class="size-5 rounded-full object-cover sm:size-4"
+            :class="isActive(item) ? 'ring-2 ring-sf-accent' : ''"
+          />
+          <i v-else :class="item.icon" class="text-base sm:text-sm" />
           <!-- Мобильный экран: только иконки, подписи скрыты — четыре
                полноразмерных лейбла в пилюле на узком экране смотрелись
                тесно. От sm и шире (десктоп/широкий Telegram Desktop) подпись

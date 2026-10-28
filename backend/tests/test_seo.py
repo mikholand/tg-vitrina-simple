@@ -6,6 +6,7 @@ async def test_robots_txt_disallows_staff_and_cart_routes(client):
     assert response.status_code == 200
     body = response.text
     assert "Disallow: /seller" in body
+    assert "Disallow: /profile" in body
     assert "Disallow: /cart" in body
     assert "Disallow: /favorites" in body
 
