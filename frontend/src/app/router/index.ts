@@ -42,10 +42,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@pages/cart/CartPage.vue'),
   },
   {
-    path: '/orders',
-    name: 'orders',
-    component: () => import('@pages/orders/OrdersPage.vue'),
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@pages/profile/ProfilePage.vue'),
   },
+  // История заказов жила отдельной вкладкой до появления профиля — старые
+  // ссылки на неё (закладки, сообщения) ведём туда, где она теперь.
+  { path: '/orders', redirect: { name: 'profile' } },
   {
     path: '/seller',
     name: 'seller-dashboard',

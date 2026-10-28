@@ -29,18 +29,10 @@ const bare = computed(() => route.name === 'product-detail')
 
 const storeInitial = computed(() => storeInfoStore.storeInfo?.name?.[0]?.toUpperCase() ?? '')
 
-// A logged-in website visitor's display name in the header — first+last
-// name when Telegram gave us both, falling back to just the username (no
-// name claim at all isn't actually possible for a real Telegram account,
-// but the OIDC token's given_name could still come back empty for one) and
-// finally a generic label so the header never renders blank where the name
-// should be.
-const customerDisplayName = computed(() => {
-  const user = authStore.currentUser
-  if (!user) return ''
-  const fullName = [user.tg_first_name, user.tg_last_name].filter(Boolean).join(' ')
-  return fullName || (user.tg_username ? `@${user.tg_username}` : 'Профиль')
-})
+// Header avatar for a logged-in website visitor — just the initial, not
+// the full name: name + logout used to sit here and squeezed the shop's own
+// name down to "Лавка Тёплый …" on a phone. Name and logout now live on
+// the profile page this avatar links to.
 const customerInitial = computed(
   () => (authStore.currentUser?.tg_first_name || authStore.currentUser?.tg_username || '?')[0]?.toUpperCase() ?? '?',
 )
@@ -83,7 +75,7 @@ const BACK_BUTTON_FALLBACK_PARENT: Partial<Record<string, string>> = {
   catalog: 'home',
   favorites: 'home',
   cart: 'home',
-  orders: 'home',
+  profile: 'home',
   'seller-products': 'seller-dashboard',
   'seller-categories': 'seller-dashboard',
   'seller-statistics': 'seller-dashboard',
@@ -231,11 +223,8 @@ watch(
           </h1>
         </div>
         <div class="flex shrink-0 items-center gap-3">
-          <!-- Inside Telegram there's never a website login block to share
-               this row with (see `outsideTelegram` below) — staff just
-               gets the briefcase link on its own, as before. -->
           <RouterLink
-            v-if="isSeller && !outsideTelegram"
+            v-if="isSeller"
             :to="{ name: 'seller-dashboard' }"
             class="text-sf-muted"
             aria-label="Админка"
@@ -244,43 +233,29 @@ watch(
           </RouterLink>
           <!-- Website visitors only (see `outsideTelegram` above) — inside
                Telegram there's always already a signed-in Mini App user by
-               the time this renders, staff included. -->
-          <template v-if="outsideTelegram">
-            <div v-if="authStore.currentUser" class="flex items-center gap-2">
+               the time this renders, and the "Профиль" tab is enough. Hidden
+               on the profile page itself, which already shows the same
+               avatar (or login prompt) as its own heading. -->
+          <template v-if="outsideTelegram && route.name !== 'profile'">
+            <RouterLink
+              v-if="authStore.currentUser"
+              :to="{ name: 'profile' }"
+              class="flex shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sf-accent"
+              aria-label="Профиль"
+            >
               <img
                 v-if="authStore.currentUser.tg_photo_url"
                 :src="authStore.currentUser.tg_photo_url"
                 alt=""
-                class="size-7 shrink-0 rounded-full object-cover"
+                class="size-8 rounded-full object-cover"
               />
-              <div
+              <span
                 v-else
-                class="flex size-7 shrink-0 items-center justify-center rounded-full bg-sf-accent text-xs font-semibold text-white"
+                class="flex size-8 items-center justify-center rounded-full bg-sf-soft text-sm font-semibold text-sf-accent"
               >
                 {{ customerInitial }}
-              </div>
-              <span class="max-w-40 truncate text-sm text-sf-ink">{{ customerDisplayName }}</span>
-              <!-- A staff member logged in via the website widget still
-                   needs a way into the cabinet — placed right before
-                   logout, not at the start of the row (see the standalone
-                   one above for the Mini App case). -->
-              <RouterLink
-                v-if="isSeller"
-                :to="{ name: 'seller-dashboard' }"
-                class="flex shrink-0 items-center text-sf-muted"
-                aria-label="Админка"
-              >
-                <i class="pi pi-briefcase text-lg" />
-              </RouterLink>
-              <button
-                type="button"
-                class="flex shrink-0 items-center text-sf-muted"
-                aria-label="Выйти"
-                @click="authStore.logout()"
-              >
-                <i class="pi pi-sign-out text-lg" />
-              </button>
-            </div>
+              </span>
+            </RouterLink>
             <TelegramLoginButton v-else />
           </template>
         </div>
