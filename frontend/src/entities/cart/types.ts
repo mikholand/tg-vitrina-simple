@@ -20,6 +20,7 @@ export interface OrderItem {
   price: string
   currency: string
   quantity: number
+  photo_path: string | null
 }
 
 export interface Order {
@@ -30,8 +31,25 @@ export interface Order {
   total: string
   currency: string
   comment: string | null
+  // Plain string, not OrderStatus: the schema parses it as z.string() so a
+  // status added on the backend first doesn't make every order list fail to
+  // parse — labels.ts falls back to the raw value for unknown ones.
   status: string
   notified: boolean
   created_at: string
   items: OrderItem[]
+}
+
+/** Mirrors the backend's `OrderStatus` (app/entities/order.py). */
+export type OrderStatus = 'new' | 'accepted' | 'shipped' | 'completed' | 'cancelled'
+
+export interface OrderCustomer {
+  id: number
+  tg_username: string | null
+  tg_first_name: string | null
+  tg_last_name: string | null
+}
+
+export interface SellerOrder extends Order {
+  customer: OrderCustomer | null
 }

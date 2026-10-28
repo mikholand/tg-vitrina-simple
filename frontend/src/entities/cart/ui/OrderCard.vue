@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { formatPrice } from '@entities/product/labels'
+import { orderStatusClass, orderStatusLabel } from '../labels'
 import type { Order } from '../types'
+import OrderItemThumb from './OrderItemThumb.vue'
 
 const props = defineProps<{ order: Order }>()
 
@@ -9,16 +11,6 @@ const props = defineProps<{ order: Order }>()
 // строка отвечает на «что это было и сколько стоило» (номер, дата, первый
 // товар, сумма), а состав и комментарий — по нажатию.
 const expanded = ref(false)
-
-// Only "new" exists today (see the backend's OrderStatus docstring — more
-// statuses can be added later without a migration), but falling back to
-// the raw value keeps the card from going blank on an unrecognized one
-// rather than erroring.
-const statusLabels: Record<string, string> = {
-  new: 'Новый',
-}
-
-const statusLabel = computed(() => statusLabels[props.order.status] ?? props.order.status)
 
 // Год показываем только для прошлогодних заказов — у свежих он лишь
 // удлиняет строку, которая на узком экране делит место с суммой.
@@ -31,6 +23,9 @@ const dateLabel = computed(() => {
     ...(sameYear ? {} : { year: 'numeric' }),
   })
 })
+
+// Сколько ещё позиций скрыто за миниатюрой первой — бейдж «+N» на ней.
+const moreCount = computed(() => Math.max(props.order.items.length - 1, 0))
 
 const summary = computed(() => {
   const [first, ...rest] = props.order.items
@@ -50,6 +45,15 @@ const panelId = computed(() => `order-${props.order.id}-items`)
       :aria-controls="panelId"
       @click="expanded = !expanded"
     >
+      <span class="relative shrink-0">
+        <OrderItemThumb :src="order.items[0]?.photo_path ?? null" class="size-11 rounded-xl" />
+        <span
+          v-if="moreCount"
+          class="absolute -bottom-1 -right-1 rounded-full border-2 border-sf-card bg-sf-ink px-1.5 text-[0.65rem] font-semibold leading-4 text-white"
+        >
+          +{{ moreCount }}
+        </span>
+      </span>
       <span class="min-w-0 flex-1">
         <span class="flex items-center gap-2">
           <span class="font-medium text-sf-ink">№{{ order.id }}</span>
@@ -59,8 +63,8 @@ const panelId = computed(() => `order-${props.order.id}-items`)
       </span>
       <span class="flex shrink-0 flex-col items-end gap-1">
         <span class="font-semibold text-sf-ink">{{ formatPrice(order.total, order.currency) }}</span>
-        <span class="rounded-full bg-sf-soft px-2 py-0.5 text-xs font-medium text-sf-accent">
-          {{ statusLabel }}
+        <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="orderStatusClass(order.status)">
+          {{ orderStatusLabel(order.status) }}
         </span>
       </span>
       <i
@@ -70,9 +74,10 @@ const panelId = computed(() => `order-${props.order.id}-items`)
     </button>
 
     <div v-if="expanded" :id="panelId" class="mx-4 border-t border-sf-line pb-4 pt-3">
-      <ul class="flex flex-col gap-1.5">
-        <li v-for="item in order.items" :key="item.id" class="flex items-baseline justify-between gap-3 text-sm">
-          <span class="min-w-0 text-sf-ink">
+      <ul class="flex flex-col gap-2">
+        <li v-for="item in order.items" :key="item.id" class="flex items-center gap-3 text-sm">
+          <OrderItemThumb :src="item.photo_path" class="size-8 shrink-0 rounded-lg" />
+          <span class="min-w-0 flex-1 text-sf-ink">
             {{ item.product_name }}
             <span class="whitespace-nowrap text-sf-muted">× {{ item.quantity }}</span>
           </span>

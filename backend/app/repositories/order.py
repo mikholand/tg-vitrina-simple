@@ -3,7 +3,7 @@ from decimal import Decimal
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.entities.order import Order, OrderItem
+from app.entities.order import Order, OrderItem, OrderStatus
 from app.entities.product import Availability, Product
 
 
@@ -84,9 +84,18 @@ class OrderRepository:
         )
         await self._session.flush()
 
-    async def list_for_seller(self, limit: int, offset: int) -> tuple[list[Order], int]:
-        stmt = select(Order).order_by(Order.created_at.desc()).limit(limit).offset(offset)
+    async def get(self, order_id: int) -> Order | None:
+        return await self._session.get(Order, order_id)
+
+    async def list_for_seller(
+        self, limit: int, offset: int, statuses: list[OrderStatus] | None = None
+    ) -> tuple[list[Order], int]:
+        stmt = select(Order)
         count_stmt = select(func.count()).select_from(Order)
+        if statuses:
+            stmt = stmt.where(Order.status.in_(statuses))
+            count_stmt = count_stmt.where(Order.status.in_(statuses))
+        stmt = stmt.order_by(Order.created_at.desc(), Order.id.desc()).limit(limit).offset(offset)
         total = (await self._session.execute(count_stmt)).scalar_one()
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total

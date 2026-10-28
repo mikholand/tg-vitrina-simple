@@ -62,6 +62,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresSeller: true },
   },
   {
+    path: '/seller/orders',
+    name: 'seller-orders',
+    component: () => import('@pages/seller/orders/SellerOrdersPage.vue'),
+    meta: { requiresSeller: true },
+  },
+  {
     path: '/seller/raw-posts',
     name: 'seller-raw-posts',
     component: () => import('@pages/seller/raw-posts/RawPostsPage.vue'),

@@ -8,12 +8,20 @@ from app.entities.base import Base, TimestampMixin
 
 
 class OrderStatus(enum.StrEnum):
-    """Single status for the MVP — a checkout always lands here, and the
-    bot notification is the seller's only follow-up channel. More statuses
-    (CONFIRMED/CANCELLED/...) can be added later without a migration, since
-    the column is already a string enum."""
+    """Order lifecycle as the seller moves it along in the cabinet
+    (`OrderService.change_status`) and the customer sees it in their
+    profile. Added without a migration — the column is a plain string enum
+    (`native_enum=False`), so only `length=20` bounds new values.
+
+    Deliberately no enforced transition graph: a seller who taps the wrong
+    status must be able to put it back, and a single shop's handful of
+    staff doesn't need a workflow engine guarding them from themselves."""
 
     NEW = "new"
+    ACCEPTED = "accepted"
+    SHIPPED = "shipped"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class Order(Base, TimestampMixin):
@@ -83,5 +91,12 @@ class OrderItem(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    # First product photo at checkout time (MEDIA_ROOT-relative, like every
+    # other stored media path) — a thumbnail for the order history lists.
+    # Unlike name/price this points at the product's own file rather than a
+    # copy, so `ProductService.delete_product` removing that file leaves a
+    # dangling path: both order lists fall back to a placeholder icon when
+    # the image fails to load instead of copying a file per order line.
+    photo_path: Mapped[str | None] = mapped_column(String(500))
 
     __table_args__ = (Index("ix_order_items_order_id", "order_id"),)

@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from app.clients.bot import BotClient
 from app.core.logging import get_logger
-from app.entities.order import Order, OrderItem
+from app.entities.order import Order, OrderItem, OrderStatus
 from app.entities.user import User
 from app.repositories.order import OrderRepository
 from app.repositories.product import ProductRepository
@@ -110,6 +110,7 @@ class OrderService:
                     price=price,
                     currency=product.currency,
                     quantity=quantity,
+                    photo_path=product.photo_paths[0] if product.photo_paths else None,
                 )
             )
 
@@ -131,6 +132,24 @@ class OrderService:
         )
 
         await self._notify(order, order_items, customer)
+        return order
+
+    async def change_status(self, order_id: int, status: OrderStatus) -> Order | None:
+        """Seller moves an order along (see `OrderStatus` for why any
+        transition is allowed). Returns None for an unknown id — the API
+        layer turns that into a 404.
+
+        Cancelling deliberately does NOT return reserved stock to the
+        product: by the time a seller cancels, they may already have
+        restocked, edited the quantity or sold the item elsewhere, and
+        silently adding units back would fight `_normalize_stock`'s rules
+        (a sold-out product is stored as quantity=None/out_of_stock, so
+        there's no counter left to add to). The cabinet tells the seller to
+        adjust the product by hand instead."""
+        order = await self._order_repository.get(order_id)
+        if order is None:
+            return None
+        order.status = status
         return order
 
     async def _notify(self, order: Order, items: list[OrderItem], customer: User | None) -> None:
