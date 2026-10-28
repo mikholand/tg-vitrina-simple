@@ -57,7 +57,15 @@
   --sf-surface: #f4f0e6;
   --sf-card: #ffffff;
   --sf-accent: #c9a15a;
-  --sf-accent-soft: rgba(201, 161, 90, 0.12);
+  /* Flat hex, not a low-alpha rgba() over --sf-bg — same mistake the other
+     -soft tokens avoid (success/danger/warning-soft are already flat here):
+     a translucent gold wash barely shows up against white (it rendered as a
+     washed-out, almost-invisible active-tab highlight with a faint hard
+     edge instead of a clean filled pill — see BottomNav.vue), even though
+     the exact same rgba reads as a clearly visible warm tint against the
+     dark scheme's near-black --sf-bg below. Picked to read as the same
+     weight of pastel as --sf-success-soft/--sf-danger-soft here. */
+  --sf-accent-soft: #f7ecd3;
   /* Text/icon color ON a bg-sf-accent fill (buttons, active chips/tabs) —
      always this same dark value in BOTH schemes, never --sf-ink/--sf-bg:
      --sf-accent itself doesn't change between light/dark, so neither should
@@ -83,7 +91,7 @@
   --sf-surface: #1c1c1c;
   --sf-card: #1e1e1e;
   --sf-accent: #c9a15a;
-  --sf-accent-soft: rgba(201, 161, 90, 0.12);
+  --sf-accent-soft: #2a2317;
   --sf-accent-ink: #1a1510;
   --sf-ink: #ffffff;
   --sf-muted: #a1a1aa;

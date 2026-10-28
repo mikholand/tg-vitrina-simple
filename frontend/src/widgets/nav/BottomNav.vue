@@ -99,7 +99,7 @@ const items = computed<NavItem[]>(() => {
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors md:flex-col md:gap-1.5 md:rounded-2xl md:py-3"
+          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors md:flex-col md:gap-1.5 md:py-3"
           :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : 'md:text-sf-placeholder'"
         >
           <!-- The profile tab shows the person's own Telegram photo when
