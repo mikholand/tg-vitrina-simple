@@ -72,7 +72,7 @@ onMounted(() => {
         type="button"
         class="shrink-0 rounded-full border px-3.5 py-1.5 text-sm"
         :class="
-          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-white' : 'border-sf-line bg-sf-card text-sf-ink'
+          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-sf-bg' : 'border-sf-line bg-sf-card text-sf-ink'
         "
         @click="activeTab = tab.value"
       >

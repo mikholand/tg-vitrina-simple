@@ -135,7 +135,7 @@ onMounted(() => {
            design wants a rounded rectangle instead. -->
       <button
         type="button"
-        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-white"
+        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-sf-bg"
         @click="openCreateEditor"
       >
         <i class="pi pi-plus text-xs" /> Добавить
@@ -149,7 +149,7 @@ onMounted(() => {
         type="button"
         class="shrink-0 rounded-full border px-3.5 py-1 text-sm"
         :class="
-          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-white' : 'border-sf-line bg-sf-card text-sf-ink'
+          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-sf-bg' : 'border-sf-line bg-sf-card text-sf-ink'
         "
         @click="activeTab = tab.value"
       >
@@ -163,7 +163,7 @@ onMounted(() => {
       v-model="search"
       type="search"
       placeholder="Поиск по названию"
-      class="rounded-xl border border-sf-line bg-white px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
+      class="rounded-xl border border-sf-line bg-sf-card px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
     />
 
     <AppSpinner v-if="loading" />
@@ -178,7 +178,7 @@ onMounted(() => {
         <article
           v-for="product in products"
           :key="product.id"
-          class="flex gap-3 rounded-2xl bg-white p-3 shadow-sm"
+          class="flex gap-3 rounded-2xl bg-sf-card p-3 shadow-sm"
         >
           <img
             v-if="product.photo_paths[0]"

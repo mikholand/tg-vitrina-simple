@@ -16,34 +16,37 @@ void initTelegram()
 
 // PrimeVue's "primary" defaults to Aura's emerald scale, which would make
 // every untouched PrimeVue control (ToggleSwitch, ProgressSpinner, Tag,
-// Button) read as green next to the storefront's blue --sf-accent. Seller
+// Button) read as green next to the storefront's gold --sf-accent. Seller
 // pages use plenty of PrimeVue as-is, so the theme itself is pinned to the
-// same blue instead of re-skinning each component by hand.
+// same warm gold (Alena Zhao brand accent, #c9a15a at 600 — same slot the
+// old blue used to sit at) instead of re-skinning each component by hand.
 //
-// Aura's default "surface" scale is already Tailwind's slate scale under
-// the hood ({slate.50}, {slate.200}, {slate.900}, ...) — which is exactly
-// what --sf-card/--sf-line/--sf-ink/etc. were built from (see main.css), so
-// severity colors (red/green/amber) already line up with --sf-danger/
-// --sf-success/--sf-warning for free. The one real mismatch is which shade
-// of that scale each form-field token points at by default (white
-// background instead of --sf-card, a too-dark border/placeholder, a
-// too-small border radius) — overridden below so every PrimeVue input,
-// textarea, select, and button matches the rest of the app's rounded
-// sf-card look without hand-styling each component instance.
+// Aura's default "surface" scale is Tailwind's slate scale ({slate.50},
+// {slate.200}, {slate.900}, ...) — built for a LIGHT theme, which no longer
+// matches this app's dark --sf-card/--sf-line/--sf-ink tokens (main.css).
+// Severity colors (red/green/amber) still line up with --sf-danger/
+// --sf-success/--sf-warning without changes, but the form-field color-
+// scheme below can no longer lean on {surface.*} references — those are
+// overridden with literal dark-token-matching hex values instead (see
+// colorScheme.light.formField below).
 const SfPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#eff6ff',
-      100: '#dbeafe',
-      200: '#bfdbfe',
-      300: '#93c5fd',
-      400: '#60a5fa',
-      500: '#3b82f6',
-      600: '#2563eb',
-      700: '#1d4ed8',
-      800: '#1e40af',
-      900: '#1e3a8a',
-      950: '#172554',
+      50: '#fcf8f1',
+      100: '#f8f0e3',
+      200: '#f2e4ce',
+      300: '#e9d3ac',
+      400: '#dfc08a',
+      500: '#d4af6c',
+      600: '#c9a15a',
+      700: '#a98447',
+      800: '#866934',
+      900: '#624c26',
+      950: '#3d2f17',
+      // Aura's Button/Tag text color reads from here, not a hardcoded
+      // white class — white-on-gold fails contrast (the old blue didn't
+      // need this override, white-on-blue was already readable).
+      contrastColor: '#121212',
     },
     formField: {
       // Aura's default paddingX/Y (0.75rem/0.5rem) reads noticeably smaller
@@ -66,19 +69,23 @@ const SfPreset = definePreset(Aura, {
       },
     },
     colorScheme: {
+      // Still named "light" — PrimeVue's scheme-slot name, not a design
+      // intent. darkModeSelector: false below pins the app to this one slot
+      // regardless of OS/Telegram theme, same as before; it just now holds
+      // the dark Alena Zhao values instead of the old light ones, matching
+      // --sf-card/--sf-line/--sf-ink/--sf-placeholder/--sf-disabled in
+      // main.css (kept as literal hex here, not var()/`{surface.*}`
+      // references, since Aura's bundled "surface" scale is still its
+      // original light slate and no longer applies).
       light: {
         formField: {
-          // White, not {surface.50} (a faint off-white) — same call as the
-          // hand-rolled bg-sf-card -> bg-white switch on the categories page:
-          // against the gray seller-cabinet background, off-white read as
-          // barely distinguishable from the surrounding card.
-          background: '#ffffff',
-          borderColor: '{surface.200}',
-          hoverBorderColor: '{surface.300}',
-          color: '{surface.900}',
-          placeholderColor: '{surface.400}',
-          disabledBackground: '{surface.200}',
-          disabledColor: '{surface.400}',
+          background: '#1e1e1e',
+          borderColor: '#2e2e2e',
+          hoverBorderColor: '#3f3f46',
+          color: '#ffffff',
+          placeholderColor: '#52525b',
+          disabledBackground: '#262626',
+          disabledColor: '#52525b',
         },
       },
     },
@@ -106,11 +113,12 @@ app.use(PrimeVue, {
     options: {
       // Defaults to 'system', which makes PrimeVue independently follow
       // the OS/Telegram `prefers-color-scheme: dark` media query — on a
-      // device with dark theme active this flips Dialog and ToggleSwitch
-      // (among others) to Aura's dark palette while the rest of the app
-      // (styled via the static, deliberately-light --sf-* tokens in
-      // main.css) stays light. The app has no dark mode of its own, so
-      // PrimeVue should never switch palettes either.
+      // device with light theme active this would flip Dialog and
+      // ToggleSwitch (among others) to Aura's own light palette while the
+      // rest of the app (styled via the static --sf-* tokens in main.css,
+      // now a fixed dark/gold brand palette) stays dark. The app has no
+      // theme switching of its own, so PrimeVue should never switch
+      // palettes either.
       darkModeSelector: false,
       cssLayer: {
         name: 'primevue',

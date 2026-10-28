@@ -1,3 +1,20 @@
+/* Must stay the first rule in the file — @import is only valid before any
+   other CSS (besides @charset), so it has to precede the @layer line below
+   even though the layer declaration is otherwise the "top" of this file.
+   Unbounded (800) for headings — a bold geometric display face for the
+   brand's headline voice, echoing the Superdesign mockup's Cabinet
+   Grotesk/Satoshi pairing. Inter for body/UI text, restoring the font the
+   app always *claimed* to use (main.css set font-family: 'Inter' with no
+   <link>, no @font-face, no npm package anywhere — it silently fell back to
+   the browser's generic sans-serif the whole time; this actually loads it).
+   Google Fonts, not Fontshare: every UI string in this app is Russian (see
+   CLAUDE.md §15), and Fontshare's Cabinet Grotesk/Satoshi have no Cyrillic
+   glyphs at all — verified by fetching their CSS directly, Cyrillic text
+   would have silently fallen back to the system font again, just via a
+   different font-family. Unbounded and Inter both ship a real Cyrillic
+   subset (unicode-range U+0400-045F) from Google's CDN. */
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Inter:wght@400;500;600;700&display=swap');
+
 @layer tailwind-base, primevue, tailwind-utilities;
 
 /* Tailwind v3's @tailwind directives do NOT wrap their own output in
@@ -21,39 +38,51 @@
 }
 
 :root {
-  /* Storefront palette — ported verbatim from tg-vitrina (the original
-     project this is a slimmed-down rebuild of) so the storefront looks
-     pixel-identical regardless of the visitor's Telegram theme: white
-     background, cool greys, blue accent. Deliberately NOT wired to
-     --tg-theme-* vars (unlike the previous revision of this file) — a
-     faithful visual clone needs a fixed palette, not one that follows the
-     user's dark/light mode. */
-  --sf-bg: #ffffff;
-  /* tg-vitrina's cabinet runs on a separate gray --surface, not its white
-     storefront --sf-bg — the gray is what makes white shadow-sm cards (see
-     DashboardPage) actually read as elevated instead of blending into the
-     page. Customer-facing pages keep --sf-bg; only the seller cabinet uses
-     this (see App.vue's root background class). */
-  --sf-surface: #f3f4f6;
-  --sf-card: #f8fafc;
-  --sf-accent: #2563eb;
-  --sf-accent-soft: #eff4ff;
-  --sf-ink: #0f172a;
-  --sf-muted: #64748b;
-  --sf-line: #e2e8f0;
-  --sf-placeholder: #94a3b8;
-  --sf-disabled: #cbd5e1;
+  /* Storefront palette — restyled 2026-10-28 around the real shop's brand,
+     "Alena Zhao" (charcoal/graphite surfaces, warm metallic gold accent,
+     real uploaded logo — see the Superdesign canvas + .superdesign/
+     design-system.md for the source drafts this was transcribed from).
+     Still deliberately NOT wired to --tg-theme-* vars — a fixed brand
+     palette regardless of the visitor's Telegram theme, same reasoning as
+     before, just no longer the old tg-vitrina blue-on-white clone. */
+  --sf-bg: #121212;
+  /* The seller cabinet's --sf-surface used to be a lighter gray than the
+     storefront's white --sf-bg so white shadow-sm cards (see DashboardPage)
+     read as elevated. Same relationship here, just inverted in the dark
+     scale: --sf-surface sits one step lighter than --sf-bg so the cabinet's
+     cards (now dark, see App.vue root background class + the bg-white ->
+     dark-token patch in the seller pages) still read as elevated instead of
+     blending into the page. */
+  --sf-surface: #1c1c1c;
+  --sf-card: #1e1e1e;
+  --sf-accent: #c9a15a;
+  --sf-accent-soft: rgba(201, 161, 90, 0.12);
+  --sf-ink: #ffffff;
+  --sf-muted: #a1a1aa;
+  --sf-line: #2e2e2e;
+  --sf-placeholder: #52525b;
+  --sf-disabled: #3f3f46;
 
-  --sf-success: #16a34a;
-  --sf-success-soft: #f0fdf4;
+  --sf-success: #10b981;
+  --sf-success-soft: rgba(16, 185, 129, 0.12);
   --sf-danger: #ef4444;
-  --sf-danger-soft: #fef2f2;
+  --sf-danger-soft: rgba(239, 68, 68, 0.12);
   --sf-warning: #f59e0b;
-  --sf-warning-soft: #fffbeb;
+  --sf-warning-soft: rgba(245, 158, 11, 0.12);
 }
 
 body {
   font-family: 'Inter', sans-serif;
+}
+
+/* Headings get the brand's bold display face; body/UI text stays on Inter
+   above for legibility at small sizes (prices, chips, nav labels) and full
+   Cyrillic coverage. */
+h1,
+h2,
+h3 {
+  font-family: 'Unbounded', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* Telegram Mini Apps are touch/swipe-driven, so the OS scrollbar track is

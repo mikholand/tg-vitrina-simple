@@ -65,7 +65,7 @@ watch(
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         @click.self="visible = false"
       >
-        <div class="w-full max-w-sm rounded-2xl bg-white p-5">
+        <div class="w-full max-w-sm rounded-2xl bg-sf-card p-5">
           <header class="mb-4 flex items-center justify-between">
             <h2 class="text-base font-semibold text-sf-ink">Вход через Telegram</h2>
             <button type="button" class="text-sf-muted" aria-label="Закрыть" @click="visible = false">

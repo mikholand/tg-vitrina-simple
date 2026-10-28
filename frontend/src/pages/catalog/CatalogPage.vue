@@ -11,9 +11,9 @@ import { useSeoMeta } from '@shared/seo/useSeoMeta'
 
 const PAGE_SIZE = 20
 
-// Same cool blue-grey tints as the product card / home tiles, so a
-// category grid without icons doesn't read as a grey administrative list.
-const TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', 'bg-[#e8eef7]']
+// Same dark warm-gold tints as the product card tiles, so a category grid
+// without icons doesn't read as a grey administrative list.
+const TINTS = ['bg-[#201a10]', 'bg-[#1c1c1c]', 'bg-[#22190e]', 'bg-[#1a1a1a]', 'bg-[#241c11]']
 
 const route = useRoute()
 const categoryStore = useCategoryStore()
@@ -167,7 +167,7 @@ onMounted(async () => {
         class="flex min-h-[6.25rem] flex-col justify-between rounded-3xl border p-3.5 text-left transition-colors"
         :class="
           (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
-            ? 'border-sf-accent bg-sf-accent text-white'
+            ? 'border-sf-accent bg-sf-accent text-sf-bg'
             : 'border-sf-line bg-sf-card'
         "
         @click="selectTile(tile.id)"
@@ -176,13 +176,20 @@ onMounted(async () => {
           class="flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
           :class="
             (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
-              ? 'bg-white/20 text-white'
+              ? 'bg-sf-bg/15 text-sf-bg'
               : [tile.tint, 'text-sf-accent']
           "
         >
           {{ tile.letter }}
         </span>
-        <span class="block truncate pt-3 text-sm font-medium leading-tight text-sf-ink">
+        <span
+          class="block truncate pt-3 text-sm font-medium leading-tight"
+          :class="
+            (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
+              ? 'text-sf-bg'
+              : 'text-sf-ink'
+          "
+        >
           {{ tile.name }}
         </span>
       </button>
@@ -197,7 +204,7 @@ onMounted(async () => {
         :key="chip.id"
         type="button"
         class="shrink-0 rounded-full border px-3.5 py-1.5 text-sm"
-        :class="chip.active ? 'border-sf-accent bg-sf-accent text-white' : 'border-sf-line bg-sf-card text-sf-ink'"
+        :class="chip.active ? 'border-sf-accent bg-sf-accent text-sf-bg' : 'border-sf-line bg-sf-card text-sf-ink'"
         @click="selectChip(chip.id)"
       >
         {{ chip.name }}

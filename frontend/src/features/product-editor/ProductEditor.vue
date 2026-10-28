@@ -471,9 +471,9 @@ onMounted(() => {
           v-model="categoryQuery"
           type="search"
           placeholder="Поиск категории"
-          class="w-full rounded-xl border border-sf-line bg-white px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
+          class="w-full rounded-xl border border-sf-line bg-sf-card px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
         />
-        <div class="max-h-56 overflow-y-auto rounded-xl border border-sf-line bg-white p-2">
+        <div class="max-h-56 overflow-y-auto rounded-xl border border-sf-line bg-sf-card p-2">
           <template v-if="categoryQuery.trim()">
             <label
               v-for="category in foundCategories"
@@ -505,7 +505,7 @@ onMounted(() => {
       <button
         type="submit"
         :disabled="saving || !name.trim()"
-        class="mt-2 rounded-xl bg-sf-accent py-3 font-semibold text-white disabled:opacity-50"
+        class="mt-2 rounded-xl bg-sf-accent py-3 font-semibold text-sf-bg disabled:opacity-50"
       >
         {{ saving ? 'Сохранение…' : 'Сохранить' }}
       </button>

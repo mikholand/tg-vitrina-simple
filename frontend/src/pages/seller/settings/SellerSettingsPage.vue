@@ -76,7 +76,7 @@ async function onLogoSelected(event: Event): Promise<void> {
     <AppSpinner v-if="loading" />
 
     <div v-else-if="settings" class="flex flex-col gap-3">
-      <div class="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+      <div class="flex items-center gap-3 rounded-2xl bg-sf-card p-3.5 shadow-sm">
         <button
           type="button"
           class="relative flex shrink-0 appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none outline-none disabled:opacity-60"
@@ -123,7 +123,7 @@ async function onLogoSelected(event: Event): Promise<void> {
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+      <div class="flex flex-col gap-3 rounded-2xl bg-sf-card p-3.5 shadow-sm">
         <label class="flex flex-col gap-1 text-sm">
           <span class="text-sf-muted">Название магазина</span>
           <InputText v-model="name" fluid />
@@ -145,7 +145,7 @@ async function onLogoSelected(event: Event): Promise<void> {
            магазина, а список людей с доступом в кабинет. -->
       <RouterLink
         :to="{ name: 'seller-contacts' }"
-        class="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm"
+        class="flex items-center gap-3 rounded-2xl bg-sf-card p-3 shadow-sm"
       >
         <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-sf-soft text-sf-accent">
           <i class="pi pi-users" />
@@ -159,7 +159,7 @@ async function onLogoSelected(event: Event): Promise<void> {
 
       <RouterLink
         :to="{ name: 'seller-team' }"
-        class="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm"
+        class="flex items-center gap-3 rounded-2xl bg-sf-card p-3 shadow-sm"
       >
         <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-sf-soft text-sf-accent">
           <i class="pi pi-user-plus" />
@@ -171,7 +171,7 @@ async function onLogoSelected(event: Event): Promise<void> {
         <i class="pi pi-chevron-right shrink-0 text-xs text-sf-disabled" />
       </RouterLink>
 
-      <div class="flex flex-col gap-2 rounded-2xl bg-white p-3.5 shadow-sm text-sm">
+      <div class="flex flex-col gap-2 rounded-2xl bg-sf-card p-3.5 shadow-sm text-sm">
         <div class="flex items-center justify-between gap-2">
           <span class="text-sf-muted">ID канала Telegram</span>
           <span class="truncate text-sf-ink">{{ settings.telegram_channel_id }}</span>

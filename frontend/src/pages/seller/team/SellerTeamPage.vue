@@ -116,7 +116,7 @@ onMounted(() => {
       <p class="text-sm text-sf-muted">Доступ ко всему, кроме настроек магазина.</p>
     </div>
 
-    <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+    <div class="flex flex-col gap-3 rounded-2xl bg-sf-card p-3.5 shadow-sm">
       <p class="text-sm font-medium text-sf-ink">Пригласить</p>
       <p class="text-xs text-sf-muted">
         Отправьте ссылку человеку, которого хотите добавить — как только он её откроет, он
@@ -160,7 +160,7 @@ onMounted(() => {
       <Message v-if="inviteError" severity="error" :closable="false">{{ inviteError }}</Message>
     </div>
 
-    <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+    <div class="flex flex-col gap-3 rounded-2xl bg-sf-card p-3.5 shadow-sm">
       <p class="text-sm font-medium text-sf-ink">Модераторы</p>
 
       <AppSpinner v-if="moderatorsLoading" compact />

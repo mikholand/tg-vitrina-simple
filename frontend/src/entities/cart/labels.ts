@@ -14,7 +14,7 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
 // than --sf-warning/--sf-success: those are fill colors and fall well
 // short of readable contrast as small text on their own -soft tints.
 const statusClasses: Record<OrderStatus, string> = {
-  new: 'bg-sf-accent text-white',
+  new: 'bg-sf-accent text-sf-bg',
   accepted: 'bg-sf-warning-soft text-amber-700',
   shipped: 'bg-sf-soft text-sf-accent',
   completed: 'bg-sf-success-soft text-green-700',

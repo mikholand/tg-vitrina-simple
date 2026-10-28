@@ -58,7 +58,7 @@ const tiles = computed<Tile[]>(() => {
         v-for="tile in tiles"
         :key="tile.to"
         :to="tile.to"
-        class="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white p-6 text-center shadow-sm transition-transform active:scale-95"
+        class="flex flex-col items-center justify-center gap-2 rounded-2xl bg-sf-card p-6 text-center shadow-sm transition-transform active:scale-95"
       >
         <span class="relative">
           <i :class="`pi pi-${tile.icon}`" class="text-2xl text-sf-accent" />

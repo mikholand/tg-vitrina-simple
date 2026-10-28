@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/": {
+      "targetKind": "existing-ui",
+      "projectId": "be32ea5d-ec80-41f7-aba1-131047455619",
+      "baselineDraftId": "eb11b014-b838-4a34-b56f-3ecba3991e23",
+      "activeDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": ["alena-zhao-logo"],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "alena-zhao-logo",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/be32ea5d-ec80-41f7-aba1-131047455619/brand-assets/alena-zhao-logo/2.png"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md",
+        "frontend/src/app/App.vue",
+        "frontend/src/widgets/nav/BottomNav.vue",
+        "frontend/src/pages/home/HomePage.vue",
+        "frontend/src/entities/product/ui/ProductCard.vue",
+        "frontend/src/entities/banner/ui/BannerCarousel.vue",
+        "frontend/src/shared/ui/AppSpinner.vue"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "0b2006b09deda3dd970e5d419bdb808ca527e8424ee6e999484a9367ac3335bc",
+        ".superdesign/init/theme.md": "ddf44b27c1d87f29c8ba08969b6c752dcd3751261b91bd425a61e8296f9748ad",
+        "frontend/src/app/App.vue": "f2a83a266466083ce09f7b556bd5f200f78aeb0d60f35173661f4e29a876a16c",
+        "frontend/src/widgets/nav/BottomNav.vue": "b71df1d7b0420ddc6bb9f09dc5e00285dfe5081c739253e6cc226d298cb8188c",
+        "frontend/src/pages/home/HomePage.vue": "9a3dd85766db4e0d607130b0bebaa03d7fdc0c494e92a13e66a41e6b6cb8bee7",
+        "frontend/src/entities/product/ui/ProductCard.vue": "bf5361f487cd8b3eab6ef6a4a66faf5398cfa1ab37fce0b4e6e362340685b5ca",
+        "frontend/src/entities/banner/ui/BannerCarousel.vue": "5d6922a4abb4b9ad122fd328422898d6b8ac361c5358897aa941d59fcffe4483",
+        "frontend/src/shared/ui/AppSpinner.vue": "cb959af4a0bc5496cb7e80fd85031bc3ebbd962f33c0757e67dce8b2bdfc3eb2"
+      },
+      "drafts": {
+        "eb11b014-b838-4a34-b56f-3ecba3991e23": {
+          "title": "Текущая главная (как есть)",
+          "visualDirection": "pixel-perfect baseline reproduction",
+          "currentVersion": 1
+        },
+        "26e62d6e-4cfc-486b-b68b-8795962d0fe4": {
+          "title": "Alena Zhao Premium Storefront",
+          "visualDirection": "selected direction, restyled (replace) around the real Alena Zhao brand: charcoal/graphite surfaces, warm gold accent (#c9a15a), real uploaded logo asset in header, loaded Cabinet Grotesk + Satoshi fonts, same structure/pills/bottom-nav as the earlier refined draft",
+          "parentDraftId": "eb11b014-b838-4a34-b56f-3ecba3991e23",
+          "currentVersion": 2
+        },
+        "c24c0a12-14cc-4543-8ef2-46f8cd9da4a6": {
+          "title": "Boutique-Inspired Mini App Storefront",
+          "visualDirection": "new visual direction (warmer boutique identity, diverges from current palette/type)",
+          "parentDraftId": "eb11b014-b838-4a34-b56f-3ecba3991e23",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-28T00:00:00Z"
+    },
+    "/catalog": {
+      "targetKind": "new-ui",
+      "projectId": "be32ea5d-ec80-41f7-aba1-131047455619",
+      "activeDraftId": "e55c24d4-fa85-4793-95f0-123f27d360d8",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": ["alena-zhao-logo"],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "alena-zhao-logo",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/be32ea5d-ec80-41f7-aba1-131047455619/brand-assets/alena-zhao-logo/2.png"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md",
+        "frontend/src/app/App.vue",
+        "frontend/src/widgets/nav/BottomNav.vue",
+        "frontend/src/pages/catalog/CatalogPage.vue",
+        "frontend/src/entities/product/ui/ProductCard.vue"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "0b2006b09deda3dd970e5d419bdb808ca527e8424ee6e999484a9367ac3335bc",
+        ".superdesign/init/theme.md": "ddf44b27c1d87f29c8ba08969b6c752dcd3751261b91bd425a61e8296f9748ad",
+        "frontend/src/app/App.vue": "f2a83a266466083ce09f7b556bd5f200f78aeb0d60f35173661f4e29a876a16c",
+        "frontend/src/widgets/nav/BottomNav.vue": "b71df1d7b0420ddc6bb9f09dc5e00285dfe5081c739253e6cc226d298cb8188c",
+        "frontend/src/pages/catalog/CatalogPage.vue": "1d6bf7c878862ea4f3087b3c0f207506eadc549fbfbaa8c92fca164eff103862",
+        "frontend/src/entities/product/ui/ProductCard.vue": "bf5361f487cd8b3eab6ef6a4a66faf5398cfa1ab37fce0b4e6e362340685b5ca"
+      },
+      "drafts": {
+        "e55c24d4-fa85-4793-95f0-123f27d360d8": {
+          "title": "Каталог — Alena Zhao",
+          "visualDirection": "charcoal/gold, matches confirmed Home draft",
+          "sourceTarget": "/",
+          "sourceDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+          "parentDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-28T00:00:00Z"
+    },
+    "/product/:id": {
+      "targetKind": "new-ui",
+      "projectId": "be32ea5d-ec80-41f7-aba1-131047455619",
+      "activeDraftId": "1df8c2fe-af80-4bdf-aba7-d9fed02b2a43",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md",
+        "frontend/src/app/App.vue",
+        "frontend/src/pages/product/ProductDetailPage.vue",
+        "frontend/src/entities/product/ui/ProductGallery.vue",
+        "frontend/src/features/contact-picker/ContactPicker.vue",
+        "frontend/src/shared/ui/AppModal.vue"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "0b2006b09deda3dd970e5d419bdb808ca527e8424ee6e999484a9367ac3335bc",
+        ".superdesign/init/theme.md": "ddf44b27c1d87f29c8ba08969b6c752dcd3751261b91bd425a61e8296f9748ad",
+        "frontend/src/app/App.vue": "f2a83a266466083ce09f7b556bd5f200f78aeb0d60f35173661f4e29a876a16c",
+        "frontend/src/pages/product/ProductDetailPage.vue": "9d8491b391f8cb1543fb77f7fa8a26f1a6685237238175a805e64dbc962c5f7a",
+        "frontend/src/entities/product/ui/ProductGallery.vue": "9577a07e1c7fd9aa93bb9d2ef00e5b4732b6d66f07253c4b0ae37b280db03f76",
+        "frontend/src/features/contact-picker/ContactPicker.vue": "3de3b3d2737b1a725c577da5aa386c1aefb7e085c2dd476d56b14b1ac8493ba7",
+        "frontend/src/shared/ui/AppModal.vue": "fb9f869b3a6f7a1163484b0dc58faa7f400c042f5e1c1be0005a344716d6046c"
+      },
+      "drafts": {
+        "1df8c2fe-af80-4bdf-aba7-d9fed02b2a43": {
+          "title": "Страница товара — Alena Zhao",
+          "visualDirection": "charcoal/gold, matches confirmed Home draft, bare full-bleed layout (no shared header)",
+          "sourceTarget": "/",
+          "sourceDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+          "parentDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-28T00:00:00Z"
+    },
+    "/cart": {
+      "targetKind": "new-ui",
+      "projectId": "be32ea5d-ec80-41f7-aba1-131047455619",
+      "activeDraftId": "4bc6a62d-db4d-4dfe-85d6-4b014c324b15",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": ["alena-zhao-logo"],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "alena-zhao-logo",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/be32ea5d-ec80-41f7-aba1-131047455619/brand-assets/alena-zhao-logo/2.png"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md",
+        "frontend/src/app/App.vue",
+        "frontend/src/pages/cart/CartPage.vue"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "0b2006b09deda3dd970e5d419bdb808ca527e8424ee6e999484a9367ac3335bc",
+        ".superdesign/init/theme.md": "ddf44b27c1d87f29c8ba08969b6c752dcd3751261b91bd425a61e8296f9748ad",
+        "frontend/src/app/App.vue": "f2a83a266466083ce09f7b556bd5f200f78aeb0d60f35173661f4e29a876a16c",
+        "frontend/src/pages/cart/CartPage.vue": "aec768b493165d9fdb8ae978dfd4db8898c8261bcbcf2dd803098e74c2a996e2"
+      },
+      "drafts": {
+        "4bc6a62d-db4d-4dfe-85d6-4b014c324b15": {
+          "title": "Alena Zhao — Корзина",
+          "visualDirection": "charcoal/gold, matches confirmed Home draft; v2 adds the shared branded header (logo postcondition fix via direct import, no extra generation credit)",
+          "sourceTarget": "/",
+          "sourceDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+          "parentDraftId": "26e62d6e-4cfc-486b-b68b-8795962d0fe4",
+          "currentVersion": 2
+        }
+      },
+      "updatedAt": "2026-10-28T00:00:00Z"
+    }
+  }
+}

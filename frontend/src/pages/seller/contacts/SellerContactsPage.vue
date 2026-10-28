@@ -101,7 +101,7 @@ onMounted(load)
     <template v-else>
       <div
         v-if="!contacts.length"
-        class="flex flex-col items-center gap-2 rounded-2xl bg-white py-12 text-center text-sf-muted shadow-sm"
+        class="flex flex-col items-center gap-2 rounded-2xl bg-sf-card py-12 text-center text-sf-muted shadow-sm"
       >
         <i class="pi pi-users text-3xl" />
         <span>Пока никого не добавили</span>
@@ -111,7 +111,7 @@ onMounted(load)
         <li
           v-for="contact in contacts"
           :key="contact.id"
-          class="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm"
+          class="flex items-center gap-3 rounded-2xl bg-sf-card p-3 shadow-sm"
         >
           <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-sf-soft text-sf-accent">
             <i class="pi" :class="contactTypeIcons[contact.type]" />
@@ -141,7 +141,7 @@ onMounted(load)
         </li>
       </ul>
 
-      <div class="flex flex-col gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+      <div class="flex flex-col gap-3 rounded-2xl bg-sf-card p-3.5 shadow-sm">
         <h2 class="text-sm font-medium text-sf-ink">Добавить менеджера</h2>
 
         <label class="flex flex-col gap-1 text-sm">

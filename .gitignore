@@ -39,3 +39,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Superdesign scratch files
+.superdesign/tmp/

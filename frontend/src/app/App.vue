@@ -215,7 +215,7 @@ watch(
           />
           <div
             v-else
-            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-white"
+            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-sf-bg"
           >
             {{ storeInitial }}
           </div>

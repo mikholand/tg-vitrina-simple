@@ -44,8 +44,8 @@ onMounted(load)
         class="flex-1 rounded-full py-1.5 text-sm transition-colors"
         :class="
           period === option.value
-            ? 'bg-sf-accent font-medium text-white'
-            : 'bg-white text-sf-muted shadow-sm'
+            ? 'bg-sf-accent font-medium text-sf-bg'
+            : 'bg-sf-card text-sf-muted shadow-sm'
         "
         @click="setPeriod(option.value)"
       >
@@ -56,17 +56,16 @@ onMounted(load)
     <AppSpinner v-if="loading" />
 
     <template v-else-if="stats">
-      <!-- bg-white + shadow-sm, not bg-sf-card — this page sits on the
-           seller cabinet's gray --sf-surface (see App.vue), and --sf-card
-           (#f8fafc) is too close to that gray to read as a raised card
-           without a shadow. Same bg-white/shadow-sm pattern as
+      <!-- bg-sf-card + shadow-sm — this page sits on the seller cabinet's
+           --sf-surface; the shadow is what reads as "raised" (see App.vue
+           for the surface/card relationship). Same pattern as
            DashboardPage/SellerSettingsPage/SellerContactsPage/SellerTeamPage. -->
       <div class="grid grid-cols-2 gap-2.5">
-        <div class="rounded-2xl bg-white p-3.5 shadow-sm">
+        <div class="rounded-2xl bg-sf-card p-3.5 shadow-sm">
           <p class="text-2xl font-semibold text-sf-accent">{{ stats.store_views_total }}</p>
           <p class="text-xs text-sf-muted">Просмотры магазина</p>
         </div>
-        <div class="rounded-2xl bg-white p-3.5 shadow-sm">
+        <div class="rounded-2xl bg-sf-card p-3.5 shadow-sm">
           <p class="text-2xl font-semibold text-sf-accent">{{ stats.product_views_total }}</p>
           <p class="text-xs text-sf-muted">Просмотры товаров</p>
         </div>
@@ -80,7 +79,7 @@ onMounted(load)
         <li
           v-for="(product, index) in stats.top_products"
           :key="product.id"
-          class="flex items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-sm"
+          class="flex items-center gap-3 rounded-xl bg-sf-card px-3 py-2 shadow-sm"
         >
           <span class="w-5 shrink-0 text-center text-sm text-sf-muted">{{ index + 1 }}</span>
           <span class="min-w-0 flex-1 truncate text-sm text-sf-ink">{{ product.name }}</span>

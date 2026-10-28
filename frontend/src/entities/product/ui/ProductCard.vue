@@ -7,8 +7,8 @@ import { useCartStore } from '@entities/cart/store'
 
 // Tint placeholders: colour is pinned to the product id, so the same
 // product always looks the same and an image-less grid doesn't read as
-// grey/broken. Cool blue-grey tones, matching the rest of the storefront.
-const TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', 'bg-[#e8eef7]']
+// grey/broken. Dark warm-gold tones, matching the Alena Zhao storefront.
+const TINTS = ['bg-[#201a10]', 'bg-[#1c1c1c]', 'bg-[#22190e]', 'bg-[#1a1a1a]', 'bg-[#241c11]']
 
 const props = defineProps<{ product: Product }>()
 
@@ -67,7 +67,7 @@ function onAddToCart(event: Event): void {
 
       <button
         type="button"
-        class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+        class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-sf-bg/80 backdrop-blur"
         :aria-label="isFavorite ? 'Убрать из избранного' : 'В избранное'"
         @click="onToggleFavorite"
       >
@@ -80,7 +80,7 @@ function onAddToCart(event: Event): void {
       <button
         v-if="!outOfStock"
         type="button"
-        class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-white/85 backdrop-blur"
+        class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-sf-bg/80 backdrop-blur"
         aria-label="В корзину"
         @click="onAddToCart"
       >

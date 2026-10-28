@@ -151,7 +151,7 @@ onMounted(load)
         type="button"
         class="shrink-0 rounded-full border px-3.5 py-1 text-sm"
         :class="
-          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-white' : 'border-sf-line bg-sf-card text-sf-ink'
+          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-sf-bg' : 'border-sf-line bg-sf-card text-sf-ink'
         "
         :aria-pressed="activeTab === tab.value"
         @click="activeTab = tab.value"
@@ -173,7 +173,7 @@ onMounted(load)
       </div>
 
       <div v-else class="flex flex-col gap-3">
-        <article v-for="order in orders" :key="order.id" class="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm">
+        <article v-for="order in orders" :key="order.id" class="flex flex-col gap-3 rounded-2xl bg-sf-card p-4 shadow-sm">
           <header class="flex items-start justify-between gap-2">
             <div>
               <h2 class="font-semibold leading-tight text-sf-ink">№{{ order.id }}</h2>

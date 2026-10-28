@@ -128,7 +128,7 @@ onMounted(() => {
            page's "Добавить" (rounded rectangle, not the app-wide pill). -->
       <button
         type="button"
-        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-white"
+        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-sf-bg"
         @click="openCreateDialog"
       >
         <i class="pi pi-plus text-xs" /> Добавить
@@ -142,7 +142,7 @@ onMounted(() => {
         v-model="query"
         type="search"
         placeholder="Поиск категории"
-        class="w-full rounded-xl border border-sf-line bg-white px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
+        class="w-full rounded-xl border border-sf-line bg-sf-card px-3 py-2 text-sm text-sf-ink outline-none placeholder:text-sf-placeholder focus:border-sf-accent"
       />
 
       <!-- Поиск идёт по всему каталогу и потому отвечает плоским списком с
@@ -152,7 +152,7 @@ onMounted(() => {
         <li
           v-for="category in found"
           :key="category.id"
-          class="flex items-center gap-2 rounded-xl border border-sf-line bg-white px-3 py-2"
+          class="flex items-center gap-2 rounded-xl border border-sf-line bg-sf-card px-3 py-2"
           :class="category.is_hidden ? 'opacity-60' : ''"
         >
           <span class="min-w-0 flex-1 truncate text-sm text-sf-ink">{{ pathById.get(category.id) }}</span>

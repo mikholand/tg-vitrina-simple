@@ -21,8 +21,8 @@ function close(): void {
         class="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
         @click.self="close"
       >
-        <div class="max-h-[90vh] w-full max-w-web-app overflow-y-auto rounded-t-2xl bg-white pb-safe-bottom">
-          <header class="sticky top-0 flex items-center justify-between border-b border-sf-line bg-white px-4 py-3">
+        <div class="max-h-[90vh] w-full max-w-web-app overflow-y-auto rounded-t-2xl bg-sf-card pb-safe-bottom">
+          <header class="sticky top-0 flex items-center justify-between border-b border-sf-line bg-sf-card px-4 py-3">
             <h2 class="text-base font-semibold text-sf-ink">{{ title }}</h2>
             <button type="button" class="text-sf-muted" aria-label="Закрыть" @click="close">
               <i class="pi pi-times text-lg" />
