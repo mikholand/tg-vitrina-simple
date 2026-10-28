@@ -150,6 +150,12 @@ onMounted(load)
       >
         Продолжить покупки
       </button>
+      <!-- Guest checkouts never show up in the profile's history (no
+           customer_id to match them by), so only signed-in customers get
+           the link — it would lead a guest to an empty list. -->
+      <RouterLink v-if="authStore.token" :to="{ name: 'profile' }" class="text-sm font-medium text-sf-accent">
+        Мои заказы
+      </RouterLink>
     </div>
 
     <template v-else>
