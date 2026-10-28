@@ -239,7 +239,7 @@ onMounted(load)
       <span>Товар не найден</span>
       <button
         type="button"
-        class="mt-2 rounded-full bg-sf-accent px-5 py-2.5 text-sm font-medium text-sf-bg"
+        class="mt-2 rounded-full bg-sf-accent px-5 py-2.5 text-sm font-medium text-sf-accent-ink"
         @click="goBack"
       >
         На главную
@@ -367,7 +367,7 @@ onMounted(load)
             <button
               v-if="contacts.length"
               type="button"
-              class="flex items-center gap-2 rounded-full bg-sf-accent px-6 py-3 font-medium text-sf-bg"
+              class="flex items-center gap-2 rounded-full bg-sf-accent px-6 py-3 font-medium text-sf-accent-ink"
               @click="contactSeller"
             >
               <i class="pi pi-send" />

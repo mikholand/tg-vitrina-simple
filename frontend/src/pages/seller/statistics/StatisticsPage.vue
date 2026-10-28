@@ -44,7 +44,7 @@ onMounted(load)
         class="flex-1 rounded-full py-1.5 text-sm transition-colors"
         :class="
           period === option.value
-            ? 'bg-sf-accent font-medium text-sf-bg'
+            ? 'bg-sf-accent font-medium text-sf-accent-ink'
             : 'bg-sf-card text-sf-muted shadow-sm'
         "
         @click="setPeriod(option.value)"

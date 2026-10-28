@@ -64,6 +64,10 @@ interface TelegramWebApp {
   initDataUnsafe: TelegramWebAppInitDataUnsafe
   version: string
   platform: string
+  // Telegram's own light/dark client setting — not guaranteed present on
+  // every client/version, hence the `?`; `getTelegramColorScheme()` below
+  // already treats a missing/unrecognized value as "no opinion".
+  colorScheme?: string
   BackButton: TelegramWebAppBackButton
   isVersionAtLeast(version: string): boolean
   ready(): void
@@ -75,6 +79,11 @@ interface TelegramWebApp {
   addToHomeScreen(): void
   checkHomeScreenStatus(callback: (status: string) => void): void
   openTelegramLink(url: string): void
+  setHeaderColor(color: string): void
+  setBackgroundColor(color: string): void
+  setBottomBarColor(color: string): void
+  onEvent(eventType: string, callback: () => void): void
+  offEvent(eventType: string, callback: () => void): void
 }
 
 declare global {
@@ -350,4 +359,67 @@ export function checkHomeScreenStatus(): Promise<string> {
       resolve('unsupported')
     }
   })
+}
+
+/**
+ * Telegram's own client-level light/dark setting, or null when absent/
+ * unrecognized (older clients, or running outside Telegram where the
+ * official script defines `colorScheme` as an empty default). Used by
+ * `shared/theme/theme.ts` as the first choice for the app's own light/dark
+ * state, ahead of the OS `prefers-color-scheme` fallback — the one place
+ * this app DOES follow Telegram, by the user's own request, unlike the
+ * fixed --sf-* brand colors it deliberately ignores Telegram for otherwise
+ * (see main.css).
+ */
+export function getTelegramColorScheme(): 'light' | 'dark' | null {
+  const scheme = getWebApp()?.colorScheme
+  return scheme === 'light' || scheme === 'dark' ? scheme : null
+}
+
+/**
+ * Subscribes to Telegram's `themeChanged` event (fired when the person
+ * flips their Telegram client's own theme while the Mini App stays open)
+ * and returns an unsubscribe function. Outside Telegram / on clients
+ * without event support, the callback simply never fires.
+ */
+export function onTelegramThemeChanged(fn: () => void): VoidFunction {
+  try {
+    const tg = getWebApp()
+    if (tg) {
+      tg.onEvent('themeChanged', fn)
+      return () => tg.offEvent('themeChanged', fn)
+    }
+  } catch {
+    // Not supported — listener just never gets attached.
+  }
+  return () => {}
+}
+
+/**
+ * Paints Telegram's own native chrome (the header bar above the Mini App
+ * and, on clients that have one, the bottom bar) to match the app's
+ * current --sf-bg, so the native chrome doesn't sit there in the opposite
+ * theme's color while the page content underneath has already switched.
+ * Each call is independently wrapped: older clients support header/
+ * background color but not the bottom bar (added later, Bot API 7.10), and
+ * none of that should block the others.
+ */
+export function setTelegramChromeColor(hexColor: string): void {
+  const tg = getWebApp()
+  if (!tg) return
+  try {
+    tg.setHeaderColor(hexColor)
+  } catch {
+    // Unsupported client/version — header keeps its previous color.
+  }
+  try {
+    tg.setBackgroundColor(hexColor)
+  } catch {
+    // Unsupported client/version — background keeps its previous color.
+  }
+  try {
+    tg.setBottomBarColor(hexColor)
+  } catch {
+    // Unsupported client/version (pre-7.10) — no bottom bar to color there.
+  }
 }

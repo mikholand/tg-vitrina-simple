@@ -4,6 +4,7 @@ import TelegramLoginButton from '@features/telegram-login/TelegramLoginButton.vu
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
 import { showBackButton, hideBackButton, onBackButtonClick, isInsideTelegram } from '@shared/telegram/sdk'
+import { currentTheme, toggleTheme } from '@shared/theme/theme'
 
 const route = useRoute()
 const router = useRouter()
@@ -215,7 +216,7 @@ watch(
           />
           <div
             v-else
-            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-sf-bg"
+            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-sf-accent-ink"
           >
             {{ storeInitial }}
           </div>
@@ -224,6 +225,14 @@ watch(
           </h1>
         </div>
         <div class="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            class="text-sf-muted"
+            :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
+            @click="toggleTheme"
+          >
+            <i :class="currentTheme === 'dark' ? 'pi pi-sun' : 'pi pi-moon'" class="text-xl" />
+          </button>
           <RouterLink
             v-if="isSeller"
             :to="{ name: 'seller-dashboard' }"
@@ -273,6 +282,14 @@ watch(
           {{ storeInfoStore.storeInfo.name }}
         </RouterLink>
         <div class="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            class="text-sf-muted"
+            :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
+            @click="toggleTheme"
+          >
+            <i :class="currentTheme === 'dark' ? 'pi pi-sun' : 'pi pi-moon'" class="text-xl" />
+          </button>
           <RouterLink
             :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
             class="text-sf-muted"

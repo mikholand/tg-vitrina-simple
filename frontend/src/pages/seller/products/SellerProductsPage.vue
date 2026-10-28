@@ -135,7 +135,7 @@ onMounted(() => {
            design wants a rounded rectangle instead. -->
       <button
         type="button"
-        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-sf-bg"
+        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-sf-accent-ink"
         @click="openCreateEditor"
       >
         <i class="pi pi-plus text-xs" /> Добавить
@@ -149,7 +149,7 @@ onMounted(() => {
         type="button"
         class="shrink-0 rounded-full border px-3.5 py-1 text-sm"
         :class="
-          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-sf-bg' : 'border-sf-line bg-sf-card text-sf-ink'
+          activeTab === tab.value ? 'border-sf-accent bg-sf-accent text-sf-accent-ink' : 'border-sf-line bg-sf-card text-sf-ink'
         "
         @click="activeTab = tab.value"
       >

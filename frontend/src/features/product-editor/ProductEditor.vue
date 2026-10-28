@@ -505,7 +505,7 @@ onMounted(() => {
       <button
         type="submit"
         :disabled="saving || !name.trim()"
-        class="mt-2 rounded-xl bg-sf-accent py-3 font-semibold text-sf-bg disabled:opacity-50"
+        class="mt-2 rounded-xl bg-sf-accent py-3 font-semibold text-sf-accent-ink disabled:opacity-50"
       >
         {{ saving ? 'Сохранение…' : 'Сохранить' }}
       </button>

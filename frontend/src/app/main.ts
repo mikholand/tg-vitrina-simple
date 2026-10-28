@@ -11,6 +11,13 @@ import ToastService from 'primevue/toastservice'
 import App from './App.vue'
 import { router } from './router'
 import { initTelegram } from '@shared/telegram/sdk'
+// Side-effect import: resolves the initial light/dark theme (Telegram
+// colorScheme -> OS prefers-color-scheme -> the localStorage override
+// index.html's inline bootstrap script already applied before this module
+// even loaded) and keeps `<html data-theme>` in sync afterwards. Imported
+// here, not inside App.vue, so the PrimeVue preset below and the rest of
+// the app boot already agreeing on a theme instead of racing it.
+import '@shared/theme/theme'
 
 void initTelegram()
 
@@ -22,13 +29,16 @@ void initTelegram()
 // old blue used to sit at) instead of re-skinning each component by hand.
 //
 // Aura's default "surface" scale is Tailwind's slate scale ({slate.50},
-// {slate.200}, {slate.900}, ...) — built for a LIGHT theme, which no longer
-// matches this app's dark --sf-card/--sf-line/--sf-ink tokens (main.css).
-// Severity colors (red/green/amber) still line up with --sf-danger/
-// --sf-success/--sf-warning without changes, but the form-field color-
-// scheme below can no longer lean on {surface.*} references — those are
-// overridden with literal dark-token-matching hex values instead (see
-// colorScheme.light.formField below).
+// {slate.200}, {slate.900}, ...) — built for a light theme, and its bundled
+// "dark" colorScheme is a different, unrelated dark gray scale — neither
+// matches this app's own --sf-card/--sf-line/--sf-ink tokens (main.css,
+// which now has its own light AND dark blocks, toggled the same way as
+// PrimeVue's below: the `[data-theme="dark"]` attribute on <html>, driven
+// by shared/theme/theme.ts). Severity colors (red/green/amber) still line
+// up with --sf-danger/--sf-success/--sf-warning in both schemes without
+// changes, but the form-field colors below can't lean on {surface.*}
+// references in either scheme — overridden with literal hex values that
+// mirror main.css's two blocks instead.
 const SfPreset = definePreset(Aura, {
   semantic: {
     primary: {
@@ -69,15 +79,24 @@ const SfPreset = definePreset(Aura, {
       },
     },
     colorScheme: {
-      // Still named "light" — PrimeVue's scheme-slot name, not a design
-      // intent. darkModeSelector: false below pins the app to this one slot
-      // regardless of OS/Telegram theme, same as before; it just now holds
-      // the dark Alena Zhao values instead of the old light ones, matching
-      // --sf-card/--sf-line/--sf-ink/--sf-placeholder/--sf-disabled in
-      // main.css (kept as literal hex here, not var()/`{surface.*}`
-      // references, since Aura's bundled "surface" scale is still its
-      // original light slate and no longer applies).
+      // Both slots now map 1:1 to main.css's two --sf-* blocks (literal hex,
+      // not var()/`{surface.*}` references — Aura's bundled "surface" scale
+      // doesn't match this brand's tokens in either scheme). `darkModeSelector`
+      // below tells PrimeVue to pick between them off the same
+      // `[data-theme="dark"]` attribute main.css's `:root[data-theme="dark"]`
+      // block already keys off, so both stay in sync automatically.
       light: {
+        formField: {
+          background: '#ffffff',
+          borderColor: '#e7e0d2',
+          hoverBorderColor: '#d8d0c0',
+          color: '#1a1510',
+          placeholderColor: '#a89d89',
+          disabledBackground: '#f4f0e6',
+          disabledColor: '#a89d89',
+        },
+      },
+      dark: {
         formField: {
           background: '#1e1e1e',
           borderColor: '#2e2e2e',
@@ -111,15 +130,15 @@ app.use(PrimeVue, {
   theme: {
     preset: SfPreset,
     options: {
-      // Defaults to 'system', which makes PrimeVue independently follow
-      // the OS/Telegram `prefers-color-scheme: dark` media query — on a
-      // device with light theme active this would flip Dialog and
-      // ToggleSwitch (among others) to Aura's own light palette while the
-      // rest of the app (styled via the static --sf-* tokens in main.css,
-      // now a fixed dark/gold brand palette) stays dark. The app has no
-      // theme switching of its own, so PrimeVue should never switch
-      // palettes either.
-      darkModeSelector: false,
+      // Defaults to 'system', which makes PrimeVue independently follow the
+      // OS `prefers-color-scheme` media query — a second theme source the
+      // app would have no control over, racing shared/theme/theme.ts's own
+      // resolution (Telegram colorScheme / manual toggle included, not just
+      // the OS setting). Pointed at the exact same selector
+      // tailwind.config.js's `darkMode` already uses and theme.ts already
+      // sets on `<html>`, so PrimeVue and the --sf-* tokens in main.css
+      // always agree on which scheme is active.
+      darkModeSelector: '[data-theme="dark"]',
       cssLayer: {
         name: 'primevue',
         order: 'tailwind-base, primevue, tailwind-utilities',

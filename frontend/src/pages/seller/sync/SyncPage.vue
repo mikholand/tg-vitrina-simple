@@ -97,7 +97,7 @@ onUnmounted(() => {
           <button
             v-if="!isActive && !canResume"
             type="button"
-            class="flex items-center gap-1.5 rounded-full bg-sf-accent px-4 py-2 text-sm font-medium text-sf-bg disabled:opacity-60"
+            class="flex items-center gap-1.5 rounded-full bg-sf-accent px-4 py-2 text-sm font-medium text-sf-accent-ink disabled:opacity-60"
             :disabled="actionLoading"
             @click="onStart(false)"
           >
@@ -106,7 +106,7 @@ onUnmounted(() => {
           <button
             v-if="canResume"
             type="button"
-            class="flex items-center gap-1.5 rounded-full bg-sf-accent px-4 py-2 text-sm font-medium text-sf-bg disabled:opacity-60"
+            class="flex items-center gap-1.5 rounded-full bg-sf-accent px-4 py-2 text-sm font-medium text-sf-accent-ink disabled:opacity-60"
             :disabled="actionLoading"
             @click="onStart(true)"
           >

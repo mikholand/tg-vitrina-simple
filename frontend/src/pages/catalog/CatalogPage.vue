@@ -167,7 +167,7 @@ onMounted(async () => {
         class="flex min-h-[6.25rem] flex-col justify-between rounded-3xl border p-3.5 text-left transition-colors"
         :class="
           (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
-            ? 'border-sf-accent bg-sf-accent text-sf-bg'
+            ? 'border-sf-accent bg-sf-accent text-sf-accent-ink'
             : 'border-sf-line bg-sf-card'
         "
         @click="selectTile(tile.id)"
@@ -176,7 +176,7 @@ onMounted(async () => {
           class="flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
           :class="
             (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
-              ? 'bg-sf-bg/15 text-sf-bg'
+              ? 'bg-sf-accent-ink/15 text-sf-accent-ink'
               : [tile.tint, 'text-sf-accent']
           "
         >
@@ -186,7 +186,7 @@ onMounted(async () => {
           class="block truncate pt-3 text-sm font-medium leading-tight"
           :class="
             (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
-              ? 'text-sf-bg'
+              ? 'text-sf-accent-ink'
               : 'text-sf-ink'
           "
         >
@@ -204,7 +204,7 @@ onMounted(async () => {
         :key="chip.id"
         type="button"
         class="shrink-0 rounded-full border px-3.5 py-1.5 text-sm"
-        :class="chip.active ? 'border-sf-accent bg-sf-accent text-sf-bg' : 'border-sf-line bg-sf-card text-sf-ink'"
+        :class="chip.active ? 'border-sf-accent bg-sf-accent text-sf-accent-ink' : 'border-sf-line bg-sf-card text-sf-ink'"
         @click="selectChip(chip.id)"
       >
         {{ chip.name }}

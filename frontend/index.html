@@ -24,6 +24,36 @@
     <meta property="og:title" content="Магазин" />
     <meta property="og:description" content="Каталог товаров и быстрый заказ прямо в Telegram." />
     <meta name="twitter:card" content="summary" />
+    <!-- Sets `data-theme` on <html> before any CSS loads, so the correct
+         `:root`/`:root[data-theme="dark"]` block in styles/main.css applies
+         from the very first paint instead of flashing the other scheme.
+         Only localStorage + the OS prefers-color-scheme query are available
+         this early — `telegram-web-app.js` (loaded further down, in body;
+         see the comment there for why it isn't here instead) hasn't run
+         yet, so Telegram's own colorScheme can't be consulted synchronously.
+         shared/theme/theme.ts re-resolves against Telegram's value once
+         that script has loaded and corrects `data-theme` if it disagrees —
+         same "read fast, correct once the real answer is known" tradeoff
+         index.html already makes elsewhere (see the static SEO meta tags
+         above, upgraded once fetchStoreInfo() resolves). -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('sf-theme')
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (e) {
+          // Storage/matchMedia unavailable — falls through to main.css's
+          // default `:root` (light) block, same as a browser with no
+          // opinion either way.
+        }
+      })()
+    </script>
     <!-- Pure CSS, no JS/framework dependency — paints on first frame, before
          the bundled JS has even been fetched/parsed, let alone before
          router.isReady() resolves (main.ts delays app.mount() until then so
@@ -31,7 +61,8 @@
          flashing the home page first — see main.ts for the full story).
          Colors match --sf-bg/--sf-accent/--sf-line from styles/main.css,
          hardcoded here since this markup renders before that stylesheet (or
-         any Vue CSS) is applied. -->
+         any Vue CSS) is applied — including the light/dark split, keyed off
+         the same `data-theme` attribute the script above already set. -->
     <style>
       #app-preloader {
         position: fixed;
@@ -41,13 +72,20 @@
         justify-content: center;
         background: #ffffff;
       }
+      html[data-theme='dark'] #app-preloader {
+        background: #121212;
+      }
       #app-preloader__spinner {
         width: 2.5rem;
         height: 2.5rem;
         border-radius: 50%;
-        border: 3px solid #e2e8f0;
-        border-top-color: #2563eb;
+        border: 3px solid #e7e0d2;
+        border-top-color: #c9a15a;
         animation: app-preloader-spin 0.8s linear infinite;
+      }
+      html[data-theme='dark'] #app-preloader__spinner {
+        border-color: #2e2e2e;
+        border-top-color: #c9a15a;
       }
       @keyframes app-preloader-spin {
         to {

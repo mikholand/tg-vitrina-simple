@@ -128,7 +128,7 @@ onMounted(() => {
            page's "Добавить" (rounded rectangle, not the app-wide pill). -->
       <button
         type="button"
-        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-sf-bg"
+        class="flex shrink-0 items-center gap-1 rounded-lg bg-sf-accent px-3 py-1.5 text-sm font-medium text-sf-accent-ink"
         @click="openCreateDialog"
       >
         <i class="pi pi-plus text-xs" /> Добавить

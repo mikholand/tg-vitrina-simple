@@ -39,24 +39,52 @@
 
 :root {
   /* Storefront palette — restyled 2026-10-28 around the real shop's brand,
-     "Alena Zhao" (charcoal/graphite surfaces, warm metallic gold accent,
-     real uploaded logo — see the Superdesign canvas + .superdesign/
-     design-system.md for the source drafts this was transcribed from).
-     Still deliberately NOT wired to --tg-theme-* vars — a fixed brand
-     palette regardless of the visitor's Telegram theme, same reasoning as
-     before, just no longer the old tg-vitrina blue-on-white clone. */
+     "Alena Zhao" (warm metallic gold accent, real uploaded logo — see the
+     Superdesign canvas + .superdesign/design-system.md for the source
+     drafts this was transcribed from). Two schemes now exist: this block is
+     LIGHT (the default — applied whenever `html` has no `data-theme="dark"`
+     attribute), the block below is DARK. Still deliberately NOT wired to
+     --tg-theme-* vars — the app picks its OWN light/dark state (see
+     shared/theme/theme.ts: Telegram colorScheme -> OS prefers-color-scheme
+     -> a manual toggle persisted in localStorage), it just no longer
+     ignores light/dark entirely the way the old tg-vitrina-ported palette
+     did. */
+  --sf-bg: #ffffff;
+  /* The seller cabinet's --sf-surface is a step off the storefront's
+     --sf-bg (darker in light mode, lighter in dark mode below) so cards
+     (--sf-card) read as elevated against it instead of blending in — see
+     App.vue's root background class. */
+  --sf-surface: #f4f0e6;
+  --sf-card: #ffffff;
+  --sf-accent: #c9a15a;
+  --sf-accent-soft: rgba(201, 161, 90, 0.12);
+  /* Text/icon color ON a bg-sf-accent fill (buttons, active chips/tabs) —
+     always this same dark value in BOTH schemes, never --sf-ink/--sf-bg:
+     --sf-accent itself doesn't change between light/dark, so neither should
+     the color that has to stay readable on top of it. See the
+     'sf-accent-ink' comment in tailwind.config.js. */
+  --sf-accent-ink: #1a1510;
+  --sf-ink: #1a1510;
+  --sf-muted: #746b5c;
+  --sf-line: #e7e0d2;
+  --sf-placeholder: #a89d89;
+  --sf-disabled: #d8d0c0;
+
+  --sf-success: #16a34a;
+  --sf-success-soft: #f0fdf4;
+  --sf-danger: #dc2626;
+  --sf-danger-soft: #fef2f2;
+  --sf-warning: #d97706;
+  --sf-warning-soft: #fffbeb;
+}
+
+:root[data-theme='dark'] {
   --sf-bg: #121212;
-  /* The seller cabinet's --sf-surface used to be a lighter gray than the
-     storefront's white --sf-bg so white shadow-sm cards (see DashboardPage)
-     read as elevated. Same relationship here, just inverted in the dark
-     scale: --sf-surface sits one step lighter than --sf-bg so the cabinet's
-     cards (now dark, see App.vue root background class + the bg-white ->
-     dark-token patch in the seller pages) still read as elevated instead of
-     blending into the page. */
   --sf-surface: #1c1c1c;
   --sf-card: #1e1e1e;
   --sf-accent: #c9a15a;
   --sf-accent-soft: rgba(201, 161, 90, 0.12);
+  --sf-accent-ink: #1a1510;
   --sf-ink: #ffffff;
   --sf-muted: #a1a1aa;
   --sf-line: #2e2e2e;

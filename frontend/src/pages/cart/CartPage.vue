@@ -145,7 +145,7 @@ onMounted(load)
       </p>
       <button
         type="button"
-        class="mt-2 rounded-full bg-sf-accent px-6 py-2.5 text-sm font-medium text-sf-bg"
+        class="mt-2 rounded-full bg-sf-accent px-6 py-2.5 text-sm font-medium text-sf-accent-ink"
         @click="startNewOrder"
       >
         Продолжить покупки
