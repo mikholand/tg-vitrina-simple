@@ -110,7 +110,7 @@ const items = computed<NavItem[]>(() => {
             v-if="item.to === '/profile' && profilePhoto"
             :src="profilePhoto"
             alt=""
-            class="size-5 rounded-full object-cover sm:size-4 md:size-5"
+            class="size-4 rounded-full object-cover sm:size-3.5 md:size-4"
             :class="isActive(item) ? 'ring-2 ring-sf-accent' : ''"
           />
           <i v-else :class="item.icon" class="text-base sm:text-sm md:text-base" />
