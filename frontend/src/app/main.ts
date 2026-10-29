@@ -23,13 +23,18 @@ void initTelegram()
 
 // PrimeVue's "primary" defaults to Aura's emerald scale, which would make
 // every untouched PrimeVue control (ToggleSwitch, ProgressSpinner, Tag,
-// Button) read as green next to the app's blue --sf-accent. Seller pages
-// use plenty of PrimeVue as-is, so the theme itself is pinned to the same
-// blue instead of re-skinning each component by hand. (This briefly became
-// a gold scale matching main.css's --sf-accent during the Alena Zhao
-// storefront rebrand, then both were reverted back to blue on direct
-// request — the brand's gold still lives on in the logo, hero banner and
-// category tints, just not as the interactive accent.)
+// Button) read as green next to the app's own accent. Seller pages use
+// plenty of PrimeVue as-is, so the theme itself is pinned to match instead
+// of re-skinning each component by hand. The scale below is the blue it was
+// briefly reverted to everywhere (direct request, undoing the Alena Zhao
+// gold rebrand's accent); a further request then asked for dark mode
+// specifically to keep that gold instead — since light and dark now
+// genuinely disagree on the hue (not just the shade), that split lives in
+// `colorScheme.light/dark.primary` below, not in this single scale (see the
+// comment there for why). This scale itself still matters as the fallback
+// base every other token derives from (e.g. the pale `{primary.50}`
+// selection-highlight tint) — left as blue since light mode is unchanged
+// from the original revert and is the one actually built from it.
 //
 // Aura's default "surface" scale is already Tailwind's slate scale under
 // the hood ({slate.50}, {slate.200}, {slate.900}, ...) — which is exactly
@@ -90,6 +95,20 @@ const SfPreset = definePreset(Aura, {
       // `dark` stays pinned to its own hex — the cabinet's dark theme was
       // never part of this revert (see main.css).
       light: {
+        // Blue — see the top-of-file comment and main.css's --sf-accent.
+        // Overridden here (not just via the `primary` scale above) because
+        // Aura's own light/dark semantic defaults point `primary.color` at
+        // different steps of that one scale ({primary.500} light,
+        // {primary.400} dark) — fine when light and dark use the same hue,
+        // but insufficient now that they're different hues entirely. This
+        // is what Button/ToggleSwitch/Tag/etc. actually read via
+        // `{primary.color}`/`{primary.hover.color}`/etc.
+        primary: {
+          color: '#2563eb',
+          contrastColor: '#ffffff',
+          hoverColor: '#1d4ed8',
+          activeColor: '#1e40af',
+        },
         formField: {
           background: '#ffffff',
           borderColor: '{surface.200}',
@@ -101,6 +120,19 @@ const SfPreset = definePreset(Aura, {
         },
       },
       dark: {
+        // Gold — kept from the Alena Zhao rebrand on direct request, unlike
+        // every other dark-mode token here (which matches main.css's
+        // `:root[data-theme="dark"]` block, itself unaffected by any of
+        // this file's light-mode reverts). hoverColor/activeColor go
+        // lighter, not darker, matching Aura's own light-gets-darker/
+        // dark-gets-lighter hover convention (see the comment on `light`
+        // above).
+        primary: {
+          color: '#c9a15a',
+          contrastColor: '#1a1510',
+          hoverColor: '#d4af6c',
+          activeColor: '#dfc08a',
+        },
         formField: {
           background: '#1e1e1e',
           borderColor: '#2e2e2e',

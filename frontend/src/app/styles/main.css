@@ -62,8 +62,12 @@
   /* Accent reverted back to the original tg-vitrina blue (#2563eb) on
      direct request — the gold brand accent stays everywhere else (logo,
      hero banner, category tints) but this token specifically goes back to
-     blue, in both schemes. See main.ts's `primary` scale, reverted the same
-     way. */
+     blue. LIGHT mode only, per a follow-up request: dark mode keeps the
+     Alena Zhao gold accent below instead, so --sf-accent is the one token
+     that now genuinely differs between the two schemes (everything else in
+     this file matches across both, aside from the obvious light/dark
+     inversion of neutrals). See main.ts's `colorScheme.light/dark.primary`,
+     which mirrors this same split. */
   --sf-accent: #2563eb;
   --sf-accent-soft: #eff4ff;
   /* Text/icon color ON a bg-sf-accent fill (buttons, active chips/tabs) —
@@ -111,9 +115,13 @@
   --sf-bg: #121212;
   --sf-surface: #1c1c1c;
   --sf-card: #1e1e1e;
-  --sf-accent: #2563eb;
-  --sf-accent-soft: #1e2f52;
-  --sf-accent-ink: #ffffff;
+  /* Accent stays the Alena Zhao gold here, unlike the light block above —
+     direct request after the blue revert landed everywhere: keep dark mode
+     gold ("как было до последнего изменения"), blue only in light mode. See
+     main.ts's `colorScheme.dark.primary` for the matching PrimeVue side. */
+  --sf-accent: #c9a15a;
+  --sf-accent-soft: #2a2317;
+  --sf-accent-ink: #1a1510;
   --sf-ink: #ffffff;
   --sf-muted: #a1a1aa;
   --sf-line: #2e2e2e;
