@@ -3,7 +3,7 @@ import BottomNav from '@widgets/nav/BottomNav.vue'
 import TelegramLoginButton from '@features/telegram-login/TelegramLoginButton.vue'
 import { useAuthStore } from '@entities/user/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
-import { showBackButton, hideBackButton, onBackButtonClick, isInsideTelegram } from '@shared/telegram/sdk'
+import { showBackButton, hideBackButton, onBackButtonClick } from '@shared/telegram/sdk'
 import { currentTheme, toggleTheme } from '@shared/theme/theme'
 
 const route = useRoute()
@@ -15,13 +15,6 @@ const isSeller = computed(
   () => authStore.role === 'seller' || authStore.role === 'admin' || authStore.role === 'moderator',
 )
 const isOwner = computed(() => authStore.role === 'seller' || authStore.role === 'admin')
-
-// The Telegram Login Widget only makes sense outside the Mini App — inside
-// it, `ensureAuthInitialized()` (router/index.ts) already logs every
-// visitor in silently via init_data before the first page even renders.
-// This doesn't need to be reactive: whether we're inside Telegram is
-// decided once, at launch, by the environment the page loaded into.
-const outsideTelegram = !isInsideTelegram()
 
 // Карточка товара рисует фото во всю ширину и свою нижнюю панель с ценой —
 // общие вкладки и верхний отступ под чёлку на ней только мешали бы, как и
@@ -241,12 +234,17 @@ watch(
           >
             <i class="pi pi-briefcase text-xl" />
           </RouterLink>
-          <!-- Website visitors only (see `outsideTelegram` above) — inside
-               Telegram there's always already a signed-in Mini App user by
-               the time this renders, and the "Профиль" tab is enough. Hidden
-               on the profile page itself, which already shows the same
-               avatar (or login prompt) as its own heading. -->
-          <template v-if="outsideTelegram && route.name !== 'profile'">
+          <!-- This is now the only way to reach "Профиль" — the bottom nav
+               no longer has its own tab for it (see BottomNav.vue), so this
+               is shown everywhere, Telegram included, not just to website
+               visitors. Inside Telegram `authStore.currentUser` is always
+               already set by the time this renders (silent init_data login,
+               see `ensureAuthInitialized()` in router/index.ts), so the
+               `TelegramLoginButton` fallback only ever actually shows to a
+               logged-out website visitor. Hidden on the profile page itself,
+               which already shows the same avatar (or login prompt) as its
+               own heading. -->
+          <template v-if="route.name !== 'profile'">
             <RouterLink
               v-if="authStore.currentUser"
               :to="{ name: 'profile' }"

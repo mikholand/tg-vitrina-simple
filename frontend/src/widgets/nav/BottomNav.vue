@@ -13,8 +13,6 @@ const authStore = useAuthStore()
 const cartStore = useCartStore()
 const route = useRoute()
 
-const profilePhoto = computed(() => authStore.currentUser?.tg_photo_url ?? null)
-
 // Why not RouterLink's `active-class`/`exact-active-class`: those props
 // APPEND a class string alongside whatever static `class` is already on the
 // element — they don't replace it. That silently broke every previous
@@ -33,20 +31,17 @@ function isActive(item: NavItem): boolean {
   return route.path === item.to
 }
 
-// First four labels match tg-vitrina's storefront nav verbatim ("Витрина"
-// names the landing/feed screen as a curated pick, distinct from "Каталог"
-// which is the full by-section browse — the two words read as the same
-// thing otherwise). "Профиль" has no tg-vitrina equivalent: it holds the
-// customer's order history, seller contacts and (on the website) logout —
-// one tab for "my stuff" instead of a bare "Заказы" tab that was a dead end
-// for anyone not logged in, plus a name/logout block squeezing the shop's
-// own name in the header (ProfilePage.vue).
+// Matches tg-vitrina's storefront nav verbatim ("Витрина" names the
+// landing/feed screen as a curated pick, distinct from "Каталог" which is
+// the full by-section browse — the two words read as the same thing
+// otherwise). No "Профиль" tab here — that's reached via the avatar in
+// App.vue's header instead (see the comment there), so this nav doesn't
+// need a 5th item duplicating it.
 const customerItems: NavItem[] = [
   { to: '/', label: 'Витрина', icon: 'pi pi-home' },
   { to: '/catalog', label: 'Каталог', icon: 'pi pi-th-large' },
   { to: '/favorites', label: 'Избранное', icon: 'pi pi-heart' },
   { to: '/cart', label: 'Корзина', icon: 'pi pi-shopping-cart' },
-  { to: '/profile', label: 'Профиль', icon: 'pi pi-user' },
 ]
 
 // Exactly tg-vitrina's tabBarSections, five items, same order: Главное,
@@ -89,11 +84,8 @@ const items = computed<NavItem[]>(() => {
        labels, and the active tab gets its own highlighted sub-pill instead
        of just a soft-tinted whole-item background. This used to switch at
        md, with an intermediate sm-only "icon beside label, still in a row"
-       layout — that in-between step was never designed for an avatar: the
-       profile photo (meant for the stacked layout's centered, breathing-
-       room treatment) rendered at nearly full size inside the cramped row
-       and visibly broke out of the pill's rounded corner. Collapsing sm and
-       md onto the same stacked layout removes that broken middle step. -->
+       layout — collapsed onto the same sm+ stacked layout as desktop so
+       there's no in-between step at tablet widths. -->
   <nav
     v-if="!isInAdminSection"
     class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 px-4 pb-safe-bottom sm:max-w-md lg:max-w-lg"
@@ -107,21 +99,7 @@ const items = computed<NavItem[]>(() => {
           class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors sm:flex-col sm:gap-1 sm:py-2"
           :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : 'sm:text-sf-placeholder'"
         >
-          <!-- The profile tab shows the person's own Telegram photo when
-               Telegram gave us one (only for attachment-menu launches and
-               the website widget, see User.tg_photo_url) — "this is you"
-               reads faster than a generic silhouette. Sized a bit smaller
-               than earlier attempts at this (size-7/28px peaked) — bigger
-               than that visually collides with the pill's rounded corner
-               at these narrower stacked widths, see the comment above. -->
-          <img
-            v-if="item.to === '/profile' && profilePhoto"
-            :src="profilePhoto"
-            alt=""
-            class="size-5 rounded-full object-cover sm:size-6 sm:mb-0.5"
-            :class="isActive(item) ? 'ring-2 ring-sf-accent' : ''"
-          />
-          <i v-else :class="item.icon" class="text-base" />
+          <i :class="item.icon" class="text-base" />
           <!-- Мобильный экран: только иконки, подписи скрыты — четыре
                полноразмерных лейбла в пилюле на узком экране смотрелись
                тесно. От sm и шире (любое реальное окно — узкий десктоп,
