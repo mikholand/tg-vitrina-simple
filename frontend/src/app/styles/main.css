@@ -103,7 +103,11 @@
    admin. */
 :root:not([data-theme='dark']) .admin-scheme {
   --sf-surface: #f3f4f6;
-  --sf-card: #f8fafc;
+  /* Pure white, not tg-vitrina's original #f8fafc — that's barely a shade
+     off --sf-surface (#f3f4f6), so cards/inputs read as nearly fused with
+     the page background instead of visibly elevated (direct follow-up
+     request after seeing it live). */
+  --sf-card: #ffffff;
   --sf-ink: #0f172a;
   --sf-muted: #64748b;
   --sf-line: #e2e8f0;
