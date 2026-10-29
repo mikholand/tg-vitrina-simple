@@ -176,7 +176,7 @@ onMounted(async () => {
           class="flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
           :class="
             (tile.id === null ? selectedCategoryId === null : selectedRoot?.id === tile.id)
-              ? 'bg-sf-accent-ink/15 text-sf-accent-ink'
+              ? 'bg-sf-accent-ink text-sf-accent'
               : [tile.tint, 'text-sf-accent']
           "
         >
