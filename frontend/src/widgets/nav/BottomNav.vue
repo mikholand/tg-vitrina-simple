@@ -83,48 +83,55 @@ const items = computed<NavItem[]>(() => {
 <template>
   <!-- Customer nav: tg-vitrina's StorefrontNav — a floating rounded pill,
        bordered/shadowed so it reads on a plain white background.
-       Mobile (<768px, incl. the Mini App itself): icon-only row, unchanged.
-       Desktop (md+ — the website/Telegram Desktop at a real window width):
-       icon-above-label stack, uppercase labels, and the active tab gets its
-       own highlighted sub-pill instead of just a soft-tinted whole-item
-       background — the design the mobile pill's `bg-sf-soft` tint doesn't
-       read as clearly once there's room to spread five full labels out. -->
+       Mobile (<640px, incl. the Mini App itself): icon-only row, unchanged.
+       Tablet/desktop (sm+ — any real window width, from a narrow website
+       view up through Telegram Desktop): icon-above-label stack, uppercase
+       labels, and the active tab gets its own highlighted sub-pill instead
+       of just a soft-tinted whole-item background. This used to switch at
+       md, with an intermediate sm-only "icon beside label, still in a row"
+       layout — that in-between step was never designed for an avatar: the
+       profile photo (meant for the stacked layout's centered, breathing-
+       room treatment) rendered at nearly full size inside the cramped row
+       and visibly broke out of the pill's rounded corner. Collapsing sm and
+       md onto the same stacked layout removes that broken middle step. -->
   <nav
     v-if="!isInAdminSection"
-    class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 px-4 pb-safe-bottom md:max-w-md lg:max-w-lg"
+    class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 px-4 pb-safe-bottom sm:max-w-md lg:max-w-lg"
   >
     <ul
-      class="mb-3 flex items-stretch gap-1 rounded-full border border-sf-line bg-sf-bg p-1.5 shadow-lg shadow-black/5 md:gap-1 md:p-1"
+      class="mb-3 flex items-stretch gap-1 rounded-full border border-sf-line bg-sf-bg p-1.5 shadow-lg shadow-black/5 sm:gap-1 sm:p-1"
     >
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors md:flex-col md:gap-1 md:py-2"
-          :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : 'md:text-sf-placeholder'"
+          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors sm:flex-col sm:gap-1 sm:py-2"
+          :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : 'sm:text-sf-placeholder'"
         >
           <!-- The profile tab shows the person's own Telegram photo when
                Telegram gave us one (only for attachment-menu launches and
                the website widget, see User.tg_photo_url) — "this is you"
-               reads faster than a generic silhouette. -->
+               reads faster than a generic silhouette. Sized a bit smaller
+               than earlier attempts at this (size-7/28px peaked) — bigger
+               than that visually collides with the pill's rounded corner
+               at these narrower stacked widths, see the comment above. -->
           <img
             v-if="item.to === '/profile' && profilePhoto"
             :src="profilePhoto"
             alt=""
-            class="size-6 rounded-full object-cover sm:size-5 md:size-7 md:mb-0.5"
+            class="size-5 rounded-full object-cover sm:size-6 sm:mb-0.5"
             :class="isActive(item) ? 'ring-2 ring-sf-accent' : ''"
           />
-          <i v-else :class="item.icon" class="text-base sm:text-sm md:text-base" />
+          <i v-else :class="item.icon" class="text-base" />
           <!-- Мобильный экран: только иконки, подписи скрыты — четыре
                полноразмерных лейбла в пилюле на узком экране смотрелись
-               тесно. От sm и шире (узкий десктоп/широкий Telegram Desktop)
-               подпись возвращается рядом с иконкой; от md — уже под ней,
-               капсом, по макету выше. -->
-          <span class="hidden leading-none sm:inline md:text-[0.6rem] md:font-semibold md:uppercase md:tracking-wide">{{
+               тесно. От sm и шире (любое реальное окно — узкий десктоп,
+               Telegram Desktop) подпись уже под иконкой, капсом. -->
+          <span class="hidden leading-none sm:inline sm:text-[0.6rem] sm:font-semibold sm:uppercase sm:tracking-wide">{{
             item.label
           }}</span>
           <span
             v-if="item.to === '/cart' && cartStore.itemsCount > 0"
-            class="absolute right-3 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white md:right-2.5 md:top-1"
+            class="absolute right-3 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white sm:right-2.5 sm:top-1"
           >
             {{ cartStore.itemsCount }}
           </span>
