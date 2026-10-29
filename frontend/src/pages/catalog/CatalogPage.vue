@@ -8,12 +8,21 @@ import { useCategoryStore } from '@entities/category/store'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useStoreInfoStore } from '@entities/store-info/store'
 import { useSeoMeta } from '@shared/seo/useSeoMeta'
+import { currentTheme } from '@shared/theme/theme'
 
 const PAGE_SIZE = 20
 
-// Same dark warm-gold tints as the product card tiles, so a category grid
-// without icons doesn't read as a grey administrative list.
-const TINTS = ['bg-[#201a10]', 'bg-[#1c1c1c]', 'bg-[#22190e]', 'bg-[#1a1a1a]', 'bg-[#241c11]']
+// Light: the original tg-vitrina cool blue-grey tints, reverted alongside
+// --sf-accent going back to blue (a near-black badge read as broken/
+// administrative against the light page — direct follow-up request after
+// seeing it live). Dark: kept from the Alena Zhao gold rebrand on an
+// earlier direct request, unlike --sf-accent — themed at the array level,
+// not via a Tailwind `dark:` variant, because every other themed value in
+// this codebase is a CSS custom property, not a Tailwind dark-mode class
+// (see styles/main.css).
+const LIGHT_TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', 'bg-[#e8eef7]']
+const DARK_TINTS = ['bg-[#201a10]', 'bg-[#1c1c1c]', 'bg-[#22190e]', 'bg-[#1a1a1a]', 'bg-[#241c11]']
+const TINTS = computed(() => (currentTheme.value === 'dark' ? DARK_TINTS : LIGHT_TINTS))
 
 const route = useRoute()
 const categoryStore = useCategoryStore()
@@ -68,12 +77,12 @@ useSeoMeta(() => {
 })
 
 const tiles = computed(() => [
-  { id: null as number | null, name: 'Все', letter: 'В', tint: TINTS[0] },
+  { id: null as number | null, name: 'Все', letter: 'В', tint: TINTS.value[0] },
   ...rootCategories.value.map((root, index) => ({
     id: root.id,
     name: root.name,
     letter: root.name[0]?.toUpperCase() ?? '',
-    tint: TINTS[(index + 1) % TINTS.length],
+    tint: TINTS.value[(index + 1) % TINTS.value.length],
   })),
 ])
 
