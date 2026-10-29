@@ -121,20 +121,31 @@ const items = computed<NavItem[]>(() => {
   <!-- Seller nav: tg-vitrina's SellerNav — a flat, bordered-top tab bar.
        tg-vitrina itself contrasts a light gray-400 inactive color against a
        strong dark-blue primary for the active tab, so the active one clearly
-       pops instead of blending in with a merely-slightly-darker shade. -->
+       pops instead of blending in with a merely-slightly-darker shade.
+       Mobile (<640px, incl. the Mini App itself) stays exactly this: staff
+       mostly use the cabinet from inside Telegram, where this already
+       works fine. Tablet/desktop (sm+) switches to the same floating pill
+       the customer nav above uses — now that staff log in with their own
+       Telegram account (not just preview the storefront from inside the
+       bot), the cabinet gets opened directly as a real desktop page often
+       enough to deserve the same treatment, not just the customer side. -->
   <nav
     v-else
-    class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 border-t border-sf-line bg-sf-bg pb-safe-bottom"
+    class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 border-t border-sf-line bg-sf-bg pb-safe-bottom sm:max-w-md sm:border-t-0 sm:bg-transparent sm:px-4 lg:max-w-lg"
   >
-    <ul class="flex items-stretch justify-around">
+    <ul
+      class="flex items-stretch justify-around sm:mb-3 sm:gap-1 sm:rounded-full sm:border sm:border-sf-line sm:bg-sf-bg sm:p-1 sm:shadow-lg sm:shadow-black/5"
+    >
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="flex flex-col items-center gap-1 py-2 transition-colors"
-          :class="isActive(item) ? 'text-sf-ink font-medium' : 'text-sf-placeholder'"
+          class="flex flex-col items-center gap-1 py-2 transition-colors sm:rounded-full"
+          :class="isActive(item) ? 'text-sf-ink font-medium sm:bg-sf-soft sm:text-sf-accent' : 'text-sf-placeholder'"
         >
-          <i :class="item.icon" class="text-lg" />
-          <span class="text-[0.65rem] leading-none">{{ item.label }}</span>
+          <i :class="item.icon" class="text-lg sm:text-base" />
+          <span class="text-[0.65rem] leading-none sm:text-[0.6rem] sm:font-semibold sm:uppercase sm:tracking-wide">{{
+            item.label
+          }}</span>
         </RouterLink>
       </li>
     </ul>
