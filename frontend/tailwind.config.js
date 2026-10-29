@@ -12,13 +12,14 @@ export default {
         'sf-card': 'var(--sf-card)',
         'sf-accent': 'var(--sf-accent)',
         'sf-soft': 'var(--sf-accent-soft)',
-        // Text/icon color for content sitting ON a bg-sf-accent (gold) fill —
+        // Text/icon color for content sitting ON a bg-sf-accent fill —
         // deliberately its own token, not --sf-ink: --sf-accent-ink stays the
-        // same fixed dark value in BOTH light and dark themes (see
+        // same fixed value in BOTH light and dark themes (see
         // styles/main.css), because --sf-accent itself doesn't change
         // between themes either. If this used --sf-ink/--sf-bg instead, text
-        // on gold would flip to white-on-gold in light mode and fail
-        // contrast, even though it reads fine in dark mode.
+        // on the accent would flip to dark-on-accent in light mode (--sf-ink
+        // is dark there) and fail contrast, even though it reads fine in
+        // dark mode (--sf-ink is white there).
         'sf-accent-ink': 'var(--sf-accent-ink)',
         'sf-ink': 'var(--sf-ink)',
         'sf-muted': 'var(--sf-muted)',

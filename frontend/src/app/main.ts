@@ -23,40 +23,39 @@ void initTelegram()
 
 // PrimeVue's "primary" defaults to Aura's emerald scale, which would make
 // every untouched PrimeVue control (ToggleSwitch, ProgressSpinner, Tag,
-// Button) read as green next to the storefront's gold --sf-accent. Seller
-// pages use plenty of PrimeVue as-is, so the theme itself is pinned to the
-// same warm gold (Alena Zhao brand accent, #c9a15a at 600 — same slot the
-// old blue used to sit at) instead of re-skinning each component by hand.
+// Button) read as green next to the app's blue --sf-accent. Seller pages
+// use plenty of PrimeVue as-is, so the theme itself is pinned to the same
+// blue instead of re-skinning each component by hand. (This briefly became
+// a gold scale matching main.css's --sf-accent during the Alena Zhao
+// storefront rebrand, then both were reverted back to blue on direct
+// request — the brand's gold still lives on in the logo, hero banner and
+// category tints, just not as the interactive accent.)
 //
-// Aura's default "surface" scale is Tailwind's slate scale ({slate.50},
-// {slate.200}, {slate.900}, ...) — built for a light theme, and its bundled
-// "dark" colorScheme is a different, unrelated dark gray scale — neither
-// matches this app's own --sf-card/--sf-line/--sf-ink tokens (main.css,
-// which now has its own light AND dark blocks, toggled the same way as
-// PrimeVue's below: the `[data-theme="dark"]` attribute on <html>, driven
-// by shared/theme/theme.ts). Severity colors (red/green/amber) still line
-// up with --sf-danger/--sf-success/--sf-warning in both schemes without
-// changes, but the form-field colors below can't lean on {surface.*}
-// references in either scheme — overridden with literal hex values that
-// mirror main.css's two blocks instead.
+// Aura's default "surface" scale is already Tailwind's slate scale under
+// the hood ({slate.50}, {slate.200}, {slate.900}, ...) — which is exactly
+// what the seller cabinet's --sf-card/--sf-line/--sf-ink tokens are (see
+// main.css's `.admin-scheme` block: also reverted back to the original
+// gray/white scheme in light mode), so severity colors (red/green/amber)
+// line up with --sf-danger/--sf-success/--sf-warning for free, and the
+// `formField.light` override below can reference `{surface.*}` directly
+// again instead of duplicating literal hex. The cabinet's DARK theme is
+// unrelated to this revert (it never had a "before" — see main.css), so
+// `formField.dark` below stays pinned to its own literal hex, same as it
+// was before this revert.
 const SfPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#fcf8f1',
-      100: '#f8f0e3',
-      200: '#f2e4ce',
-      300: '#e9d3ac',
-      400: '#dfc08a',
-      500: '#d4af6c',
-      600: '#c9a15a',
-      700: '#a98447',
-      800: '#866934',
-      900: '#624c26',
-      950: '#3d2f17',
-      // Aura's Button/Tag text color reads from here, not a hardcoded
-      // white class — white-on-gold fails contrast (the old blue didn't
-      // need this override, white-on-blue was already readable).
-      contrastColor: '#121212',
+      50: '#eff6ff',
+      100: '#dbeafe',
+      200: '#bfdbfe',
+      300: '#93c5fd',
+      400: '#60a5fa',
+      500: '#3b82f6',
+      600: '#2563eb',
+      700: '#1d4ed8',
+      800: '#1e40af',
+      900: '#1e3a8a',
+      950: '#172554',
     },
     formField: {
       // Aura's default paddingX/Y (0.75rem/0.5rem) reads noticeably smaller
@@ -79,21 +78,26 @@ const SfPreset = definePreset(Aura, {
       },
     },
     colorScheme: {
-      // Both slots now map 1:1 to main.css's two --sf-* blocks (literal hex,
-      // not var()/`{surface.*}` references — Aura's bundled "surface" scale
-      // doesn't match this brand's tokens in either scheme). `darkModeSelector`
-      // below tells PrimeVue to pick between them off the same
-      // `[data-theme="dark"]` attribute main.css's `:root[data-theme="dark"]`
-      // block already keys off, so both stay in sync automatically.
+      // `darkModeSelector` below tells PrimeVue to pick between these two
+      // slots off the same `[data-theme="dark"]` attribute main.css's
+      // `:root[data-theme="dark"]` block already keys off, so both stay in
+      // sync automatically. PrimeVue form fields only ever render inside
+      // the seller cabinet (customer-facing pages use hand-rolled --sf-card
+      // inputs, see CLAUDE.md) — `light` below is back to referencing
+      // Aura's own untouched `{surface.*}` slate scale, matching the
+      // cabinet's reverted-to-original `.admin-scheme` light palette in
+      // main.css exactly, instead of duplicating its literal hex here.
+      // `dark` stays pinned to its own hex — the cabinet's dark theme was
+      // never part of this revert (see main.css).
       light: {
         formField: {
           background: '#ffffff',
-          borderColor: '#e7e0d2',
-          hoverBorderColor: '#d8d0c0',
-          color: '#1a1510',
-          placeholderColor: '#a89d89',
-          disabledBackground: '#f4f0e6',
-          disabledColor: '#a89d89',
+          borderColor: '{surface.200}',
+          hoverBorderColor: '{surface.300}',
+          color: '{surface.900}',
+          placeholderColor: '{surface.400}',
+          disabledBackground: '{surface.200}',
+          disabledColor: '{surface.400}',
         },
       },
       dark: {

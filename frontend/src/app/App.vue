@@ -175,7 +175,7 @@ watch(
 <template>
   <div
     class="min-h-screen text-sf-ink"
-    :class="isInAdminSection ? 'bg-sf-surface' : 'bg-sf-bg'"
+    :class="isInAdminSection ? 'bg-sf-surface admin-scheme' : 'bg-sf-bg'"
     style="
       padding-left: var(--tg-safe-area-inset-left, 0px);
       padding-right: var(--tg-safe-area-inset-right, 0px);
