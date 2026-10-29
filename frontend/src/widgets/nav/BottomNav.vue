@@ -91,15 +91,15 @@ const items = computed<NavItem[]>(() => {
        read as clearly once there's room to spread five full labels out. -->
   <nav
     v-if="!isInAdminSection"
-    class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 px-4 pb-safe-bottom md:max-w-xl lg:max-w-2xl"
+    class="fixed bottom-0 left-1/2 z-40 w-full max-w-web-app -translate-x-1/2 px-4 pb-safe-bottom md:max-w-md lg:max-w-lg"
   >
     <ul
-      class="mb-3 flex items-stretch gap-1 rounded-full border border-sf-line bg-sf-bg p-1.5 shadow-lg shadow-black/5 md:gap-1.5 md:p-2"
+      class="mb-3 flex items-stretch gap-1 rounded-full border border-sf-line bg-sf-bg p-1.5 shadow-lg shadow-black/5 md:gap-1 md:p-1"
     >
       <li v-for="item in items" :key="item.to" class="flex-1">
         <RouterLink
           :to="item.to"
-          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors md:flex-col md:gap-1.5 md:py-3"
+          class="relative flex items-center justify-center gap-2 rounded-full py-2.5 text-sm transition-colors md:flex-col md:gap-1 md:py-2"
           :class="isActive(item) ? 'bg-sf-soft font-medium text-sf-accent' : 'md:text-sf-placeholder'"
         >
           <!-- The profile tab shows the person's own Telegram photo when
@@ -110,21 +110,21 @@ const items = computed<NavItem[]>(() => {
             v-if="item.to === '/profile' && profilePhoto"
             :src="profilePhoto"
             alt=""
-            class="size-5 rounded-full object-cover sm:size-4 md:size-6"
+            class="size-5 rounded-full object-cover sm:size-4 md:size-5"
             :class="isActive(item) ? 'ring-2 ring-sf-accent' : ''"
           />
-          <i v-else :class="item.icon" class="text-base sm:text-sm md:text-xl" />
+          <i v-else :class="item.icon" class="text-base sm:text-sm md:text-base" />
           <!-- Мобильный экран: только иконки, подписи скрыты — четыре
                полноразмерных лейбла в пилюле на узком экране смотрелись
                тесно. От sm и шире (узкий десктоп/широкий Telegram Desktop)
                подпись возвращается рядом с иконкой; от md — уже под ней,
                капсом, по макету выше. -->
-          <span class="hidden leading-none sm:inline md:text-[0.7rem] md:font-semibold md:uppercase md:tracking-wide">{{
+          <span class="hidden leading-none sm:inline md:text-[0.6rem] md:font-semibold md:uppercase md:tracking-wide">{{
             item.label
           }}</span>
           <span
             v-if="item.to === '/cart' && cartStore.itemsCount > 0"
-            class="absolute right-3 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white md:right-4 md:top-1.5"
+            class="absolute right-3 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-sf-danger px-1 text-[0.6rem] font-semibold leading-4 text-white md:right-2.5 md:top-1"
           >
             {{ cartStore.itemsCount }}
           </span>
