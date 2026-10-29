@@ -227,7 +227,7 @@ watch(
         <div class="flex shrink-0 items-center gap-3">
           <button
             type="button"
-            class="text-sf-muted"
+            class="flex items-center text-sf-muted"
             :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
             @click="toggleTheme"
           >
@@ -236,7 +236,7 @@ watch(
           <RouterLink
             v-if="isSeller"
             :to="{ name: 'seller-dashboard' }"
-            class="text-sf-muted"
+            class="flex items-center text-sf-muted"
             aria-label="Админка"
           >
             <i class="pi pi-briefcase text-xl" />
@@ -284,7 +284,7 @@ watch(
         <div class="flex shrink-0 items-center gap-3">
           <button
             type="button"
-            class="text-sf-muted"
+            class="flex items-center text-sf-muted"
             :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
             @click="toggleTheme"
           >
@@ -292,12 +292,17 @@ watch(
           </button>
           <RouterLink
             :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
-            class="text-sf-muted"
+            class="flex items-center text-sf-muted"
             :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
           >
             <i :class="isInAdminSection ? 'pi pi-shop' : 'pi pi-briefcase'" class="text-xl" />
           </RouterLink>
-          <RouterLink v-if="isOwner" to="/seller/settings" class="text-sf-muted" aria-label="Настройки">
+          <RouterLink
+            v-if="isOwner"
+            to="/seller/settings"
+            class="flex items-center text-sf-muted"
+            aria-label="Настройки"
+          >
             <i class="pi pi-cog text-xl" />
           </RouterLink>
         </div>
