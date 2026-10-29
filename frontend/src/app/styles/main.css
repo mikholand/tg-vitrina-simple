@@ -140,6 +140,20 @@
   --sf-warning-soft: rgba(245, 158, 11, 0.12);
 }
 
+/* Seller cabinet, dark theme — only --sf-card differs from the shared block
+   above. The storefront's own dark cards already read as clearly elevated
+   (--sf-bg 0x12 vs --sf-card 0x1e — a 12-point jump), but the cabinet sits
+   its cards on --sf-surface, not --sf-bg, and --sf-surface (0x1c) is only 2
+   points off that same --sf-card — nearly fused (direct follow-up request
+   after seeing the dashboard tiles live, same blending the light-theme
+   `.admin-scheme` block above already fixed for --sf-card there). Not
+   folded into one `.admin-scheme` selector covering both schemes: every
+   other dark neutral here is intentionally the shared one above, unlike the
+   light block which reverts the full set. */
+:root[data-theme='dark'] .admin-scheme {
+  --sf-card: #2a2a2a;
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }
