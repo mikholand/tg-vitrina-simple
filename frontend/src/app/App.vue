@@ -200,10 +200,11 @@ watch(
            sized headers in and out, which used to make the page visibly
            jump a few pixels on every switch (direct follow-up request).
            Left: shop logo/initial + name, identical in both sections,
-           except the admin side links it back to the dashboard. Right:
-           theme toggle (always) → store<->admin switch icon (staff only,
-           either direction) → the one slot that actually differs: avatar/
-           login for customers, the settings gear for admin owners. -->
+           except the admin side links it back to the dashboard. Right: the
+           one slot that actually differs — avatar/login for customers, the
+           settings gear for admin owners — then the theme toggle (always),
+           then the store<->admin switch icon (staff only, either
+           direction). -->
       <header
         v-if="!bare && storeInfoStore.storeInfo"
         class="mb-1 flex items-center justify-between gap-2.5 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
@@ -244,23 +245,6 @@ watch(
         </div>
 
         <div class="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            class="flex items-center text-sf-muted"
-            :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
-            @click="toggleTheme"
-          >
-            <i :class="currentTheme === 'dark' ? 'pi pi-sun' : 'pi pi-moon'" class="text-xl" />
-          </button>
-          <RouterLink
-            v-if="isSeller"
-            :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
-            class="flex items-center text-sf-muted"
-            :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
-          >
-            <i :class="isInAdminSection ? 'pi pi-shop' : 'pi pi-briefcase'" class="text-xl" />
-          </RouterLink>
-
           <!-- Admin side: settings gear, owners only (moderators don't
                manage shop settings — see CLAUDE.md §8). -->
           <RouterLink
@@ -282,7 +266,8 @@ watch(
                `TelegramLoginButton` fallback only ever actually shows to a
                logged-out website visitor. Hidden on the profile page
                itself, which already shows the same avatar (or login
-               prompt) as its own heading. -->
+               prompt) as its own heading. Placed first in this row (direct
+               follow-up request), ahead of the theme toggle. -->
           <template v-if="!isInAdminSection && route.name !== 'profile'">
             <RouterLink
               v-if="authStore.currentUser"
@@ -305,6 +290,23 @@ watch(
             </RouterLink>
             <TelegramLoginButton v-else />
           </template>
+
+          <button
+            type="button"
+            class="flex items-center text-sf-muted"
+            :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
+            @click="toggleTheme"
+          >
+            <i :class="currentTheme === 'dark' ? 'pi pi-sun' : 'pi pi-moon'" class="text-xl" />
+          </button>
+          <RouterLink
+            v-if="isSeller"
+            :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
+            class="flex items-center text-sf-muted"
+            :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
+          >
+            <i :class="isInAdminSection ? 'pi pi-shop' : 'pi pi-briefcase'" class="text-xl" />
+          </RouterLink>
         </div>
       </header>
 
