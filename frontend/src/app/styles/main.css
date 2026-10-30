@@ -57,12 +57,18 @@
      --sf-bg so cards (--sf-card) read as elevated against it instead of
      blending in — see App.vue's root background class. */
   --sf-surface: #f3f4f6;
-  /* Pure white, not tg-vitrina's original #f8fafc — that's barely a shade
-     off --sf-surface (#f3f4f6), so cards/inputs read as nearly fused with
-     the page background instead of visibly elevated (direct follow-up
-     request after seeing it live, originally caught on the seller cabinet
-     before this same full-palette revert reached the storefront too). */
-  --sf-card: #ffffff;
+  /* tg-vitrina's original #f8fafc — a visible step off --sf-bg's pure
+     white, which is what makes a product card actually read as a raised
+     card against the page instead of fading into it (direct follow-up
+     request: a prior pass had bumped this to #ffffff everywhere, which
+     fixed the *admin cabinet*'s cards blending into its gray --sf-surface,
+     but incorrectly carried that same fix over to the storefront too,
+     where cards sit on white --sf-bg, not gray --sf-surface, so #ffffff
+     here just made every storefront card invisible against the page). The
+     admin cabinet keeps its own #ffffff override below — #f8fafc is close
+     enough to its --sf-surface (#f3f4f6) to nearly fuse there, same
+     problem in reverse. */
+  --sf-card: #f8fafc;
   /* LIGHT mode only, per a follow-up request: dark mode keeps the Alena
      Zhao gold accent below instead, so --sf-accent is the one token that
      now genuinely differs between the two schemes. See main.ts's
@@ -122,17 +128,20 @@
   --sf-warning-soft: rgba(245, 158, 11, 0.12);
 }
 
-/* Seller cabinet, dark theme only — --sf-card differs from the shared block
-   above. The storefront's own dark cards already read as clearly elevated
-   (--sf-bg 0x12 vs --sf-card 0x1e — a 12-point jump), but the cabinet sits
-   its cards on --sf-surface, not --sf-bg, and --sf-surface (0x1c) is only 2
-   points off that same --sf-card — nearly fused (direct follow-up request
-   after seeing the dashboard tiles live). Light mode needs no equivalent
-   `.admin-scheme` override any more: since the full light palette above
-   reverted to tg-vitrina's original tokens, the cabinet and the storefront
-   now simply share the one light scheme, same as pre-rebrand. Dark mode
-   never had a "before" to revert to, so it keeps its own Alena Zhao
-   neutrals for both. */
+/* Seller cabinet — in BOTH themes, --sf-card is the one token that diverges
+   from the shared blocks above, for the same reason each time: the cabinet
+   sits its cards on --sf-surface (see App.vue's root background class),
+   not on --sf-bg like the storefront does, and --sf-surface sits too close
+   to the shared --sf-card value to read as elevated there — nearly fused
+   (direct follow-up request, caught independently in both themes after
+   seeing the dashboard/cards live). Dark: --sf-surface 0x1c vs shared
+   --sf-card 0x1e, only 2 points apart → bumped lighter (0x2a). Light:
+   --sf-surface #f3f4f6 vs shared --sf-card #f8fafc, similarly close →
+   bumped to pure white instead. */
+:root:not([data-theme='dark']) .admin-scheme {
+  --sf-card: #ffffff;
+}
+
 :root[data-theme='dark'] .admin-scheme {
   --sf-card: #2a2a2a;
 }
