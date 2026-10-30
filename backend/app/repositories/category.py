@@ -29,6 +29,12 @@ class CategoryRepository:
             category.is_hidden = is_hidden
             await self._session.flush()
 
+    async def set_name(self, category_id: int, name: str) -> None:
+        category = await self.get(category_id)
+        if category is not None:
+            category.name = name
+            await self._session.flush()
+
     async def create(
         self,
         name: str,

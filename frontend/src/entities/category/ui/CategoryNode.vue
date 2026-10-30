@@ -11,6 +11,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'toggle-visibility': [category: Category]
+  rename: [category: Category]
   delete: [category: Category]
 }>()
 
@@ -50,6 +51,15 @@ const open = ref(true)
 
       <button
         type="button"
+        class="shrink-0 text-sf-muted"
+        aria-label="Переименовать"
+        @click="emit('rename', category)"
+      >
+        <i class="pi pi-pencil text-sm" />
+      </button>
+
+      <button
+        type="button"
         class="shrink-0 text-sf-muted disabled:opacity-50"
         :aria-label="category.is_hidden ? 'Показывать' : 'Скрыть'"
         :disabled="togglingId === category.id"
@@ -84,6 +94,7 @@ const open = ref(true)
         :toggling-id="togglingId"
         :deleting-id="deletingId"
         @toggle-visibility="(c) => emit('toggle-visibility', c)"
+        @rename="(c) => emit('rename', c)"
         @delete="(c) => emit('delete', c)"
       />
     </ul>

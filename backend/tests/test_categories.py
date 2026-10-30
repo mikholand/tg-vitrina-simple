@@ -32,6 +32,49 @@ async def test_seller_category_listing_requires_seller_role(client, customer, ma
     assert response.status_code == 403
 
 
+async def test_rename_category_persists(client, seller, make_category):
+    _, headers = seller
+    category = await make_category("Тифаны", "tifany")
+
+    response = await client.patch(
+        f"/api/v1/seller/categories/{category.id}",
+        json={"name": "Тапочки"},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["name"] == "Тапочки"
+
+    seller_list = await client.get("/api/v1/seller/categories", headers=headers)
+    updated = next(c for c in seller_list.json() if c["id"] == category.id)
+    assert updated["name"] == "Тапочки"
+
+
+async def test_rename_category_rejects_duplicate_sibling_name(client, seller, make_category):
+    _, headers = seller
+    parent = await make_category("Родитель", "parent")
+    await make_category("Существующая", "existing", parent_id=parent.id)
+    renaming = await make_category("Другая", "other", parent_id=parent.id)
+
+    response = await client.patch(
+        f"/api/v1/seller/categories/{renaming.id}",
+        json={"name": "Существующая"},
+        headers=headers,
+    )
+    assert response.status_code == 400
+
+
+async def test_rename_category_requires_seller_role(client, customer, make_category):
+    _, headers = customer
+    category = await make_category("Нужно поправить", "fix-me")
+
+    response = await client.patch(
+        f"/api/v1/seller/categories/{category.id}",
+        json={"name": "Поправлено"},
+        headers=headers,
+    )
+    assert response.status_code == 403
+
+
 async def test_visibility_toggle_persists(client, seller, make_category):
     _, headers = seller
     category = await make_category("Toggle me", "toggle-me")

@@ -82,6 +82,26 @@ class CategoryService:
             depth=depth,
         )
 
+    async def rename(self, category_id: int, name: str) -> Category:
+        """Fixes a seller's typo in a category name without touching `code`
+        (derived from the name only at creation — see `category_code`) or
+        reshuffling the tree, since descendants' codes are built on top of
+        their parent's code and would need a cascading rewrite otherwise."""
+        name = name.strip()
+        if not name:
+            raise ValueError("category name cannot be empty")
+        category = await self._category_repository.get(category_id)
+        if category is None:
+            raise ValueError("category_not_found")
+        categories = await self._category_repository.list_all()
+        if any(
+            c.id != category_id and c.parent_id == category.parent_id and c.name == name
+            for c in categories
+        ):
+            raise ValueError("a category with this name already exists under the same parent")
+        await self._category_repository.set_name(category_id, name)
+        return category
+
     async def delete(self, category_id: int) -> None:
         category = await self._category_repository.get(category_id)
         if category is None:

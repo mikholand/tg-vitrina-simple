@@ -5,6 +5,7 @@ import {
   createSellerCategory,
   deleteSellerCategory,
   getSellerCategories,
+  renameSellerCategory,
   setCategoryVisibility,
 } from '@entities/category/api'
 import { buildCategoryTree } from '@entities/category/tree'
@@ -20,6 +21,11 @@ const createDialogVisible = ref(false)
 const creating = ref(false)
 const newCategoryName = ref('')
 const newCategoryParentId = ref<number | null>(null)
+
+const renameDialogVisible = ref(false)
+const renaming = ref(false)
+const renameCategoryId = ref<number | null>(null)
+const renameCategoryName = ref('')
 
 const sortedCategories = computed(() =>
   [...categories.value].sort((a, b) => a.depth - b.depth || a.sort_order - b.sort_order),
@@ -98,6 +104,34 @@ async function onCreateCategory(): Promise<void> {
   }
 }
 
+function openRenameDialog(category: Category): void {
+  renameCategoryId.value = category.id
+  renameCategoryName.value = category.name
+  renameDialogVisible.value = true
+}
+
+async function onRenameCategory(): Promise<void> {
+  const id = renameCategoryId.value
+  const name = renameCategoryName.value.trim()
+  if (id === null || !name) return
+
+  renaming.value = true
+  try {
+    await renameSellerCategory(id, name)
+    renameDialogVisible.value = false
+    await loadCategories()
+  } catch (err) {
+    // Most likely cause: a sibling category under the same parent already
+    // has this name (backend's `uq_categories_parent_name`) — surfaced via
+    // `CategoryService.rename`'s own duplicate check, not a DB constraint
+    // violation.
+    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    window.alert(detail ?? 'Не удалось переименовать категорию.')
+  } finally {
+    renaming.value = false
+  }
+}
+
 async function onDeleteCategory(category: Category): Promise<void> {
   if (!window.confirm(`Удалить категорию «${category.name}»? Подкатегории будут удалены вместе с ней.`)) {
     return
@@ -158,6 +192,14 @@ onMounted(() => {
           <span class="min-w-0 flex-1 truncate text-sm text-sf-ink">{{ pathById.get(category.id) }}</span>
           <button
             type="button"
+            class="shrink-0 text-sf-muted"
+            aria-label="Переименовать"
+            @click="openRenameDialog(category)"
+          >
+            <i class="pi pi-pencil text-sm" />
+          </button>
+          <button
+            type="button"
             class="shrink-0 text-sf-muted disabled:opacity-50"
             :aria-label="category.is_hidden ? 'Показывать' : 'Скрыть'"
             :disabled="togglingId === category.id"
@@ -193,6 +235,7 @@ onMounted(() => {
           :toggling-id="togglingId"
           :deleting-id="deletingId"
           @toggle-visibility="onToggleVisibility"
+          @rename="openRenameDialog"
           @delete="onDeleteCategory"
         />
       </ul>
@@ -223,6 +266,23 @@ onMounted(() => {
           :loading="creating"
           :disabled="!newCategoryName.trim()"
           @click="onCreateCategory"
+        />
+      </template>
+    </Dialog>
+
+    <Dialog v-model:visible="renameDialogVisible" modal header="Переименовать категорию" class="w-[90vw] max-w-sm">
+      <label class="flex flex-col gap-1.5 text-sm">
+        <span class="text-sf-muted">Название</span>
+        <InputText v-model="renameCategoryName" fluid @keyup.enter="onRenameCategory" />
+      </label>
+
+      <template #footer>
+        <Button label="Отмена" text @click="renameDialogVisible = false" />
+        <Button
+          label="Сохранить"
+          :loading="renaming"
+          :disabled="!renameCategoryName.trim()"
+          @click="onRenameCategory"
         />
       </template>
     </Dialog>

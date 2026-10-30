@@ -21,3 +21,7 @@ class CategoryVisibilityUpdateSchema(BaseModel):
 class CategoryCreateSchema(BaseModel):
     name: str
     parent_id: int | None = None
+
+
+class CategoryUpdateSchema(BaseModel):
+    name: str

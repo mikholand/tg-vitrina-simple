@@ -2,7 +2,12 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentStaff
-from app.dto.category import CategoryCreateSchema, CategorySchema, CategoryVisibilityUpdateSchema
+from app.dto.category import (
+    CategoryCreateSchema,
+    CategorySchema,
+    CategoryUpdateSchema,
+    CategoryVisibilityUpdateSchema,
+)
 from app.repositories.category import CategoryRepository
 from app.services.category import CategoryService
 
@@ -27,6 +32,24 @@ async def create_category(
 ) -> CategorySchema:
     try:
         category = await category_service.create(payload.name, payload.parent_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return CategorySchema.model_validate(category)
+
+
+@router.patch("/{category_id}")
+async def update_category(
+    category_id: int,
+    payload: CategoryUpdateSchema,
+    _: CurrentStaff,
+    category_repository: FromDishka[CategoryRepository],
+    category_service: FromDishka[CategoryService],
+) -> CategorySchema:
+    category = await category_repository.get(category_id)
+    if category is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+    try:
+        category = await category_service.rename(category_id, payload.name)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return CategorySchema.model_validate(category)
