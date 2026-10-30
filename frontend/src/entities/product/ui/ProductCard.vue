@@ -4,11 +4,19 @@ import { availabilityChipClasses, availabilityLabels, formatPrice } from '@entit
 import { isOutOfStock, maxCartQuantity, shouldShowQuantity } from '@entities/product/stock'
 import { useFavoriteStore } from '@entities/favorite/store'
 import { useCartStore } from '@entities/cart/store'
+import { currentTheme } from '@shared/theme/theme'
 
 // Tint placeholders: colour is pinned to the product id, so the same
 // product always looks the same and an image-less grid doesn't read as
-// grey/broken. Dark warm-gold tones, matching the Alena Zhao storefront.
-const TINTS = ['bg-[#201a10]', 'bg-[#1c1c1c]', 'bg-[#22190e]', 'bg-[#1a1a1a]', 'bg-[#241c11]']
+// grey/broken. Light: tg-vitrina's original cool blue-grey tints, restored
+// alongside the rest of the light theme's neutral palette (see
+// styles/main.css) — the dark-only tones below used to apply here
+// unconditionally, which read as a near-black square on a light page. Dark:
+// kept from the Alena Zhao gold rebrand. Same two arrays as
+// CatalogPage.vue's category tiles — keep both in sync if either changes.
+const LIGHT_TINTS = ['bg-[#eff4ff]', 'bg-[#f1f5f9]', 'bg-[#f5f8ff]', 'bg-[#eef2f7]', 'bg-[#e8eef7]']
+const DARK_TINTS = ['bg-[#201a10]', 'bg-[#1c1c1c]', 'bg-[#22190e]', 'bg-[#1a1a1a]', 'bg-[#241c11]']
+const TINTS = computed(() => (currentTheme.value === 'dark' ? DARK_TINTS : LIGHT_TINTS))
 
 const props = defineProps<{ product: Product }>()
 
@@ -17,7 +25,7 @@ const cartStore = useCartStore()
 
 const isFavorite = computed(() => favoriteStore.isFavorite(props.product.id))
 const thumbnail = computed(() => props.product.photo_paths[0] ?? null)
-const tint = computed(() => TINTS[props.product.id % TINTS.length])
+const tint = computed(() => TINTS.value[props.product.id % TINTS.value.length])
 const initial = computed(() => props.product.name[0]?.toUpperCase() ?? '')
 
 const showAvailability = computed(() => props.product.availability !== 'unknown')

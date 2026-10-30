@@ -54,65 +54,47 @@
      tg-vitrina-ported palette did. */
   --sf-bg: #ffffff;
   /* The seller cabinet's --sf-surface is a step off the storefront's
-     --sf-bg (darker in light mode, lighter in dark mode below) so cards
-     (--sf-card) read as elevated against it instead of blending in — see
-     App.vue's root background class. */
-  --sf-surface: #f4f0e6;
-  --sf-card: #ffffff;
-  /* Accent reverted back to the original tg-vitrina blue (#2563eb) on
-     direct request — the gold brand accent stays everywhere else (logo,
-     hero banner, category tints) but this token specifically goes back to
-     blue. LIGHT mode only, per a follow-up request: dark mode keeps the
-     Alena Zhao gold accent below instead, so --sf-accent is the one token
-     that now genuinely differs between the two schemes (everything else in
-     this file matches across both, aside from the obvious light/dark
-     inversion of neutrals). See main.ts's `colorScheme.light/dark.primary`,
-     which mirrors this same split. */
-  --sf-accent: #2563eb;
-  --sf-accent-soft: #eff4ff;
-  /* Text/icon color ON a bg-sf-accent fill (buttons, active chips/tabs) —
-     white, same as this app originally used before the gold accent needed
-     a dark ink color for contrast (white-on-blue reads fine, same as
-     PrimeVue's own default contrastColor for its blue primary scale). */
-  --sf-accent-ink: #ffffff;
-  --sf-ink: #1a1510;
-  --sf-muted: #746b5c;
-  --sf-line: #e7e0d2;
-  --sf-placeholder: #a89d89;
-  --sf-disabled: #d8d0c0;
-
-  --sf-success: #16a34a;
-  --sf-success-soft: #f0fdf4;
-  --sf-danger: #dc2626;
-  --sf-danger-soft: #fef2f2;
-  --sf-warning: #d97706;
-  --sf-warning-soft: #fffbeb;
-}
-
-/* Seller cabinet, light theme only — reverted back to tg-vitrina's original
-   gray/white neutral palette on direct request ("админка как раньше"),
-   while the storefront above keeps its warm Alena Zhao neutrals (--sf-ink,
-   --sf-card, etc.) and both sides share the blue accent. Scoped to
-   `.admin-scheme` (App.vue's root wrapper, only present while
-   isInAdminSection — see the class there) rather than reusing the
-   `.bg-sf-surface` utility class itself: that class is also used on small
-   inline elements elsewhere (OrderItemThumb, SellerOrdersPage, cart status
-   labels) that must NOT get their own nested token overrides. Not scoped
-   under dark mode — the cabinet's dark theme never had a "before" to revert
-   to, so it keeps the shared dark neutrals below for both storefront and
-   admin. */
-:root:not([data-theme='dark']) .admin-scheme {
+     --sf-bg so cards (--sf-card) read as elevated against it instead of
+     blending in — see App.vue's root background class. */
   --sf-surface: #f3f4f6;
   /* Pure white, not tg-vitrina's original #f8fafc — that's barely a shade
      off --sf-surface (#f3f4f6), so cards/inputs read as nearly fused with
      the page background instead of visibly elevated (direct follow-up
-     request after seeing it live). */
+     request after seeing it live, originally caught on the seller cabinet
+     before this same full-palette revert reached the storefront too). */
   --sf-card: #ffffff;
+  /* LIGHT mode only, per a follow-up request: dark mode keeps the Alena
+     Zhao gold accent below instead, so --sf-accent is the one token that
+     now genuinely differs between the two schemes. See main.ts's
+     `colorScheme.light/dark.primary`, which mirrors this same split. */
+  --sf-accent: #2563eb;
+  --sf-accent-soft: #eff4ff;
+  /* Text/icon color ON a bg-sf-accent fill (buttons, active chips/tabs) —
+     white, matching PrimeVue's own default contrastColor for a blue
+     primary scale. */
+  --sf-accent-ink: #ffffff;
+  /* The rest of this block — ink/muted/line/placeholder/disabled plus the
+     status colors below — reverted to tg-vitrina's original cool-grey
+     palette (same values the seller cabinet's `.admin-scheme` override
+     below already had) on a direct follow-up request: the Alena Zhao warm
+     charcoal neutrals (#1a1510 ink, #e7e0d2 line, etc.) stayed applied to
+     the whole LIGHT theme even after the accent itself went back to blue,
+     which is what made a photo-less ProductCard tile (ProductCard.vue's
+     TINTS, pinned to the dark-only rebrand tones) blend near-invisibly
+     against a light page. Dark mode is unaffected — it never had a
+     "before" to revert to, see the block below. */
   --sf-ink: #0f172a;
   --sf-muted: #64748b;
   --sf-line: #e2e8f0;
   --sf-placeholder: #94a3b8;
   --sf-disabled: #cbd5e1;
+
+  --sf-success: #16a34a;
+  --sf-success-soft: #f0fdf4;
+  --sf-danger: #ef4444;
+  --sf-danger-soft: #fef2f2;
+  --sf-warning: #f59e0b;
+  --sf-warning-soft: #fffbeb;
 }
 
 :root[data-theme='dark'] {
@@ -140,16 +122,17 @@
   --sf-warning-soft: rgba(245, 158, 11, 0.12);
 }
 
-/* Seller cabinet, dark theme — only --sf-card differs from the shared block
+/* Seller cabinet, dark theme only — --sf-card differs from the shared block
    above. The storefront's own dark cards already read as clearly elevated
    (--sf-bg 0x12 vs --sf-card 0x1e — a 12-point jump), but the cabinet sits
    its cards on --sf-surface, not --sf-bg, and --sf-surface (0x1c) is only 2
    points off that same --sf-card — nearly fused (direct follow-up request
-   after seeing the dashboard tiles live, same blending the light-theme
-   `.admin-scheme` block above already fixed for --sf-card there). Not
-   folded into one `.admin-scheme` selector covering both schemes: every
-   other dark neutral here is intentionally the shared one above, unlike the
-   light block which reverts the full set. */
+   after seeing the dashboard tiles live). Light mode needs no equivalent
+   `.admin-scheme` override any more: since the full light palette above
+   reverted to tg-vitrina's original tokens, the cabinet and the storefront
+   now simply share the one light scheme, same as pre-rebrand. Dark mode
+   never had a "before" to revert to, so it keeps its own Alena Zhao
+   neutrals for both. */
 :root[data-theme='dark'] .admin-scheme {
   --sf-card: #2a2a2a;
 }
