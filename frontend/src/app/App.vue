@@ -192,15 +192,40 @@ watch(
       class="relative mx-auto max-w-web-app sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl"
       :class="bare ? '' : 'pb-20'"
     >
-      <!-- Shown for customers always, and for staff while they're
-           previewing the storefront via the store<->admin switcher below
-           (hence `!isInAdminSection`, not role-based `!isSeller` — a staff
-           member on /catalog must see exactly what a customer sees). -->
+      <!-- One shared header for both customer and seller/moderator sections
+           (merged from two near-duplicate <header>s that only agreed on
+           most of their markup) — switching between them via the
+           store<->admin icon below now toggles a handful of v-if branches
+           inside the SAME element instead of swapping two differently-
+           sized headers in and out, which used to make the page visibly
+           jump a few pixels on every switch (direct follow-up request).
+           Left: shop logo/initial + name, identical in both sections,
+           except the admin side links it back to the dashboard. Right:
+           theme toggle (always) → store<->admin switch icon (staff only,
+           either direction) → the one slot that actually differs: avatar/
+           login for customers, the settings gear for admin owners. -->
       <header
-        v-if="!isInAdminSection && !bare && storeInfoStore.storeInfo"
+        v-if="!bare && storeInfoStore.storeInfo"
         class="mb-1 flex items-center justify-between gap-2.5 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
       >
-        <div class="flex min-w-0 items-center gap-2.5">
+        <RouterLink v-if="isInAdminSection" to="/seller" class="flex min-w-0 items-center gap-2.5">
+          <img
+            v-if="storeInfoStore.storeInfo.logo"
+            :src="storeInfoStore.storeInfo.logo"
+            :alt="storeInfoStore.storeInfo.name"
+            class="size-9 shrink-0 rounded-full object-cover"
+          />
+          <div
+            v-else
+            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-sf-accent text-sm font-semibold text-sf-accent-ink"
+          >
+            {{ storeInitial }}
+          </div>
+          <h1 class="min-w-0 truncate font-semibold leading-tight text-sf-ink">
+            {{ storeInfoStore.storeInfo.name }}
+          </h1>
+        </RouterLink>
+        <div v-else class="flex min-w-0 items-center gap-2.5">
           <img
             v-if="storeInfoStore.storeInfo.logo"
             :src="storeInfoStore.storeInfo.logo"
@@ -217,6 +242,7 @@ watch(
             {{ storeInfoStore.storeInfo.name }}
           </h1>
         </div>
+
         <div class="flex shrink-0 items-center gap-3">
           <button
             type="button"
@@ -228,23 +254,36 @@ watch(
           </button>
           <RouterLink
             v-if="isSeller"
-            :to="{ name: 'seller-dashboard' }"
+            :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
             class="flex items-center text-sf-muted"
-            aria-label="Админка"
+            :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
           >
-            <i class="pi pi-briefcase text-xl" />
+            <i :class="isInAdminSection ? 'pi pi-shop' : 'pi pi-briefcase'" class="text-xl" />
           </RouterLink>
-          <!-- This is now the only way to reach "Профиль" — the bottom nav
-               no longer has its own tab for it (see BottomNav.vue), so this
-               is shown everywhere, Telegram included, not just to website
-               visitors. Inside Telegram `authStore.currentUser` is always
-               already set by the time this renders (silent init_data login,
-               see `ensureAuthInitialized()` in router/index.ts), so the
+
+          <!-- Admin side: settings gear, owners only (moderators don't
+               manage shop settings — see CLAUDE.md §8). -->
+          <RouterLink
+            v-if="isInAdminSection && isOwner"
+            to="/seller/settings"
+            class="flex items-center text-sf-muted"
+            aria-label="Настройки"
+          >
+            <i class="pi pi-cog text-xl" />
+          </RouterLink>
+
+          <!-- Customer side: avatar/login, the only way to reach "Профиль"
+               now that the bottom nav no longer has its own tab for it (see
+               BottomNav.vue) — shown everywhere, Telegram included, not
+               just to website visitors. Inside Telegram
+               `authStore.currentUser` is always already set by the time
+               this renders (silent init_data login, see
+               `ensureAuthInitialized()` in router/index.ts), so the
                `TelegramLoginButton` fallback only ever actually shows to a
-               logged-out website visitor. Hidden on the profile page itself,
-               which already shows the same avatar (or login prompt) as its
-               own heading. -->
-          <template v-if="route.name !== 'profile'">
+               logged-out website visitor. Hidden on the profile page
+               itself, which already shows the same avatar (or login
+               prompt) as its own heading. -->
+          <template v-if="!isInAdminSection && route.name !== 'profile'">
             <RouterLink
               v-if="authStore.currentUser"
               :to="{ name: 'profile' }"
@@ -266,43 +305,6 @@ watch(
             </RouterLink>
             <TelegramLoginButton v-else />
           </template>
-        </div>
-      </header>
-
-      <!-- Seller cabinet: tg-vitrina's SellerLayout header — flat row with
-           the shop name (back to the dashboard) and a gear to Settings,
-           no card/logo like the customer header above. -->
-      <header
-        v-if="isInAdminSection && storeInfoStore.storeInfo"
-        class="flex items-center justify-between gap-2 px-4 pb-2 pt-safe-top sm:px-6 md:px-8 lg:px-10"
-      >
-        <RouterLink to="/seller" class="truncate text-lg font-semibold leading-tight text-sf-ink">
-          {{ storeInfoStore.storeInfo.name }}
-        </RouterLink>
-        <div class="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            class="flex items-center text-sf-muted"
-            :aria-label="currentTheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
-            @click="toggleTheme"
-          >
-            <i :class="currentTheme === 'dark' ? 'pi pi-sun' : 'pi pi-moon'" class="text-xl" />
-          </button>
-          <RouterLink
-            :to="isInAdminSection ? { name: 'home' } : { name: 'seller-dashboard' }"
-            class="flex items-center text-sf-muted"
-            :aria-label="isInAdminSection ? 'Магазин' : 'Админка'"
-          >
-            <i :class="isInAdminSection ? 'pi pi-shop' : 'pi pi-briefcase'" class="text-xl" />
-          </RouterLink>
-          <RouterLink
-            v-if="isOwner"
-            to="/seller/settings"
-            class="flex items-center text-sf-muted"
-            aria-label="Настройки"
-          >
-            <i class="pi pi-cog text-xl" />
-          </RouterLink>
         </div>
       </header>
 
